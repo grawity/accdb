@@ -137,8 +137,7 @@ def read(file):
 					value = value[1:].strip()
 					current.setflags("deleted")
 				current.name = value
-				
-				current.tagline = lineno
+				current.position = lineno
 				
 			elif line[0] == "!":
 				value = line[1:].strip()
@@ -206,7 +205,7 @@ def find_identifier(data, pattern):
 		
 def find_flagged(data, flag):
 	for record in data:
-		if flag.lower() in record.get("flags", []):
+		if flag.lower() in record.flags:
 			yield record
 
 def run_editor(file):
@@ -228,7 +227,7 @@ elif command in ("g", "grep"):
 	if not pattern.startswith("["): pattern = "*"+pattern
 	if not pattern.endswith("]"): pattern = pattern+"*"
 	for record in find_identifier(data, pattern):
-		print "(line %d)" % record.tagline
+		print "(line %d)" % record.position
 		print record
 elif command == "grep-flag":
 	flag = sys.argv.pop(1).lower()
