@@ -1,6 +1,33 @@
 #!/usr/bin/python
 # Account and password database. For my own internal use.
 
+"""
+General syntax:
+
+= entry name
+; comments
+<tab>	key = value
+
+Flags:
+ * Can be separated by spaces or commas.
+ * Can have prefixes such as "auth:" or "is:":
+       flags = auth:openid, auth:sslcert, is:apikey
+ * Multiple flags with same prefix can be grouped:
+       flags:auth = openid, sslcert
+
+Shorthands:
+ * Lines starting with "http://" or "https://" will be converted to an 'uri' field.
+ * Lines starting with "+" will be added as flags.
+ * 'u', 'p', and '@' expand to 'login', 'password', and 'uri'.
+
+Misc syntax notes:
+ * Both "=" and ": " are accepted as separators. (Only one, however, is output
+   when rewriting the database.)
+
+Database will be rewritten and all shorthands expanded if any change is made,
+also when doing 'accdb touch'.
+"""
+
 import sys, os
 import uuid
 import fnmatch as fnm
@@ -97,6 +124,22 @@ class Record(dict):
 		if len(self.flags) > 0:
 			value = list(self.flags)
 			value.sort()
+			
+			## group by prefix
+			prefixes = {}
+			for i in value:
+				p, v = i.split(":", 2) if ":" in i else (None, i)
+				prefixes[p] = prefixes.get(p, []) + [v]
+				
+			unprinted = []
+			for p, v in prefixes.items():
+				if len(v) >= 3:
+					v = ", ".join(v)
+					s += "\t%s\n" % fieldsep.join(("flags:%s" % p, v))
+				else:
+					unprinted.extend([("%s:%s" % (p,f) if p is not None else f) for f in v])
+			value = unprinted
+			
 			value = ", ".join(value)
 			s += "\t%s\n" % fieldsep.join(("flags", value))
 		return s
@@ -147,7 +190,7 @@ def read(file):
 				value = line[1:].strip()
 				current.comment.append(value)
 			
-			elif line[0] == "|":
+			elif line[0] == "(" and line[-1] == ")":
 				pass
 			
 			elif line[0] == "+":
@@ -175,8 +218,15 @@ def read(file):
 				if value == "(none)" or value == "(null)":
 					value = None
 				
-				if key == "flags":
+				if key == "flags" or key.startswith("flags:"):
+					if ":" in key:
+						key, valueprefix = key.split(":", 2)
+					else:
+						valueprefix = None
+						
 					value = value.lower().replace(",", " ").split()
+					if valueprefix is not None:
+						value = ["%s:%s" % (valueprefix, i) for i in value]
 					value.sort()
 					current.setflags(*value)
 				else:
@@ -203,9 +253,14 @@ def find_identifier(data, pattern):
 		if fnm.filter(ids, pattern):
 			yield record
 		
-def find_flagged(data, flag):
+def find_flagged(data, flag, exact=True):
+	if exact:
+		check = lambda record, flag: flag.lower() in record.flags
+	else:
+		check = lambda record, flag: fnm.filter(record.flags, flag)
+		
 	for record in data:
-		if flag.lower() in record.flags:
+		if check(record, flag):
 			yield record
 
 def run_editor(file):
@@ -222,17 +277,28 @@ if command in ("a", "add"):
 	except: pass
 	dx = read("con:")
 	print dx
-elif command in ("g", "grep"):
+elif command in ("g", "grep", "ls", "list"):
+	listonly = command in ("ls", "list")
+	option = None
 	pattern = sys.argv.pop(1).lower()
-	if not pattern.startswith("["): pattern = "*"+pattern
-	if not pattern.endswith("]"): pattern = pattern+"*"
-	for record in find_identifier(data, pattern):
-		print "(line %d)" % record.position
-		print record
-elif command == "grep-flag":
-	flag = sys.argv.pop(1).lower()
-	for record in find_flagged(data, flag):
-		print record
+	while pattern.startswith("/"):
+		option = pattern[1:]
+		pattern = sys.argv.pop(1).lower()
+	exact = pattern.startswith("=")
+	if exact: pattern = pattern[1:]
+	
+	if option == "flag":
+		results = find_flagged(data, pattern, exact)
+	else:
+		results = find_identifier(data, pattern)
+		
+	for record in results:
+		if listonly:
+			print record.name
+		else:
+			print "(line %d)" % record.position
+			print record
+	
 elif command == "dump":
 	for record in data:
 		print record
@@ -257,16 +323,5 @@ elif command == "help":
 else:
 	print "db file: %s" % File
 	print "records: %d" % len(data)
-	
-	print "Authentication:"
-	for flag, name in {
-		"openid": "OpenID",
-		"facebook": "Facebook",
-		"twitter": "Twitter",
-		"sshkey": "SSH keys",
-	}.items():
-		count = sum(1 for rec in data if flag in rec.flags)
-		print " - %(name)-14s %(count)d" % locals()
-
 if Modified:
 	dump(File, data)
