@@ -280,12 +280,16 @@ if command in ("a", "add"):
 elif command in ("g", "grep", "ls", "list"):
 	listonly = command in ("ls", "list")
 	option = None
-	pattern = sys.argv.pop(1).lower()
-	while pattern.startswith("/"):
-		option = pattern[1:]
+	try:
 		pattern = sys.argv.pop(1).lower()
-	exact = pattern.startswith("=")
-	if exact: pattern = pattern[1:]
+		while pattern.startswith("-"):
+			option = pattern[1:]
+			pattern = sys.argv.pop(1).lower()
+		exact = pattern.startswith("=")
+		if exact: pattern = pattern[1:]
+	except IndexError:
+		pattern = "*"
+		exact = False
 	
 	if option == "flag":
 		results = find_flagged(data, pattern, exact)
