@@ -312,18 +312,23 @@ elif command == "ls":
 elif command == "touch":
 	print "Rewriting database"
 	Modified = True
+elif command == "db:sort":
+	print "Rewriting database"
+	data.sort(key=lambda x: x.name.lower())
+	Modified = True
 elif command == "edit":
 	run_editor(File)
 elif command == "help":
 	print "Commands:"
-	for command, desc in {
-		"grep": "search for <pattern> in name, host, and URI",
-		"grep-flag": "search for <flag>",
-		"edit": "run $EDITOR",
-		"dump": "write database to stdout",
-		"touch": "load and rewrite database",
-	}.items():
-		print "%(command)-10s: %(desc)s" % locals()
+	for command, desc in (
+		("grep", "search for <pattern> in name, host, and URI"),
+		("  /flag", "search for <flag>"),
+		("edit", "run $EDITOR"),
+		("dump", "write database to stdout"),
+		("touch", "load and rewrite database"),
+		("db:sort", "sort and rewrite database"),
+	):
+		print "%(command)-12s: %(desc)s" % locals()
 else:
 	print "db file: %s" % File
 	print "records: %d" % len(data)
