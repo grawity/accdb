@@ -38,10 +38,13 @@ fields = dict(
 	object = ("host", "uri"),
 	username = ("login", "nic-hdl"),
 	password = ("pass",),
+	email = ("email",),
 	flags = ("flags",),
 	)
 
-fieldorder = "object", "username", "password", "flags"
+fieldorder = "object", "username", "password", "email", "flags"
+
+multivalue = fields['object'] + fields['email']
 
 def fix_fieldname(name):
 	name = name.lower()
@@ -61,7 +64,7 @@ def fix_fieldname(name):
 		"password": "pass",
 		}.get(name, name)
 
-def sortfields(input):
+def sortfields(input, full=True):
 	fixed = [fix_fieldname(k) for k in input]
 	output = []
 
@@ -71,9 +74,10 @@ def sortfields(input):
 			if k in fixed or fix_fieldname(k) in fixed:
 				rk = input[fixed.index(k)]
 				output.append(rk)
-	for k in input:
-		if k not in output:
-			output.append(k)
+	if full:
+		for k in input:
+			if k not in output:
+				output.append(k)
 	return output
 
 def chunks(list, size):
@@ -105,6 +109,7 @@ class Record(dict):
 
 	def __str__(self):
 		fieldsep = " = "
+		fieldsep = ": "
 		s = ""
 		if self.name:
 			s += "= %s\n" % self.name
@@ -112,18 +117,20 @@ class Record(dict):
 			for id in self.identifier():
 				s += "= %s\n" % id
 		for line in self.comment:
-			s += "\t; %s\n" % line
+			s += "; %s\n" % line
 		for key in sortfields(self.keys()):
 			if key == "flags":
-				value = list(self.flags)
-				if len(value) == 0:
-					continue
-				value.sort()
-				value = ", ".join(value)
+				pass
 			else:
-				key, value = fix_fieldname(key), self[key]
-			if value == None: value = "(none)"
-			s += "\t%s\n" % fieldsep.join((key, value))
+				key, data = fix_fieldname(key), list(self[key])
+			
+			if data is None:
+				s += "\t%s\n" % fieldsep.join((key, "(none)"))
+			else:
+				for value in data:
+					s += "\t%s\n" % fieldsep.join((key, value))
+				#values = ", ".join(data)
+				#s += "\t%s\n" % fieldsep.join((key, values))
 
 		if len(self.flags) > 0:
 			value = list(self.flags)
@@ -138,17 +145,19 @@ class Record(dict):
 			for prefix, values in flags.items():
 				if prefix is None:
 					continue
-				if len(prefix)*len(values) + sum(len(x)+3 for x in values) < 40:
+				if len(prefix)*len(values) + sum(len(x)+3 for x in values) < 60:
 					flags[None] = flags.get(None, []) + ["%s:%s" % (prefix, v) for v in values]
 				else:
 					values = ", ".join(values)
-					s += "\t%s\n" % fieldsep.join(("flags:%s" % prefix, values))
+					#s += "\t%s\n" % fieldsep.join(("flags:%s" % prefix, values))
+					s += "\t+ %s\n" % values
 
 			if None in flags:
 				flags[None].sort()
 				for ch in chunks(flags[None], 4):
 					ch = ", ".join(ch)
-					s += "\t%s\n" % fieldsep.join(("flags", ch))
+					#s += "\t%s\n" % fieldsep.join(("flags", ch))
+					s += "\t+ %s\n" % ch
 					
 		return s
 
@@ -163,7 +172,12 @@ class Record(dict):
 		return sorted(list(self.flags))
 
 	def identifier(self):
-		return [self[k] for k in fields["object"] if k in self]
+		id = []
+		for k in fields["object"]:
+			if k in self:
+				id.extend(self[k])
+		#return [self[k] for k in fields["object"] if k in self]
+		return id
 
 def read(file):
 	data, current = [], Record()
@@ -227,18 +241,23 @@ def read(file):
 					value = None
 
 				if key == "flags" or key.startswith("flags:"):
-					if ":" in key:
-						key, valueprefix = key.split(":", 2)
-					else:
-						valueprefix = None
-
+					key, sep, valueprefix = key.partition(":")
 					value = value.lower().replace(",", " ").split()
-					if valueprefix is not None:
+					if valueprefix:
 						value = ["%s:%s" % (valueprefix, i) for i in value]
 					value.sort()
 					current.setflags(*value)
+				
+				elif key in multivalue:
+					value = value.split(", ")
+					try:
+					#	current[key].append(value)
+						current[key].extend(value)
+					except KeyError:
+					#	current[key] = [value]
+						current[key] = value
 				else:
-					current[key] = value
+					current[key] = [value]
 	if len(current) > 0:
 		data.append(current)
 
@@ -291,8 +310,9 @@ elif command in ("a", "add"):
 	#print dx
 	from subprocess import Popen
 	Popen(("notepad.exe", "/g", "-1", File))
-elif command in ("g", "grep", "ls", "list"):
+elif command in ("g", "grep", "a", "auth", "ls", "list"):
 	listonly = command in ("ls", "list")
+	authonly = command in ("a", "auth")
 	option = None
 	try:
 		pattern = sys.argv.pop(1).lower()
@@ -308,15 +328,31 @@ elif command in ("g", "grep", "ls", "list"):
 	if option == "flag":
 		results = find_flagged(data, pattern, exact)
 	else:
-		results = find_identifier(data, pattern)
-
+		results = find_identifier(data, "*%s*" % pattern)
+	
+	num_results = 0
 	for record in results:
+		num_results += 1
 		if listonly:
 			print record.name
+		elif authonly:
+			fieldsep = ": "
+			print record.name
+			for key in sortfields(record.keys(), False):
+				key, data = fix_fieldname(key), list(record[key])
+				if data is None:
+					print "\t%s" % fieldsep.join((key, "(none)"))
+				else:
+					values = ", ".join(data)
+					print "\t%s" % fieldsep.join((key, values))
+			print
 		else:
 			print "(line %d)" % record.position
 			print record
-
+	
+	if not listonly:
+		print "(%d entr%s matching '%s')" % (num_results, ("y" if num_results == 1 else "ies"), pattern)
+	
 elif command == "dump":
 	for record in data:
 		print record
