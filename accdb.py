@@ -32,7 +32,19 @@ import sys, os
 import uuid
 import fnmatch as fnm
 
-File = r"Q:\Private\accounts.db.txt"
+# TODO: can filter() stop after one match?
+#File = filter(os.path.exists, (
+
+Files = (
+	r"Q:\Private\accounts.db.txt",
+	"/home/grawity/fs/pqi/private/accounts.db.txt",
+)
+File = None
+for f in Files:
+	if os.path.exists(f):
+		File = f
+if File is None:
+	raise BaseException, "Database not found"
 
 fields = dict(
 	object = ("host", "uri"),
