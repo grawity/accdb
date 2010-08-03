@@ -288,7 +288,7 @@ def find_identifier(data, pattern):
 	for record in data:
 		ids = record.identifier()
 		if record.name:
-			ids.append(record.name)
+			ids.append(record.name.lower())
 		if fnm.filter(ids, pattern):
 			yield record
 
