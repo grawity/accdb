@@ -32,15 +32,10 @@ import sys, os
 import uuid
 import fnmatch as fnm
 
-# TODO: can filter() stop after one match?
-#File = filter(os.path.exists, (
-
-Files = (
-	r"Q:\Private\accounts.db.txt",
-	"/home/grawity/fs/pqi/private/accounts.db.txt",
-)
-File = None
-for f in Files:
+for f in (
+	os.path.expanduser("~/.accounts.txt"),
+	os.path.expanduser("~/accounts.txt"),
+	):
 	if os.path.exists(f):
 		File = f
 if File is None:
