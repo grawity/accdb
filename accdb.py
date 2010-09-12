@@ -33,6 +33,7 @@ import uuid
 import fnmatch as fnm
 
 for f in (
+	os.environ.get("ACCDB", None),
 	os.path.expanduser("~/.accounts.txt"),
 	os.path.expanduser("~/accounts.txt"),
 	):
