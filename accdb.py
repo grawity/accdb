@@ -37,7 +37,7 @@ for f in (
 	os.path.expanduser("~/.accounts.txt"),
 	os.path.expanduser("~/accounts.txt"),
 	):
-	if os.path.exists(f):
+	if f and os.path.exists(f):
 		File = f
 if File is None:
 	raise BaseException, "Database not found"
@@ -333,7 +333,7 @@ elif command in ("g", "grep", "a", "auth", "ls", "list"):
 		pattern = "*"
 		exact = False
 
-	if option == "flag":
+	if option == "f" or option == "flag":
 		results = find_flagged(data, pattern, exact)
 	else:
 		results = find_identifier(data, "*%s*" % pattern)
