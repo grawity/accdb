@@ -229,7 +229,7 @@ def read(file):
 				current.setflags(*value)
 
 			elif line.startswith("http://") or line.startswith("https://"):
-				current["uri"] = line.strip()
+				current["uri"] = [line.strip()]
 
 			else:
 				separator = ": " if ": " in line else "="
