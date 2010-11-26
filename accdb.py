@@ -20,7 +20,7 @@ Misc syntax notes:
 Database will be rewritten and all shorthands expanded if any change is made,
 also when doing 'accdb touch'.
 """
-
+import os
 import sys
 import fnmatch
 
