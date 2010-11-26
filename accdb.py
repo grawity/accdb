@@ -7,16 +7,9 @@ General syntax:
 = entry name
 ; comments
 <tab>	key = value
-
-Flags:
- * Can be separated by spaces or commas.
- * Can have prefixes such as "auth:" or "is:":
-       flags = auth:openid, auth:sslcert, is:apikey
- * Multiple flags with same prefix can be grouped:
-       flags:auth = openid, sslcert
+<tab>	+ flag, other:flag, another:flag
 
 Shorthands:
- * Lines starting with "http://" or "https://" will be converted to an 'uri' field.
  * Lines starting with "+" will be added as flags.
  * 'u', 'p', and '@' expand to 'login', 'password', and 'uri'.
 
@@ -28,297 +21,188 @@ Database will be rewritten and all shorthands expanded if any change is made,
 also when doing 'accdb touch'.
 """
 
-import sys, os
-import uuid
-import fnmatch as fnm
-
-for f in (
-	os.environ.get("ACCDB", None),
-	os.path.expanduser("~/.accounts.txt"),
-	os.path.expanduser("~/accounts.txt"),
-	):
-	if f and os.path.exists(f):
-		File = f
-if File is None:
-	raise BaseException, "Database not found"
-
-fields = dict(
-	object = ("host", "uri"),
-	username = ("login", "nic-hdl"),
-	password = ("pass",),
-	email = ("email",),
-	flags = ("flags",),
-	)
-
-fieldorder = "object", "username", "password", "email", "flags"
-
-multivalue = fields['object'] + fields['email']
-
-def fix_fieldname(name):
-	name = name.lower()
-	return {
-		"h": "host",
-		"hostname": "host",
-		"machine": "host",
-
-		"@": "uri",
-		"url": "uri",
-		"website": "uri",
-
-		"u": "login",
-		"user": "login",
-
-		"p": "pass",
-		"password": "pass",
-		}.get(name, name)
-
-def sortfields(input, full=True):
-	fixed = [fix_fieldname(k) for k in input]
-	output = []
-
-	# first add the standard fields, by group
-	for group in fieldorder:
-		for k in fields[group]:
-			if k in fixed or fix_fieldname(k) in fixed:
-				rk = input[fixed.index(k)]
-				output.append(rk)
-	if full:
-		for k in input:
-			if k not in output:
-				output.append(k)
-	return output
-
-def chunks(list, size):
-	for i in xrange(0, len(list), size):
-		yield list[i:i+size]
+import sys
+import fnmatch
 
 class Record(dict):
 	def __init__(self, *args, **kwargs):
-		self.id = uuid.uuid4()
-		self.name = None
-		# .comment is list to make things easier for __str__
-		self.comment = []
 		self.flags = set()
-
-		if "Name" in kwargs:
-			self.name = kwargs["Name"]
-			del kwargs["Name"]
+		self.comment = []
 		dict.__init__(self, *args, **kwargs)
-
-	def __repr__(self):
-		rep = "<Record"
-		if self.name:
-			rep += " %s" % repr(self.name)
-		for fname in fields["object"]:
-			if fname in self:
-				rep += " for %s" % repr(self[fname])
-		rep += ">"
-		return rep
-
-	def __str__(self):
-		fieldsep = " = "
-		fieldsep = ": "
-		s = ""
-		if self.name:
-			s += "= %s\n" % self.name
-		else:
-			for id in self.identifier():
-				s += "= %s\n" % id
+	
+	def __str__(self, full=True):
+		sep = ": "
+		out = ""
+		out += "= %s\n" % self["Name"]
 		for line in self.comment:
-			s += "; %s\n" % line
-		for key in sortfields(self.keys()):
-			if key == "flags":
-				pass
+			out += "; %s\n" % line
+		for key in sort_fields(self.keys(), full):
+			if key in ("Name", "comment"):
+				continue
+			if isinstance(self[key], str):
+				values = [self[key]]
 			else:
-				key, data = fix_fieldname(key), list(self[key])
-			
-			if data is None:
-				s += "\t%s\n" % fieldsep.join((key, "(none)"))
-			else:
-				for value in data:
-					s += "\t%s\n" % fieldsep.join((key, value))
-				#values = ", ".join(data)
-				#s += "\t%s\n" % fieldsep.join((key, values))
+				values = self[key]
+			for val in values:
+				out += "\t%s\n" % sep.join((key, val))
+		if full and len(self.flags) > 0:
+			cur = []
+			for f in sorted(self.flags):
+				if sum(len(x)+2 for x in cur) + len(f) >= 70:
+					out += "\t+ %s\n" % ", ".join(cur)
+					cur = []
+				cur.append(f)
+			if len(cur):
+				out += "\t+ %s\n" % ", ".join(cur)
+		return out
+	
+	def keys(self):
+		return dict.keys(self)
 
-		if len(self.flags) > 0:
-			value = list(self.flags)
-			value.sort()
+	def names(self):
+		n = [self["Name"]]
+		for f in fields["object"]:
+			if f in self:
+				n.extend(self[f])
+		return n
 
-			## group by prefix
-			flags = {}
-			for i in value:
-				prefix, suffix = i.split(":", 1) if ":" in i else (None, i)
-				flags[prefix] = flags.get(prefix, []) + [suffix]
+def parse(file):
+	data, cur, lineno = [], Record(), 0
 
-			for prefix, values in flags.items():
-				if prefix is None:
-					continue
-				if len(prefix)*len(values) + sum(len(x)+3 for x in values) < 60:
-					flags[None] = flags.get(None, []) + ["%s:%s" % (prefix, v) for v in values]
-				else:
-					values = ", ".join(values)
-					#s += "\t%s\n" % fieldsep.join(("flags:%s" % prefix, values))
-					s += "\t+ %s\n" % values
-
-			if None in flags:
-				flags[None].sort()
-				for ch in chunks(flags[None], 4):
-					ch = ", ".join(ch)
-					#s += "\t%s\n" % fieldsep.join(("flags", ch))
-					s += "\t+ %s\n" % ch
-					
-		return s
-
-	def setflags(self, *flags):
-		flags = [x.lower() for x in flags]
-		self.flags |= set(flags)
-	def unsetflags(self, *flags):
-		flags = [x.lower() for x in flags]
-		self.flags -= set(flags)
-
-	def flaglist(self):
-		return sorted(list(self.flags))
-
-	def identifier(self):
-		id = []
-		for k in fields["object"]:
-			if k in self:
-				id.extend(self[k])
-		#return [self[k] for k in fields["object"] if k in self]
-		return id
-
-def read(file):
-	data, current = [], Record()
-	lineno = 0
-	skip = False
-	with open(file, "r") as inputfile:
-		for line in inputfile:
-			lineno += 1
-			line = line.strip()
-			if line == "":
-				if len(current) > 0:
-					data.append(current)
-					current = Record()
-
-			elif line[0] == "=":
-				if len(current) > 0:
-					data.append(current)
-				current = Record()
-
-				value = line[1:].strip()
-				if value.startswith("!"):
-					value = value[1:].strip()
-					current.setflags("deleted")
-				current.name = value
-				current.position = lineno
-
-			elif line[0] == "!":
-				value = line[1:].strip()
-				current.id = uuid.UUID(value)
-
-			elif line[0] == ";":
-				value = line[1:].strip()
-				current.comment.append(value)
-
-			elif line[0] == "(" and line[-1] == ")":
-				pass
-
-			elif line[0] == "+":
-				value = line[1:].lower().replace(",", " ").split()
-				value.sort()
-				current.setflags(*value)
-
-			elif line.startswith("http://") or line.startswith("https://"):
-				current["uri"] = [line.strip()]
-
-			else:
-				separator = ": " if ": " in line else "="
-				#if ": " in line: separator = ": "
-				#elif " -> " in line: separator = "->"
-				#elif " => " in line: separator = "=>"
-				#else: separator = "="
-				try:
-					key, value = line.split(separator, 1)
-				except ValueError:
-					print >> sys.stderr, "db[%d]: line not in key=value format" % lineno
-					continue
-
-				key, value = key.strip(), value.strip()
-				key = fix_fieldname(key)
-				if value == "(none)" or value == "(null)":
-					value = None
-
-				if key == "flags" or key.startswith("flags:"):
-					key, sep, valueprefix = key.partition(":")
-					value = value.lower().replace(",", " ").split()
-					if valueprefix:
-						value = ["%s:%s" % (valueprefix, i) for i in value]
-					value.sort()
-					current.setflags(*value)
+	for line in open(file, "r"):
+		line = line.strip()
+		lineno += 1
+		
+		if line == "":
+			if len(cur) > 0:
+				data.append(cur)
+				cur = Record()
 				
-				elif key in multivalue:
-					value = value.split(", ")
-					try:
-					#	current[key].append(value)
-						current[key].extend(value)
-					except KeyError:
-					#	current[key] = [value]
-						current[key] = value
-				else:
-					current[key] = [value]
-	if len(current) > 0:
-		data.append(current)
+		elif line[0] == "=":
+			val = line[1:].strip()
+			if val.startswith("!"):
+				val = val[1:].strip()
+				cur.flags.add("deleted")
+				
+			if len(cur) > 0:
+				data.append(cur)
+			cur = Record(Name=val)
+			cur.line = lineno
+		
+		elif line[0] == ";":
+			val = line[1:].strip()
+			cur.comment.append(val)
+		
+		elif line[0] == "(" and line[-1] == ")":
+			pass
+		
+		elif line[0] == "+":
+			val = line[1:].lower().replace(",", " ").split()
+			cur.flags |= set(val)
+		
+		else:
+			sep = ": " if ": " in line else "="
+			try:
+				key, val = line.split(sep, 1)
+			except ValueError:
+				print >> sys.stderr, "{%d} not in key=value format" % lineno
+				continue
+			# normalize input
+			key, val = key.strip(), val.strip()
+			key = fix_field_name(key)
+			if val == "(none)" or val == "(null)":
+				val = None
 
+			if key in ("login", "pass"):
+				cur[key] = val
+			else:
+				try:
+					cur[key].append(val)
+				except KeyError:
+					cur[key] = [val]
+	
+	if len(cur) > 0:
+		data.append(cur)
+	
 	return data
 
 def dump(file, data):
 	map(str, data) # make sure __str__() does not fail
+	with open(file+"x", "w") as fh:
+		print fh
+		for item in data:
+			if "deleted" in item.flags:
+				continue
+			print >> fh, item
 
-	with open(file, "w") as fh:
-		for rec in data:
-			if "deleted" in rec.flags: continue
-			fh.write(str(rec))
-			fh.write("\n")
+fields = dict(
+	object		= ("host", "uri"),
+	username	= ("login", "nic-hdl"),
+	password	= ("pass",),
+	email		= ("email",),
+)
+field_order = "object", "username", "password", "email"
 
-def find_identifier(data, pattern):
-	for record in data:
-		ids = record.identifier()
-		if record.name:
-			ids.append(record.name.lower())
-		if fnm.filter(ids, pattern):
-			yield record
+def sort_fields(input, full=True):
+	output = []	
+	for group in field_order:
+		output += [k for k in fields[group] if k in input]
+	if full:
+		output += [k for k in input if k not in output]
+	return output
 
-def find_flagged(data, flag, exact=True):
+# Expand field name aliases when reading db
+def fix_field_name(name):
+	name = name.lower()
+	return {
+		"h":		"host",
+		"hostname":	"host",
+		"machine":	"host",
+		
+		"@":		"uri",
+		"url":		"uri",
+		"website":	"uri",
+		
+		"l":		"login",
+		"u":		"login",
+		"user":		"login",
+		"username":	"login",
+		
+		"p":		"pass",
+		"password":	"pass",
+	}.get(name, name)
+
+def find_named(pattern):
+	for item in db:
+		if fnmatch.filter(item.names(), pattern):
+			yield item
+
+def find_flagged(pattern, exact=True):
 	if exact:
-		check = lambda record, flag: flag.lower() in record.flags
+		test = lambda i, p: p.lower() in i.flags
 	else:
-		check = lambda record, flag: fnm.filter(record.flags, flag)
-
-	for record in data:
-		if check(record, flag):
-			yield record
+		test = lambda i, p: fnmatch.filter(i.flags, p)
+	
+	for item in db:
+		if test(item, pattern):
+			yield item
 
 def run_editor(file):
 	from subprocess import Popen
 	Popen((os.environ.get("EDITOR", "notepad.exe"), file))
 
-data = read(File)
-Modified = False
-
-try: command = sys.argv.pop(1).lower()
-except IndexError: command = None
+dbfile = "Q:/private/accounts.db.txt"
+db = parse(dbfile)
+modified = False
+try:
+	command = sys.argv.pop(1).lower()
+except IndexError:
+	command = None
 
 if command is None:
-	print "db file: %s" % File
-	print "records: %d" % len(data)
-elif command in ("a", "add"):
-	#try: input = raw_input
-	#except: pass
-	#dx = read("con:")
-	#print dx
-	from subprocess import Popen
-	Popen(("notepad.exe", "/g", "-1", File))
-elif command in ("g", "grep", "a", "auth", "ls", "list"):
+	print "file: %s" % dbfile
+	print "items: %s" % len(db)
+elif command in ("g", "grep", "a", "auth", "l", "ls"):
 	listonly = command in ("ls", "list")
 	authonly = command in ("a", "auth")
 	option = None
@@ -333,62 +217,59 @@ elif command in ("g", "grep", "a", "auth", "ls", "list"):
 		pattern = "*"
 		exact = False
 
-	if option == "f" or option == "flag":
-		results = find_flagged(data, pattern, exact)
+	if option == "f":
+		results = find_flagged(pattern, exact)
 	else:
-		results = find_identifier(data, "*%s*" % pattern)
+		results = find_named("*%s*" % pattern)
 	
 	num_results = 0
-	for record in results:
+	for item in results:
 		num_results += 1
 		if listonly:
-			print record.name
+			print item["Name"]
 		elif authonly:
-			fieldsep = ": "
-			print record.name
-			for key in sortfields(record.keys(), False):
-				key, data = fix_fieldname(key), list(record[key])
-				if data is None:
-					print "\t%s" % fieldsep.join((key, "(none)"))
-				else:
-					values = ", ".join(data)
-					print "\t%s" % fieldsep.join((key, values))
-			print
+			print item.__str__(False)
 		else:
-			print "(line %d)" % record.position
-			print record
-	
+			print "(line %d)" % item.line
+			print item		
 	if not listonly:
-		print "(%d entr%s matching '%s')" % (num_results, ("y" if num_results == 1 else "ies"), pattern)
-	
+		print "(%d entr%s matching '%s')" % (
+			num_results,
+			("y" if num_results == 1 else "ies"),
+			pattern)
 elif command == "dump":
-	for record in data:
-		print record
-elif command == "ls":
-	for record in data:
-		print record.name
+	for item in db:
+		print item
+elif command == "dump:json":
+	import json
+	dbx = []
+	for item in db:
+		itemx = dict(item)
+		if len(item.flags):
+			itemx["flags"] = list(item.flags)
+		dbx.append(itemx)
+	print json.dumps(dbx, indent=4)
+elif command == "dump:yaml":
+	import yaml
+	dbx = []
+	for item in db:
+		itemx = dict(item)
+		if len(item.flags):
+			itemx["flags"] = list(item.flags)
+		dbx.append(itemx)
+	print yaml.dump(dbx)
 elif command == "touch":
 	print "Rewriting database"
-	Modified = True
-elif command == "db:sort":
+	modified = True
+elif command == "sort":
 	print "Rewriting database"
-	data.sort(key=lambda x: x.name.lower())
-	Modified = True
+	db.sort(key=lambda x: x["Name"].lower())
+	modified = True
 elif command == "edit":
-	run_editor(File)
-elif command == "help":
-	print "Commands:"
-	for command, desc in (
-		("grep", "search for <pattern> in name, host, and URI"),
-		("  /flag", "search for <flag>"),
-		("edit", "run $EDITOR"),
-		("dump", "write database to stdout"),
-		("touch", "load and rewrite database"),
-		("db:sort", "sort and rewrite database"),
-	):
-		print "%(command)-12s: %(desc)s" % locals()
+	run_editor(dbfile)
 else:
 	print "Unknown command."
 
-if Modified:
-	dump(File, data)
+if modified:
+	dump(dbfile, db)
+	pass
