@@ -29,7 +29,7 @@ class Record(dict):
 		self.flags = set()
 		self.comment = []
 		dict.__init__(self, *args, **kwargs)
-	
+
 	def __str__(self, full=True):
 		sep = ": "
 		out = ""
@@ -55,7 +55,7 @@ class Record(dict):
 			if len(cur):
 				out += "\t+ %s\n" % ", ".join(cur)
 		return out
-	
+
 	def keys(self):
 		return dict.keys(self)
 
@@ -72,34 +72,34 @@ def parse(file):
 	for line in open(file, "r"):
 		line = line.strip()
 		lineno += 1
-		
+
 		if line == "":
 			if len(cur) > 0:
 				data.append(cur)
 				cur = Record()
-				
+
 		elif line[0] == "=":
 			val = line[1:].strip()
 			if val.startswith("!"):
 				val = val[1:].strip()
 				cur.flags.add("deleted")
-				
+
 			if len(cur) > 0:
 				data.append(cur)
 			cur = Record(Name=val)
 			cur.line = lineno
-		
+
 		elif line[0] == ";":
 			val = line[1:].strip()
 			cur.comment.append(val)
-		
+
 		elif line[0] == "(" and line[-1] == ")":
 			pass
-		
+
 		elif line[0] == "+":
 			val = line[1:].lower().replace(",", " ").split()
 			cur.flags |= set(val)
-		
+
 		else:
 			sep = ": " if ": " in line else "="
 			try:
@@ -120,10 +120,10 @@ def parse(file):
 					cur[key].append(val)
 				except KeyError:
 					cur[key] = [val]
-	
+
 	if len(cur) > 0:
 		data.append(cur)
-	
+
 	return data
 
 def dump(file, data):
@@ -144,7 +144,7 @@ fields = dict(
 field_order = "object", "username", "password", "email"
 
 def sort_fields(input, full=True):
-	output = []	
+	output = []
 	for group in field_order:
 		output += [k for k in fields[group] if k in input]
 	if full:
@@ -158,16 +158,16 @@ def fix_field_name(name):
 		"h":		"host",
 		"hostname":	"host",
 		"machine":	"host",
-		
+
 		"@":		"uri",
 		"url":		"uri",
 		"website":	"uri",
-		
+
 		"l":		"login",
 		"u":		"login",
 		"user":		"login",
 		"username":	"login",
-		
+
 		"p":		"pass",
 		"password":	"pass",
 	}.get(name, name)
@@ -182,7 +182,7 @@ def find_flagged(pattern, exact=True):
 		test = lambda i, p: p.lower() in i.flags
 	else:
 		test = lambda i, p: fnmatch.filter(i.flags, p)
-	
+
 	for item in db:
 		if test(item, pattern):
 			yield item
@@ -221,7 +221,7 @@ elif command in ("g", "grep", "a", "auth", "l", "ls"):
 		results = find_flagged(pattern, exact)
 	else:
 		results = find_named("*%s*" % pattern)
-	
+
 	num_results = 0
 	for item in results:
 		num_results += 1
@@ -231,7 +231,7 @@ elif command in ("g", "grep", "a", "auth", "l", "ls"):
 			print item.__str__(False)
 		else:
 			print "(line %d)" % item.line
-			print item		
+			print item
 	if not listonly:
 		print "(%d entr%s matching '%s')" % (
 			num_results,
