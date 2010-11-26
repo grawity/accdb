@@ -171,12 +171,12 @@ def fix_field_name(name):
 		"password":	"pass",
 	}.get(name, name)
 
-def find_named(pattern):
+def grep_named(pattern):
 	for item in db:
 		if fnmatch.filter(item.names(), pattern):
 			yield item
 
-def find_flagged(pattern, exact=True):
+def grep_flagged(pattern, exact=True):
 	if exact:
 		test = lambda i, p: p.lower() in i.flags
 	else:
@@ -186,11 +186,17 @@ def find_flagged(pattern, exact=True):
 		if test(item, pattern):
 			yield item
 
+def find_database():
+	if "ACCDB" in os.environ:
+		return os.environ["ACCDB"]
+	else:
+		return os.path.expanduser("~/accounts.db.txt")
+
 def run_editor(file):
 	from subprocess import Popen
 	Popen((os.environ.get("EDITOR", "notepad.exe"), file))
 
-dbfile = "Q:/private/accounts.db.txt"
+dbfile = find_database()
 db = parse(dbfile)
 modified = False
 try:
@@ -217,9 +223,9 @@ elif command in ("g", "grep", "a", "auth", "l", "ls"):
 		exact = False
 
 	if option == "f":
-		results = find_flagged(pattern, exact)
+		results = grep_flagged(pattern, exact)
 	else:
-		results = find_named("*%s*" % pattern)
+		results = grep_named("*%s*" % pattern)
 
 	num_results = 0
 	for item in results:
