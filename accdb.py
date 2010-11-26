@@ -128,8 +128,7 @@ def parse(file):
 
 def dump(file, data):
 	map(str, data) # make sure __str__() does not fail
-	with open(file+"x", "w") as fh:
-		print fh
+	with open(file, "w") as fh:
 		for item in data:
 			if "deleted" in item.flags:
 				continue
@@ -272,4 +271,3 @@ else:
 
 if modified:
 	dump(dbfile, db)
-	pass
