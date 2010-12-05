@@ -190,7 +190,7 @@ def run_editor(file):
 	from subprocess import Popen
 	Popen((os.environ.get("EDITOR", "notepad.exe"), file))
 
-dbfile = "Q:/private/accounts.db.txt"
+dbfile = os.environ.get("ACCDB", os.path.expanduser("~/accounts.db.txt"))
 db = parse(dbfile)
 modified = False
 try:
