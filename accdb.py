@@ -87,6 +87,7 @@ class Database(object):
 		self.modified = False
 		self.readonly = False
 		self._modeline = "; vim: ft=accdb:"
+		self.flags = set()
 		self._adduuids = True
 
 	# Import
@@ -111,7 +112,10 @@ class Database(object):
 		for line in fh:
 			lineno += 1
 			if line.startswith("; vim:"):
-				self._modeline = line
+				self._modeline = line.strip()
+			elif line.startswith("; dbflags:"):
+				flags = re.split(Entry.RE_TAGS, line[10:].strip())
+				self.flags = set(flags)
 			elif line.startswith("="):
 				entry = Entry.parse(data, lineno=lastno)
 				if entry:
@@ -204,7 +208,12 @@ class Database(object):
 			print(entry.dump(storage=storage), file=fh)
 		print("(last-write: %s)" % time.strftime("%Y-%m-%d %H:%M:%S"), file=fh)
 		if storage:
-			print(self._modeline, file=fh)
+			if self.flags:
+				print("; dbflags: %s" % \
+					", ".join(sorted(self.flags)),
+					file=fh)
+			if self._modeline:
+				print(self._modeline, file=fh)
 
 	def to_structure(self):
 		return [entry.to_structure() for entry in self]
@@ -560,6 +569,6 @@ else:
 
 db.flush()
 
-if db.path != db_cache_path:
+if "cache" in db.flags and db.path != db_cache_path:
 	print("Updating cache at %s" % db_cache_path, file=sys.stderr)
 	db.to_file(db_cache_path)
