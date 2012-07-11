@@ -162,13 +162,13 @@ class Database(object):
 			if re.match(reobj, entry.name):
 				yield entry
 
-	def find_by_tag(self, pattern, glob=False):
-		if glob:
+	def find_by_tag(self, pattern, exact=True):
+		if exact:
+			func = lambda tags: pattern in tags
+		else:
 			regex = fnmatch.translate(pattern)
 			reobj = re.compile(regex, re.I | re.U)
 			func = lambda tags: any(reobj.match(tag) for tag in tags)
-		else:
-			func = lambda tags: pattern in tags
 		for entry in self:
 			if func(entry.tags):
 				yield entry
@@ -468,8 +468,11 @@ class Interactive(cmd.Cmd):
 
 	def do_grep(self, arg):
 		"""Search for an entry"""
-		arg += '*'
-		results = db.find_by_name(arg)
+		if arg.startswith('+'):
+			results = db.find_by_tag(arg[1:], exact=False)
+		else:
+			arg += '*'
+			results = db.find_by_name(arg)
 		num = 0
 		for entry in results:
 			if entry.deleted:
