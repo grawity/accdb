@@ -210,8 +210,9 @@ class Database(object):
 			if entry.deleted:
 				continue
 			print(entry.dump(storage=storage), file=fh)
-		print("(last-write: %s)" % time.strftime("%Y-%m-%d %H:%M:%S"), file=fh)
 		if storage:
+			print("(last-write: %s)" % \
+				time.strftime("%Y-%m-%d %H:%M:%S"), file=fh)
 			if self.flags:
 				print("; dbflags: %s" % \
 					", ".join(sorted(self.flags)),
