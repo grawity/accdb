@@ -55,6 +55,11 @@ def split_ranges(string):
 			else:
 				yield int(j), int(j)+1
 
+def split_tags(string):
+	string = string.strip(" ,")
+	items = re.split(Entry.RE_TAGS, string)
+	return set(items)
+
 def expand_range(string):
 	items = []
 	for m, n in split_ranges(string):
@@ -114,8 +119,7 @@ class Database(object):
 			if line.startswith("; vim:"):
 				self._modeline = line.strip()
 			elif line.startswith("; dbflags:"):
-				flags = re.split(Entry.RE_TAGS, line[10:].strip())
-				self.flags = set(flags)
+				self.flags = split_tags(line[10:])
 			elif line.startswith("="):
 				entry = Entry.parse(data, lineno=lastno)
 				if entry:
@@ -281,8 +285,7 @@ class Entry(object):
 						file=sys.stderr)
 				self.name = line[1:].strip()
 			elif line.startswith("+"):
-				tags = re.split(self.RE_TAGS, line[1:].strip())
-				self.tags.update(tags)
+				self.tags |= split_tags(line[1:])
 			elif line.startswith(";"):
 				self.comment += line[1:] + "\n"
 			elif line.startswith("(") and line.endswith(")"):
