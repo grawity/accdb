@@ -320,6 +320,7 @@ class Entry(object):
 					print("Line %d: lost private data, you're fucked" \
 						% lineno,
 						file=sys.stderr)
+					val = "<private[data lost]>"
 
 				key = translate_field(key)
 
@@ -418,9 +419,13 @@ class PrivateAttribute(Attribute):
 	# Inherits a dump() method from Attribute for obtaining the actual data.
 
 	def __repr__(self):
+		if self == "<private[data lost]>":
+			return self.dump()
 		return "<private[%d]>" % len(self)
 
 	def __str__(self):
+		if self == "<private[data lost]>":
+			return self.dump()
 		return "<private[%d]>" % len(self)
 
 class Interactive(cmd.Cmd):
