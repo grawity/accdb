@@ -56,7 +56,7 @@ def split_ranges(string):
 				yield int(j), int(j)+1
 
 def split_tags(string):
-	string = string.strip(" ,")
+	string = string.strip(" ,\n")
 	items = re.split(Entry.RE_TAGS, string)
 	return set(items)
 
