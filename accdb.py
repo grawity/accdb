@@ -408,9 +408,6 @@ class Attribute(str):
 	# Nothing special about this class. Exists only for consistency
 	# with PrivateAttribute providing a dump() method.
 
-	def __init__(self, value):
-		str.__init__(self, value)
-
 	def dump(self):
 		return str.__str__(self)
 
