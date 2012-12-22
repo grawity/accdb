@@ -521,6 +521,7 @@ class Interactive(cmd.Cmd):
 	do_g	= do_grep
 	do_re	= do_reveal
 	do_s	= do_show
+	do_w	= do_touch
 
 class Clipboard():
 	@classmethod
@@ -563,7 +564,7 @@ if os.path.exists(db_path):
 else:
 	db = Database.from_file(db_cache_path)
 	db.readonly = True
-	print("Database not found; reading from read-only cache", file=sys.stderr)
+	print("(Using read-only cache.)", file=sys.stderr)
 
 interp = Interactive()
 
@@ -576,5 +577,4 @@ else:
 db.flush()
 
 if "cache" in db.flags and db.path != db_cache_path:
-	print("Updating cache at %s" % db_cache_path, file=sys.stderr)
 	db.to_file(db_cache_path)
