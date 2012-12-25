@@ -481,8 +481,12 @@ class Interactive(cmd.Cmd):
 		start_editor(db_path)
 		return True
 
-	def do_grep(self, arg):
+	def do_rgrep(self, arg):
+		return self.do_grep(arg, full=True)
+
+	def do_grep(self, arg, full=False):
 		"""Search for an entry"""
+
 		if arg.startswith('+'):
 			results = db.find_by_tag(arg[1:], exact=False)
 		else:
@@ -492,9 +496,17 @@ class Interactive(cmd.Cmd):
 		for entry in results:
 			if entry.deleted:
 				continue
-			print(entry)
+			if full:
+				print(entry.dump(storage=True))
+			else:
+				print(entry)
 			num += 1
-		print("(%d entr%s matching '%s')" % (num, ("y" if num == 1 else "ies"), arg))
+
+		print("(%d entr%s matching '%s')" % \
+			(num, ("y" if num == 1 else "ies"), arg))
+
+		if full:
+			print(db._modeline)
 
 	def do_reveal(self, arg):
 		"""Display entry (including sensitive information)"""
@@ -512,7 +524,7 @@ class Interactive(cmd.Cmd):
 		"""Rewrite the accounts.db file"""
 		db.modified = True
 
-	def do_dbsort(self, arg):
+	def do_sort(self, arg):
 		"""Sort and rewrite the database"""
 		db.sort()
 		db.modified = True
