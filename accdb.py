@@ -182,7 +182,7 @@ class Database(object):
 				yield entry
 
 	def find_by_uuid(self, uuid):
-		return self[uuid]
+		return self.entries[uuid]
 
 	# Aggregate lookup
 
