@@ -538,6 +538,7 @@ class Interactive(cmd.Cmd):
 			except KeyError:
 				entry = db.add(newentry)
 			print(entry)
+			db.modified = True
 
 	def do_reveal(self, arg):
 		"""Display entry (including sensitive information)"""
