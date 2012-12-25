@@ -348,8 +348,12 @@ class Entry(object):
 					val = "<private[data lost]>"
 					self._broken = True
 				elif val.startswith("<base64> "):
-					val = val[len("<base64> "):]
-					val = b64decode(val).decode("utf-8")
+					nval = val[len("<base64> "):]
+					nval = b64decode(nval)
+					try:
+						val = nval.decode("utf-8")
+					except UnicodeDecodeError:
+						pass # leave the old value assigned
 
 				key = translate_field(key)
 
@@ -402,7 +406,8 @@ class Entry(object):
 			for value in self.attributes[key]:
 				if storage or reveal:
 					value = value.dump()
-				if storage and not reveal and self.is_private_attr(key):
+				if storage and not reveal and self.is_private_attr(key) \
+				    and not value.startswith("<base64> "):
 					value = value.encode("utf-8")
 					value = b64encode(value)
 					value = value.decode("utf-8")
