@@ -144,7 +144,7 @@ class Database(object):
 
 		if entry.uuid is None:
 			entry.uuid = uuid.uuid4()
-		elif entry.uuid in self.entries:
+		elif entry.uuid in self:
 			raise KeyError("Duplicate UUID %s" % entry.uuid)
 
 		self.count += 1
@@ -156,6 +156,12 @@ class Database(object):
 		self.order.append(entry.uuid)
 
 	# Lookup
+
+	def __contains__(self, key):
+		return key in self.entries
+
+	def __getitem__(self, key):
+		return self.entries[key]
 
 	def find_by_itemno(self, itemno):
 		uuid = self.order[itemno-1]
