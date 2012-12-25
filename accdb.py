@@ -525,6 +525,15 @@ class Interactive(cmd.Cmd):
 		if full:
 			print(db._modeline)
 
+	def do_merge(self, arg):
+		newdb = Database()
+		newdb.parseinto(sys.stdin)
+		for newentry in newdb:
+			try:
+				entry = db.replace(newentry)
+			except KeyError:
+				entry = db.add(newentry)
+
 	def do_reveal(self, arg):
 		"""Display entry (including sensitive information)"""
 		for itemno in expand_range(arg):
