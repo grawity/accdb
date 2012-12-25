@@ -137,17 +137,17 @@ class Database(object):
 		return self
 
 	def add(self, entry, lineno=None):
-		if entry.itemno is None:
-			entry.itemno = self.count + 1
-		if entry.lineno is None:
-			entry.lineno = lineno
-
 		if entry.uuid is None:
 			entry.uuid = uuid.uuid4()
 		elif entry.uuid in self:
 			raise KeyError("Duplicate UUID %s" % entry.uuid)
 
+		entry.itemno = self.count + 1
+
 		self.count += 1
+
+		if entry.lineno is None:
+			entry.lineno = lineno
 
 		# Two uuid.UUID objects for the same UUID will also have the same hash.
 		# Hence, it is okay to use an uuid.UUID as a dict key. For now, anyway.
