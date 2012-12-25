@@ -155,6 +155,17 @@ class Database(object):
 		self.entries[entry.uuid] = entry
 		self.order.append(entry.uuid)
 
+	def replace(self, entry):
+		if entry.uuid is None:
+			raise ValueError("Entry is missing UUID")
+
+		oldentry = self[entry.uuid]
+
+		entry.itemno = oldentry.itemno
+		entry.lineno = oldentry.lineno
+
+		self.entries[entry.uuid] = entry
+
 	# Lookup
 
 	def __contains__(self, key):
