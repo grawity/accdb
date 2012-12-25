@@ -155,6 +155,8 @@ class Database(object):
 		self.entries[entry.uuid] = entry
 		self.order.append(entry.uuid)
 
+		return entry
+
 	def replace(self, entry):
 		if entry.uuid is None:
 			raise ValueError("Entry is missing UUID")
@@ -165,6 +167,8 @@ class Database(object):
 		entry.lineno = oldentry.lineno
 
 		self.entries[entry.uuid] = entry
+
+		return entry
 
 	# Lookup
 
@@ -533,6 +537,7 @@ class Interactive(cmd.Cmd):
 				entry = db.replace(newentry)
 			except KeyError:
 				entry = db.add(newentry)
+			print(entry)
 
 	def do_reveal(self, arg):
 		"""Display entry (including sensitive information)"""
