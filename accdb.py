@@ -13,6 +13,7 @@ import sys
 import time
 import uuid
 from collections import OrderedDict
+from base64 import b64encode, b64decode
 
 field_names = {
 	"hostname":	"host",
@@ -227,10 +228,12 @@ class Database(object):
 				yield entry
 
 	def dump(self, fh=sys.stdout, storage=True):
+		eargs = {"storage": storage,
+			"reveal": not ("conceal" in self.flags)}
 		for entry in self:
 			if entry.deleted:
 				continue
-			print(entry.dump(storage=storage), file=fh)
+			print(entry.dump(**eargs), file=fh)
 		if storage:
 			print("(last-write: %s)" % \
 				time.strftime("%Y-%m-%d %H:%M:%S"), file=fh)
@@ -344,6 +347,9 @@ class Entry(object):
 						file=sys.stderr)
 					val = "<private[data lost]>"
 					self._broken = True
+				elif val.startswith("<base64> "):
+					val = val[len("<base64> "):]
+					val = b64decode(val).decode("utf-8")
 
 				key = translate_field(key)
 
@@ -370,12 +376,11 @@ class Entry(object):
 		"""
 		storage: dump metadata and private data, never skip fields
 		terse: skip fields not listed in groups
-		reveal: display private data
+		reveal: display private data as plain text
 		"""
 
 		if storage:
 			terse = False
-			reveal = True
 
 		data = ""
 
@@ -395,8 +400,13 @@ class Entry(object):
 
 		for key in sort_fields(self, terse):
 			for value in self.attributes[key]:
-				if reveal:
+				if storage or reveal:
 					value = value.dump()
+				if storage and not reveal and self.is_private_attr(key):
+					value = value.encode("utf-8")
+					value = b64encode(value)
+					value = value.decode("utf-8")
+					value = "<base64> %s" % value
 				data += "\t%s: %s\n" % (key, value)
 
 		if self.tags:
@@ -520,7 +530,7 @@ class Interactive(cmd.Cmd):
 			if entry.deleted:
 				continue
 			if full:
-				print(entry.dump(storage=True))
+				print(entry.dump(storage=True, reveal=True))
 			else:
 				print(entry)
 			num += 1
