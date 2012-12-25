@@ -284,6 +284,7 @@ class Entry(object):
 		self.name = None
 		self.tags = set()
 		self.uuid = None
+		self._broken = False
 
 	# Import
 
@@ -342,6 +343,7 @@ class Entry(object):
 						% lineno,
 						file=sys.stderr)
 					val = "<private[data lost]>"
+					self._broken = True
 
 				key = translate_field(key)
 
@@ -533,6 +535,11 @@ class Interactive(cmd.Cmd):
 		newdb = Database()
 		newdb.parseinto(sys.stdin)
 		for newentry in newdb:
+			if newentry._broken:
+				print("(warning: skipped broken entry)", file=sys.stderr)
+				print(newentry.dump(storage=True), file=sys.stderr)
+				continue
+
 			try:
 				entry = db.replace(newentry)
 			except KeyError:
