@@ -144,7 +144,7 @@ class Database(object):
 
 		if entry.uuid is None:
 			entry.uuid = uuid.uuid4()
-		elif entry.uuid in self:
+		elif entry.uuid in self.entries:
 			raise KeyError("Duplicate UUID %s" % entry.uuid)
 
 		self.count += 1
