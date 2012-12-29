@@ -369,6 +369,9 @@ class Entry(object):
 
 			lineno += 1
 
+		if not self.name:
+			self.name = "(Unnamed)"
+
 		return self
 
 	def is_private_attr(self, key):
@@ -394,7 +397,7 @@ class Entry(object):
 			elif self.lineno:
 				data += "(line %d)\n" % self.lineno
 
-		data += "= %s\n" % (self.name or "(unnamed)")
+		data += "= %s\n" % self.name
 
 		for line in self.comment.splitlines():
 			data += ";%s\n" % line
