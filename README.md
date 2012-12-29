@@ -42,9 +42,13 @@ This is more convenient for me than YAML or such stuff. I even wrote myself a Vi
 
 Syntax notes:
 
+  * For convenience, `field=value` is also accepted (but translated to `field: value` when saving).
+
   * The field `pass` is also hidden for historical reasons, despite having no `!` prefix.
 
   * Field values starting with "`<base64> `" will be Base64-decoded when reading.
+
+  * In fields named `date.*`, the value "today" is expanded to current date.
 
   * Entry UUIDs are used by `ad merge`.
 
