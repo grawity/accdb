@@ -441,7 +441,8 @@ class Entry(object):
 		return self.dump(storage=False)
 
 	def __bool__(self):
-		return bool(self.name or self.attributes or self.tags or self.comment)
+		return bool((self.name and self.name != "(Unnamed)")
+				or self.attributes or self.tags or self.comment)
 
 	@property
 	def normalized_name(self):
