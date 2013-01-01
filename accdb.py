@@ -504,8 +504,11 @@ class Interactive(cmd.Cmd):
 			print("No password found!",
 				file=sys.stderr)
 
-	def do_dump(self, arg):
+	def do_dump(self, arg, db=None):
 		"""Dump the database to stdout (yaml, json, safe)"""
+		if db is None:
+			db = globals()["db"]
+
 		if arg == "":
 			db.dump()
 		elif arg == "yaml":
@@ -552,7 +555,16 @@ class Interactive(cmd.Cmd):
 		if full:
 			print(db._modeline)
 
+	def do_convert(self, arg):
+		"""Read entries from stdin and dump to stdout"""
+
+		newdb = Database()
+		newdb.parseinto(sys.stdin)
+		self.do_dump(arg, newdb)
+
 	def do_merge(self, arg):
+		"""Read entries from stdin and merge to main database"""
+
 		newdb = Database()
 		newdb.parseinto(sys.stdin)
 		for newentry in newdb:
