@@ -39,7 +39,9 @@ field_order = ["object", "username", "password", "email"]
 def sort_fields(entry, terse=False):
 	names = []
 	for group in field_order:
-		names += sorted(k for k in field_groups[group] if k in entry.attributes)
+		for field in field_groups[group]:
+			names += sorted(k for k in entry.attributes \
+					if k == field)
 	if not terse:
 		names += sorted(k for k in entry.attributes if k not in names)
 	return names
