@@ -385,9 +385,14 @@ class Entry(object):
 
 	def dump(self, storage=False, terse=False, reveal=False):
 		"""
-		storage: dump metadata and private data, never skip fields
-		terse: skip fields not listed in groups
-		reveal: display private data as plain text
+		storage:
+			output private data (encoded unless reveal=True)
+			output metadata
+			never skip fields (disables terse)
+		terse
+			skip fields not listed in groups
+		reveal
+			output private data and never encode it
 		"""
 
 		if storage:
