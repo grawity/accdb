@@ -231,7 +231,7 @@ class Database(object):
 
 	def dump(self, fh=sys.stdout, storage=True):
 		eargs = {"storage": storage,
-			"reveal": not ("conceal" in self.flags)}
+			"conceal": ("conceal" in self.flags)}
 		for entry in self:
 			if entry.deleted:
 				continue
@@ -383,16 +383,16 @@ class Entry(object):
 
 	# Export
 
-	def dump(self, storage=False, terse=False, reveal=False):
+	def dump(self, storage=False, terse=False, conceal=True):
 		"""
 		storage:
-			output private data (encoded unless reveal=True)
+			output private data
 			output metadata
 			never skip fields (disables terse)
 		terse
 			skip fields not listed in groups
-		reveal
-			output private data and never encode it
+		conceal
+			base64-encode private data
 		"""
 
 		if storage:
@@ -416,9 +416,9 @@ class Entry(object):
 
 		for key in sort_fields(self, terse):
 			for value in self.attributes[key]:
-				if storage or reveal:
+				if storage or not conceal:
 					value = value.dump()
-				if storage and not reveal and self.is_private_attr(key) \
+				if storage and conceal and self.is_private_attr(key) \
 				    and not value.startswith("<base64> "):
 					value = value.encode("utf-8")
 					value = b64encode(value)
@@ -551,7 +551,7 @@ class Interactive(cmd.Cmd):
 			if entry.deleted:
 				continue
 			if full:
-				print(entry.dump(storage=True, reveal=True))
+				print(entry.dump(storage=True, conceal=False))
 			else:
 				print(entry)
 			num += 1
@@ -597,13 +597,13 @@ class Interactive(cmd.Cmd):
 		"""Display entry (including sensitive information)"""
 		for itemno in expand_range(arg):
 			entry = db.find_by_itemno(itemno)
-			print(entry.dump(reveal=True))
+			print(entry.dump(conceal=False))
 
 	def do_show(self, arg):
 		"""Display entry (safe)"""
 		for itemno in expand_range(arg):
 			entry = db.find_by_itemno(itemno)
-			print(entry.dump(reveal=False))
+			print(entry.dump())
 
 	def do_touch(self, arg):
 		"""Rewrite the accounts.db file"""
