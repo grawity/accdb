@@ -265,12 +265,12 @@ class Database(object):
 		if not self.modified:
 			return
 		if self.readonly:
-			print("Discarding changes (database read-only)",
+			print("(Discarding changes, database read-only)",
 				file=sys.stderr)
 			return
 		if self.path is None:
 			return
-		print("Storing database")
+		print("(Storing database)", file=sys.stderr)
 		self.to_file(self.path)
 		self.modified = False
 
@@ -574,6 +574,9 @@ class Interactive(cmd.Cmd):
 
 		newdb = Database()
 		newdb.parseinto(sys.stdin)
+
+		outdb = Database()
+
 		for newentry in newdb:
 			if newentry._broken:
 				print("(warning: skipped broken entry)", file=sys.stderr)
@@ -584,8 +587,11 @@ class Interactive(cmd.Cmd):
 				entry = db.replace(newentry)
 			except KeyError:
 				entry = db.add(newentry)
-			print(entry.dump(storage=True, reveal=True))
+			outdb.add(entry)
+
 			db.modified = True
+
+		self.do_dump("", outdb)
 
 	def do_reveal(self, arg):
 		"""Display entry (including sensitive information)"""
