@@ -584,7 +584,7 @@ class Interactive(cmd.Cmd):
 				entry = db.replace(newentry)
 			except KeyError:
 				entry = db.add(newentry)
-			print(entry)
+			print(entry.dump(storage=True, reveal=True))
 			db.modified = True
 
 	def do_reveal(self, arg):
