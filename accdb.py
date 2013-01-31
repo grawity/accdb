@@ -237,8 +237,6 @@ class Database(object):
 				continue
 			print(entry.dump(**eargs), file=fh)
 		if storage:
-			print("(last-write: %s)" % \
-				time.strftime("%Y-%m-%d %H:%M:%S"), file=fh)
 			if self.flags:
 				print("; dbflags: %s" % \
 					", ".join(sorted(self.flags)),
