@@ -554,10 +554,11 @@ class Interactive(cmd.Cmd):
 				print(entry)
 			num += 1
 
-		print("(%d entr%s matching '%s')" % \
-			(num, ("y" if num == 1 else "ies"), arg))
+		if sys.stdout.isatty():
+			print("(%d %s matching '%s')" % \
+				(num, ("entry" if num == 1 else "entries"), arg))
 
-		if full:
+		if full and not sys.stdout.isatty():
 			print(db._modeline)
 
 	def do_convert(self, arg):
@@ -659,7 +660,8 @@ if os.path.exists(db_path):
 else:
 	db = Database.from_file(db_cache_path)
 	db.readonly = True
-	print("(Using read-only cache.)", file=sys.stderr)
+	if sys.stderr.isatty():
+		print("(Using read-only cache.)", file=sys.stderr)
 
 interp = Interactive()
 
