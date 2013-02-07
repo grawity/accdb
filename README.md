@@ -21,18 +21,18 @@ Of course, it has large downsides such as complete lack of encryption, and all p
     ; Comment.
         {entry-uuid}
         field: value
-	field: value
-	!field: secretvalue
-	!field: <base64> c2VjcmV0dmFsdWU=
-	+ tag, tag, tag
+        field: value
+        !field: secretvalue
+        !field: <base64> c2VjcmV0dmFsdWU=
+        + tag, tag, tag
 
 A simpler example:
 
     = Gmail
         login: grawity@gmail.com
-	pass: nottelling
-	date.signup: 2009-02-31
-	+ is:email
+        pass: nottelling
+        date.signup: 2009-02-31
+        + is:email
 
 `accdb touch` takes care of messed up syntax – adjusts indentation, parses `field=value`, puts certain fields on top, so I don't have to bother with all that when adding new entries. !fields are hidden by `accdb grep` when displaying search results.
 
@@ -96,3 +96,5 @@ Dumping the entire database:
     ad rgrep         # default editable format
     ad dump json     # as JSON (no import yet)
     ad dump yaml     # as YAML (      〃     )
+
+<!-- vim: set ts=8 sw=8 et: -->
