@@ -48,7 +48,7 @@ Syntax notes:
 
   * Field values starting with "`<base64> `" will be Base64-decoded when reading.
 
-  * In fields named `date.*`, the value "today" is expanded to current date.
+  * In fields named `date.*`, the values "now" and "today" are expanded to current date.
 
   * Entry UUIDs are used by `ad merge`.
 

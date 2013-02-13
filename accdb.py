@@ -354,7 +354,7 @@ class Entry(object):
 						val = nval.decode("utf-8")
 					except UnicodeDecodeError:
 						pass # leave the old value assigned
-				elif key.startswith("date.") and val == "today":
+				elif key.startswith("date.") and val in {"now", "today"}:
 					val = time.strftime("%Y-%m-%d")
 
 				key = translate_field(key)
