@@ -232,6 +232,9 @@ class Database(object):
 	def dump(self, fh=sys.stdout, storage=True):
 		eargs = {"storage": storage,
 			"conceal": ("conceal" in self.flags)}
+		if storage:
+			if self._modeline:
+				print(self._modeline, file=fh)
 		for entry in self:
 			if entry.deleted:
 				continue
@@ -241,8 +244,6 @@ class Database(object):
 				print("; dbflags: %s" % \
 					", ".join(sorted(self.flags)),
 					file=fh)
-			if self._modeline:
-				print(self._modeline, file=fh)
 
 	def to_structure(self):
 		return [entry.to_structure() for entry in self]
@@ -539,6 +540,9 @@ class Interactive(cmd.Cmd):
 	def do_grep(self, arg, full=False):
 		"""Search for an entry"""
 
+		if full and not sys.stdout.isatty():
+			print(db._modeline)
+
 		if arg.startswith('+'):
 			results = db.find_by_tag(arg[1:], exact=False)
 		else:
@@ -557,9 +561,6 @@ class Interactive(cmd.Cmd):
 		if sys.stdout.isatty():
 			print("(%d %s matching '%s')" % \
 				(num, ("entry" if num == 1 else "entries"), arg))
-
-		if full and not sys.stdout.isatty():
-			print(db._modeline)
 
 	def do_convert(self, arg):
 		"""Read entries from stdin and dump to stdout"""
