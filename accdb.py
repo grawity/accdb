@@ -225,9 +225,7 @@ class Database(object):
 
 	def __iter__(self):
 		for uuid in self.order:
-			entry = self.entries[uuid]
-			if not entry.deleted:
-				yield entry
+			yield self.entries[uuid]
 
 	def dump(self, fh=sys.stdout, storage=True):
 		eargs = {"storage": storage,
@@ -313,6 +311,8 @@ class Entry(object):
 				self.name = line[1:].strip()
 			elif line.startswith("+"):
 				self.tags |= split_tags(line[1:])
+				if "\\deleted" in self.tags:
+					self.deleted = True
 			elif line.startswith(";"):
 				self.comment += line[1:] + "\n"
 			elif line.startswith("(") and line.endswith(")"):

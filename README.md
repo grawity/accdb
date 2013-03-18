@@ -50,6 +50,8 @@ Syntax notes:
 
   * In fields named `date.*`, the values "now" and "today" are expanded to current date.
 
+  * Entries tagged `\deleted` will be discarded when writing.
+
   * Entry UUIDs are used by `ad merge`.
 
   * Lines starting with `(` and ending with `)` are ignored when reading. They contain such information as "item 243" or "found 2 search results" that doesn't need to be preserved.
