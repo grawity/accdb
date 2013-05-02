@@ -44,7 +44,7 @@ Syntax notes:
 
   * For convenience, `field=value` is also accepted (but translated to `field: value` when saving).
 
-  * The field `pass` is also hidden for historical reasons, despite having no `!` prefix.
+  * The field `pass` is also hidden for historical reasons, despite having no `!` prefix. Fields `pass.*` aren't hidden.
 
   * Field values starting with "`<base64> `" will be Base64-decoded when reading.
 
