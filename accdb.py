@@ -255,7 +255,7 @@ class Database(object):
 		print(json.dumps(self.to_structure(), indent=4), file=fh)
 
 	def to_file(self, path):
-		with open(path, "w", encoding="utf-8") as fh:
+		with open(path, "w", encoding="utf-8", newline="\n") as fh:
 			self.dump(fh)
 
 	def flush(self):
