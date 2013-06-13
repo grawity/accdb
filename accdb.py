@@ -36,14 +36,21 @@ field_groups = {
 
 field_order = ["object", "username", "password", "email"]
 
+field_prefix_re = re.compile(r"^\W+")
+
+def strip_field_prefix(name):
+	return field_prefix_re.sub("", name)
+
 def sort_fields(entry, terse=False):
 	names = []
 	for group in field_order:
 		for field in field_groups[group]:
-			names += sorted(k for k in entry.attributes \
-					if k == field)
+			names += sorted((k for k in entry.attributes \
+					 if k == field),
+					key=strip_field_prefix)
 	if not terse:
-		names += sorted(k for k in entry.attributes if k not in names)
+		names += sorted((k for k in entry.attributes if k not in names),
+				key=strip_field_prefix)
 	return names
 
 def translate_field(name):
