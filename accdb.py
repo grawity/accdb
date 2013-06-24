@@ -176,6 +176,16 @@ class Database(object):
 		entry.itemno = oldentry.itemno
 		entry.lineno = oldentry.lineno
 
+		oldpass = oldentry.attributes.get("pass", None)
+		newpass = entry.attributes.get("pass", None)
+
+		if oldpass and oldpass != newpass:
+			if "!pass.old" not in entry.attributes:
+				entry.attributes["!pass.old"] = []
+			for p in oldpass:
+				p = "%s (until %s)" % (p.dump(), time.strftime("%Y-%m-%d"))
+				entry.attributes["!pass.old"].append(PrivateAttribute(p))
+
 		self.entries[entry.uuid] = entry
 
 		return entry
