@@ -443,9 +443,16 @@ class Entry(object):
 				data += "\t%s: %s\n" % (key, value)
 
 		if self.tags:
-			tags = sorted(self.tags)
-			# TODO: fold lines
-			data += "\t+ %s\n" % ", ".join(tags)
+			tags = list(self.tags)
+			tags.sort()
+			line = []
+			while tags or line:
+				linelen = 8 + sum([len(i) + 2 for i in line])
+				if not tags or (line and linelen + len(tags[0]) + 2 > 80):
+					data += "\t+ %s\n" % ", ".join(line)
+					line = []
+				if tags:
+					line.append(tags.pop(0))
 
 		return data
 
