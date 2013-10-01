@@ -108,6 +108,8 @@ def split_filter(text):
 	for pos, char in enumerate(text):
 		if char == "(":
 			if depth == 0:
+				if start >= 0:
+					tokens.append(text[start:pos])
 				start = pos+1
 			depth += 1
 		elif char == ")":
