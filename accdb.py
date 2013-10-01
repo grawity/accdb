@@ -93,6 +93,20 @@ def start_editor(path):
 	if sys.platform == "linux2":
 		proc.wait()
 
+def compile_pattern(pattern):
+	func = None
+
+	if pattern.startswith("+"):
+		regex = fnmatch.translate(pattern[1:])
+		regex = re.compile(regex, re.I | re.U)
+		func = lambda entry: any(regex.match(tag) for tag in entry.tags)
+	else:
+		regex = fnmatch.translate(pattern)
+		regex = re.compile(regex, re.I | re.U)
+		func = lambda entry: regex.match(entry.name)
+
+	return func
+
 class Database(object):
 	def __init__(self):
 		self.count = 0
@@ -203,6 +217,11 @@ class Database(object):
 		entry = self.entries[uuid]
 		assert entry.itemno == itemno
 		return entry
+
+	def find(self, filter):
+		for entry in self:
+			if filter(entry):
+				yield entry
 
 	def find_by_name(self, pattern):
 		regex = fnmatch.translate(pattern)
@@ -567,11 +586,9 @@ class Interactive(cmd.Cmd):
 		if full and not sys.stdout.isatty():
 			print(db._modeline)
 
-		if arg.startswith('+'):
-			results = db.find_by_tag(arg[1:], exact=False)
-		else:
-			arg += '*'
-			results = db.find_by_name(arg)
+		filter = compile_pattern(arg)
+		results = db.find(filter)
+
 		num = 0
 		for entry in results:
 			if entry.deleted:
