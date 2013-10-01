@@ -702,7 +702,10 @@ class Interactive(cmd.Cmd):
 	def do_rgrep(self, arg):
 		return self.do_grep(arg, full=True)
 
-	def do_grep(self, arg, full=False):
+	def do_ls(self, arg):
+		return self.do_grep(arg, ls=True)
+
+	def do_grep(self, arg, full=False, ls=False):
 		"""Search for an entry"""
 
 		if full and not sys.stdout.isatty():
@@ -734,6 +737,8 @@ class Interactive(cmd.Cmd):
 				continue
 			if full:
 				print(entry.dump(storage=True, conceal=False))
+			elif ls:
+				print("%5d │ %s" % (entry.itemno, entry.name))
 			else:
 				print(entry)
 			num += 1
