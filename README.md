@@ -74,6 +74,10 @@ Searching for a tag:
 
     ad grep +is:hosting
 
+Searching for tags and attributes, with boolean operators:
+
+    ad grep "and +is:irc (or @host=*.net* @uri=*.net*)"
+
 Displaying passwords in a search result:
 
     ad reveal 64

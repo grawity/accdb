@@ -93,6 +93,128 @@ def start_editor(path):
 	if sys.platform == "linux2":
 		proc.wait()
 
+class FilterSyntaxError(Exception):
+	pass
+
+def split_filter(text):
+	tokens = []
+	depth = 0
+	start = -1
+	for pos, char in enumerate(text):
+		if char == "(":
+			if depth == 0:
+				start = pos+1
+			depth += 1
+		elif char == ")":
+			depth -= 1
+			if depth == 0 and start >= 0:
+				tokens.append(text[start:pos])
+				start = -1
+		elif char == " ":
+			if depth == 0 and start >= 0:
+				tokens.append(text[start:pos])
+				start = -1
+		else:
+			if start < 0:
+				start = pos
+	if depth == 0:
+		if start >= 0:
+			tokens.append(text[start:])
+		return tokens
+	elif depth > 0:
+		raise FilterSyntaxError("unclosed '('")
+	elif depth < 0:
+		raise FilterSyntaxError("too many ')'s")
+
+def compile_filter(pattern):
+	tokens = split_filter(pattern)
+	#print("compiling filter %r -> %r" % (pattern, tokens))
+
+	if len(tokens) > 1:
+		if tokens[0] in ("AND", "and"):
+			filters = [compile_filter(x) for x in tokens[1:]]
+			return ConjunctionFilter(*filters)
+		elif tokens[0] in ("OR", "or"):
+			filters = [compile_filter(x) for x in tokens[1:]]
+			return DisjunctionFilter(*filters)
+		elif tokens[0] in ("NOT", "not"):
+			if len(tokens) > 2:
+				raise FilterSyntaxError("too many arguments for 'NOT'")
+			filter = compile_filter(tokens[1])
+			return NegationFilter(filter)
+		else:
+			raise FilterSyntaxError("unknown operator %r" % tokens[0])
+	else:
+		return PatternFilter(tokens[0])
+
+def compile_pattern(pattern):
+	func = None
+
+	if pattern.startswith("+"):
+		regex = fnmatch.translate(pattern[1:])
+		regex = re.compile(regex, re.I | re.U)
+		func = lambda entry: any(regex.match(tag) for tag in entry.tags)
+	elif pattern.startswith("@"):
+		if "=" in pattern:
+			attr, glob = pattern[1:].split("=", 1)
+			regex = fnmatch.translate(glob)
+			print("is glob: %r, %r, %r" % (attr, glob, regex))
+			regex = re.compile(regex, re.I | re.U)
+			func = lambda entry:\
+				attr in entry.attributes \
+				and any(regex.match(value)
+					for value in entry.attributes[attr])
+		elif "~" in pattern:
+			attr, regex = pattern[1:].split("~", 1)
+			regex = re.compile(regex, re.I | re.U)
+			func = lambda entry:\
+				attr in entry.attributes \
+				and any(regex.search(value)
+					for value in entry.attributes[attr])
+		else:
+			attr = pattern[1:]
+			func = lambda entry: attr in entry.attributes
+	else:
+		regex = fnmatch.translate(pattern + "*")
+		regex = re.compile(regex, re.I | re.U)
+		func = lambda entry: regex.match(entry.name)
+
+	return func
+
+class Filter(object):
+	def __call__(self, entry):
+		return bool(self.test(entry))
+
+class PatternFilter(Filter):
+	def __init__(self, pattern):
+		self.pattern = pattern
+		self.func = compile_pattern(self.pattern)
+
+	def test(self, entry):
+		if self.func:
+			return self.func(entry)
+
+class ConjunctionFilter(Filter):
+	def __init__(self, *filters):
+		self.filters = list(filters)
+
+	def test(self, entry):
+		return all(filter.test(entry) for filter in self.filters)
+
+class DisjunctionFilter(Filter):
+	def __init__(self, *filters):
+		self.filters = list(filters)
+
+	def test(self, entry):
+		return any(filter.test(entry) for filter in self.filters)
+
+class NegationFilter(Filter):
+	def __init__(self, filter):
+		self.filter = filter
+
+	def test(self, entry):
+		return not self.filter.test(entry)
+
 class Database(object):
 	def __init__(self):
 		self.count = 0
@@ -204,26 +326,10 @@ class Database(object):
 		assert entry.itemno == itemno
 		return entry
 
-	def find_by_name(self, pattern):
-		regex = fnmatch.translate(pattern)
-		reobj = re.compile(regex, re.I | re.U)
+	def find(self, filter):
 		for entry in self:
-			if re.match(reobj, entry.name):
+			if filter(entry):
 				yield entry
-
-	def find_by_tag(self, pattern, exact=True):
-		if exact:
-			func = lambda tags: pattern in tags
-		else:
-			regex = fnmatch.translate(pattern)
-			reobj = re.compile(regex, re.I | re.U)
-			func = lambda tags: any(reobj.match(tag) for tag in tags)
-		for entry in self:
-			if func(entry.tags):
-				yield entry
-
-	def find_by_uuid(self, uuid):
-		return self.entries[uuid]
 
 	# Aggregate lookup
 
@@ -567,11 +673,13 @@ class Interactive(cmd.Cmd):
 		if full and not sys.stdout.isatty():
 			print(db._modeline)
 
-		if arg.startswith('+'):
-			results = db.find_by_tag(arg[1:], exact=False)
-		else:
-			arg += '*'
-			results = db.find_by_name(arg)
+		# TODO: improve this
+		if arg.startswith('"'):
+			arg = shlex.split(arg)[0]
+
+		filter = compile_filter(arg)
+		results = db.find(filter)
+
 		num = 0
 		for entry in results:
 			if entry.deleted:
