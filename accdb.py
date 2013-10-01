@@ -100,6 +100,26 @@ def compile_pattern(pattern):
 		regex = fnmatch.translate(pattern[1:])
 		regex = re.compile(regex, re.I | re.U)
 		func = lambda entry: any(regex.match(tag) for tag in entry.tags)
+	elif pattern.startswith("@"):
+		if "=" in pattern:
+			attr, glob = pattern[1:].split("=", 1)
+			regex = fnmatch.translate(glob)
+			print("is glob: %r, %r, %r" % (attr, glob, regex))
+			regex = re.compile(regex, re.I | re.U)
+			func = lambda entry:\
+				attr in entry.attributes \
+				and any(regex.match(value)
+					for value in entry.attributes[attr])
+		elif "~" in pattern:
+			attr, regex = pattern[1:].split("~", 1)
+			regex = re.compile(regex, re.I | re.U)
+			func = lambda entry:\
+				attr in entry.attributes \
+				and any(regex.search(value)
+					for value in entry.attributes[attr])
+		else:
+			attr = pattern[1:]
+			func = lambda entry: attr in entry.attributes
 	else:
 		regex = fnmatch.translate(pattern)
 		regex = re.compile(regex, re.I | re.U)
