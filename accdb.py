@@ -677,11 +677,16 @@ class Interactive(cmd.Cmd):
 		if full and not sys.stdout.isatty():
 			print(db._modeline)
 
-		# TODO: improve this
-		if arg.startswith('"'):
-			arg = shlex.split(arg)[0]
-
-		filter = compile_filter(arg)
+		args = shlex.split(arg)
+		if len(args) > 1:
+			arg = "AND"
+			for x in args:
+				arg += (" (%s)" if " " in x else " %s") % x
+			filters = [compile_filter(x) for x in args]
+			filter = ConjunctionFilter(*filters)
+		else:
+			arg = args[0]
+			filter = compile_filter(arg)
 		results = db.find(filter)
 
 		num = 0
