@@ -143,7 +143,8 @@ def compile_filter(pattern):
 			filter = compile_filter(tokens[1])
 			return NegationFilter(filter)
 		else:
-			raise FilterSyntaxError("unknown operator %r" % tokens[0])
+			raise FilterSyntaxError("unknown operator %r in (%s)" \
+				% (tokens[0], pattern))
 	else:
 		return PatternFilter(tokens[0])
 
