@@ -150,6 +150,10 @@ def compile_filter(pattern):
 				raise FilterSyntaxError("too many arguments for 'NOT'")
 			filter = compile_filter(tokens[1])
 			return NegationFilter(filter)
+		elif tokens[0] in ("PATTERN", "pattern"):
+			if len(tokens) > 2:
+				raise FilterSyntaxError("too many arguments for 'PATTERN'")
+			return PatternFilter(tokens[1])
 		else:
 			raise FilterSyntaxError("unknown operator %r in (%s)" \
 				% (tokens[0], pattern))
@@ -209,12 +213,18 @@ class PatternFilter(Filter):
 		if self.func:
 			return self.func(entry)
 
+	def __repr__(self):
+		return "(PATTERN %s)" % self.pattern
+
 class ConjunctionFilter(Filter):
 	def __init__(self, *filters):
 		self.filters = list(filters)
 
 	def test(self, entry):
 		return all(filter.test(entry) for filter in self.filters)
+
+	def __repr__(self):
+		return "(AND %s)" % " ".join(repr(f) for f in self.filters)
 
 class DisjunctionFilter(Filter):
 	def __init__(self, *filters):
@@ -223,12 +233,18 @@ class DisjunctionFilter(Filter):
 	def test(self, entry):
 		return any(filter.test(entry) for filter in self.filters)
 
+	def __repr__(self):
+		return "(OR %s)" % " ".join(repr(f) for f in self.filters)
+
 class NegationFilter(Filter):
 	def __init__(self, filter):
 		self.filter = filter
 
 	def test(self, entry):
 		return not self.filter.test(entry)
+
+	def __repr__(self):
+		return "(NOT %r)" % self.filter
 
 class Database(object):
 	def __init__(self):
@@ -702,6 +718,9 @@ class Interactive(cmd.Cmd):
 		except FilterSyntaxError as e:
 			trace("syntax error in filter:", *e.args)
 			sys.exit(1)
+
+		if debug:
+			trace("compiled filter:", filter)
 
 		results = db.find(filter)
 
