@@ -93,6 +93,60 @@ def start_editor(path):
 	if sys.platform == "linux2":
 		proc.wait()
 
+class FilterSyntaxError(Exception):
+	pass
+
+def split_filter(text):
+	tokens = []
+	depth = 0
+	start = -1
+	for pos, char in enumerate(text):
+		if char == "(":
+			if depth == 0:
+				start = pos+1
+			depth += 1
+		elif char == ")":
+			depth -= 1
+			if depth == 0 and start >= 0:
+				tokens.append(text[start:pos])
+				start = -1
+		elif char == " ":
+			if depth == 0 and start >= 0:
+				tokens.append(text[start:pos])
+				start = -1
+		else:
+			if start < 0:
+				start = pos
+	if depth == 0:
+		if start >= 0:
+			tokens.append(text[start:])
+		return tokens
+	elif depth > 0:
+		raise FilterSyntaxError("unclosed '('")
+	elif depth < 0:
+		raise FilterSyntaxError("too many ')'s")
+
+def compile_filter(pattern):
+	tokens = split_filter(pattern)
+	#print("compiling filter %r -> %r" % (pattern, tokens))
+
+	if len(tokens) > 1:
+		if tokens[0] in ("AND", "and"):
+			filters = [compile_filter(x) for x in tokens[1:]]
+			return ConjunctionFilter(*filters)
+		elif tokens[0] in ("OR", "or"):
+			filters = [compile_filter(x) for x in tokens[1:]]
+			return DisjunctionFilter(*filters)
+		elif tokens[0] in ("NOT", "not"):
+			if len(tokens) > 2:
+				raise FilterSyntaxError("too many arguments for 'NOT'")
+			filter = compile_filter(tokens[1])
+			return NegationFilter(filter)
+		else:
+			raise FilterSyntaxError("unknown operator %r" % tokens[0])
+	else:
+		return PatternFilter(tokens[0])
+
 def compile_pattern(pattern):
 	func = None
 
@@ -126,6 +180,40 @@ def compile_pattern(pattern):
 		func = lambda entry: regex.match(entry.name)
 
 	return func
+
+class Filter(object):
+	def __call__(self, entry):
+		return bool(self.test(entry))
+
+class PatternFilter(Filter):
+	def __init__(self, pattern):
+		self.pattern = pattern
+		self.func = compile_pattern(self.pattern)
+
+	def test(self, entry):
+		if self.func:
+			return self.func(entry)
+
+class ConjunctionFilter(Filter):
+	def __init__(self, *filters):
+		self.filters = list(filters)
+
+	def test(self, entry):
+		return all(filter.test(entry) for filter in self.filters)
+
+class DisjunctionFilter(Filter):
+	def __init__(self, *filters):
+		self.filters = list(filters)
+
+	def test(self, entry):
+		return any(filter.test(entry) for filter in self.filters)
+
+class NegationFilter(Filter):
+	def __init__(self, filter):
+		self.filter = filter
+
+	def test(self, entry):
+		return not self.filter.test(entry)
 
 class Database(object):
 	def __init__(self):
@@ -585,7 +673,7 @@ class Interactive(cmd.Cmd):
 		if full and not sys.stdout.isatty():
 			print(db._modeline)
 
-		filter = compile_pattern(arg)
+		filter = compile_filter(arg)
 		results = db.find(filter)
 
 		num = 0
