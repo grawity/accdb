@@ -170,7 +170,9 @@ def compile_filter(pattern):
 def compile_pattern(pattern):
 	func = None
 
-	if pattern.startswith("+"):
+	if pattern == "*":
+		func = lambda entry: True
+	elif pattern.startswith("+"):
 		regex = re_compile_glob(pattern[1:])
 		func = lambda entry: any(regex.match(tag) for tag in entry.tags)
 	elif pattern.startswith("@"):
@@ -719,8 +721,11 @@ class Interactive(cmd.Cmd):
 					arg += (" (%s)" if " " in x else " %s") % x
 				filters = [compile_filter(x) for x in args]
 				filter = ConjunctionFilter(*filters)
-			else:
+			elif len(args) > 0:
 				arg = args[0]
+				filter = compile_filter(arg)
+			else:
+				arg = "*"
 				filter = compile_filter(arg)
 		except FilterSyntaxError as e:
 			trace("syntax error in filter:", *e.args)
