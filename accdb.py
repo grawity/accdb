@@ -170,6 +170,11 @@ def compile_pattern(pattern):
 				attr in entry.attributes \
 				and any(regex.search(value)
 					for value in entry.attributes[attr])
+		elif "*" in pattern:
+			regex = fnmatch.translate(pattern[1:])
+			regex = re.compile(regex, re.I | re.U)
+			func = lambda entry:\
+				any(regex.match(attr) for attr in entry.attributes)
 		else:
 			attr = pattern[1:]
 			func = lambda entry: attr in entry.attributes
