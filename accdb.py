@@ -223,27 +223,6 @@ class Database(object):
 			if filter(entry):
 				yield entry
 
-	def find_by_name(self, pattern):
-		regex = fnmatch.translate(pattern)
-		reobj = re.compile(regex, re.I | re.U)
-		for entry in self:
-			if re.match(reobj, entry.name):
-				yield entry
-
-	def find_by_tag(self, pattern, exact=True):
-		if exact:
-			func = lambda tags: pattern in tags
-		else:
-			regex = fnmatch.translate(pattern)
-			reobj = re.compile(regex, re.I | re.U)
-			func = lambda tags: any(reobj.match(tag) for tag in tags)
-		for entry in self:
-			if func(entry.tags):
-				yield entry
-
-	def find_by_uuid(self, uuid):
-		return self.entries[uuid]
-
 	# Aggregate lookup
 
 	def tags(self):
