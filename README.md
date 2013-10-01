@@ -107,6 +107,8 @@ Dumping the entire database:
 
   - `foo` – matching title (prefix glob)
 
+  - `~foo` – matching title (regex)
+
   - `@foo` – attribute `foo` present (glob)
 
   - `@foo=bar` – attribute `foo` present (exact) and has value matching `bar` (glob)
