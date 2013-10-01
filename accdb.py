@@ -145,6 +145,8 @@ def compile_filter(pattern):
 		else:
 			raise FilterSyntaxError("unknown operator %r in (%s)" \
 				% (tokens[0], pattern))
+	elif " " in tokens[0] or ("(" in tokens[0] and ")" in tokens[0]):
+		return compile_filter(tokens[0])
 	else:
 		return PatternFilter(tokens[0])
 
