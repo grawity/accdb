@@ -673,6 +673,10 @@ class Interactive(cmd.Cmd):
 		if full and not sys.stdout.isatty():
 			print(db._modeline)
 
+		# TODO: improve this
+		if arg.startswith('"'):
+			arg = shlex.split(arg)[0]
+
 		filter = compile_filter(arg)
 		results = db.find(filter)
 
