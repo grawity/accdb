@@ -158,7 +158,6 @@ def compile_pattern(pattern):
 		if "=" in pattern:
 			attr, glob = pattern[1:].split("=", 1)
 			regex = fnmatch.translate(glob)
-			print("is glob: %r, %r, %r" % (attr, glob, regex))
 			regex = re.compile(regex, re.I | re.U)
 			func = lambda entry:\
 				attr in entry.attributes \
