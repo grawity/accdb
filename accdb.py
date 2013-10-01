@@ -178,6 +178,7 @@ def compile_pattern(pattern):
 	elif pattern.startswith("@"):
 		if "=" in pattern:
 			attr, glob = pattern[1:].split("=", 1)
+			attr = translate_field(attr)
 			regex = re_compile_glob(glob)
 			func = lambda entry:\
 				attr in entry.attributes \
@@ -185,6 +186,7 @@ def compile_pattern(pattern):
 					for value in entry.attributes[attr])
 		elif "~" in pattern:
 			attr, regex = pattern[1:].split("~", 1)
+			attr = translate_field(attr)
 			regex = re.compile(regex, re.I | re.U)
 			func = lambda entry:\
 				attr in entry.attributes \
@@ -195,7 +197,7 @@ def compile_pattern(pattern):
 			func = lambda entry:\
 				any(regex.match(attr) for attr in entry.attributes)
 		else:
-			attr = pattern[1:]
+			attr = translate_field(pattern[1:])
 			func = lambda entry: attr in entry.attributes
 	elif pattern.startswith("~"):
 		regex = re.compile(pattern[1:], re.I | re.U)
