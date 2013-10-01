@@ -121,7 +121,7 @@ def compile_pattern(pattern):
 			attr = pattern[1:]
 			func = lambda entry: attr in entry.attributes
 	else:
-		regex = fnmatch.translate(pattern)
+		regex = fnmatch.translate(pattern + "*")
 		regex = re.compile(regex, re.I | re.U)
 		func = lambda entry: regex.match(entry.name)
 
