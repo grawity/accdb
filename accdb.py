@@ -144,18 +144,18 @@ def compile_filter(pattern):
 		trace("parsing filter %r -> %r" % (pattern, tokens))
 
 	if len(tokens) > 1:
-		if tokens[0] in ("AND", "and"):
+		if tokens[0] in {"AND", "and"}:
 			filters = [compile_filter(x) for x in tokens[1:]]
 			return ConjunctionFilter(*filters)
-		elif tokens[0] in ("OR", "or"):
+		elif tokens[0] in {"OR", "or"}:
 			filters = [compile_filter(x) for x in tokens[1:]]
 			return DisjunctionFilter(*filters)
-		elif tokens[0] in ("NOT", "not"):
+		elif tokens[0] in {"NOT", "not"}:
 			if len(tokens) > 2:
 				raise FilterSyntaxError("too many arguments for 'NOT'")
 			filter = compile_filter(tokens[1])
 			return NegationFilter(filter)
-		elif tokens[0] in ("PATTERN", "pattern"):
+		elif tokens[0] in {"PATTERN", "pattern"}:
 			if len(tokens) > 2:
 				raise FilterSyntaxError("too many arguments for 'PATTERN'")
 			return PatternFilter(tokens[1])
