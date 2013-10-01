@@ -76,7 +76,7 @@ Searching for a tag:
 
 Searching for tags and attributes, with boolean operators:
 
-    ad grep "and +is:irc (or @host=*.net* @uri=*.net*)"
+    ad grep "AND +is:irc (OR @host=*.net* @uri=*.net*)"
 
 Displaying passwords in a search result:
 
@@ -102,5 +102,19 @@ Dumping the entire database:
     ad rgrep         # default editable format
     ad dump json     # as JSON (no import yet)
     ad dump yaml     # as YAML (      〃     )
+
+## Search patterns
+
+  - `foo` – matching title (prefix glob)
+
+  - `@foo` – attribute `foo` present (glob)
+
+  - `@foo=bar` – attribute `foo` present (exact) and has value matching `bar` (glob)
+
+  - `@foo~bar` – attribute `foo` present (exact) and has value matching `bar` (regex)
+
+  - `AND x y ...`, `OR x y ...`, `NOT x` – boolean operators
+
+  - `(` and `)` for grouping patterns (Lisp/Logo style)
 
 <!-- vim: set ts=8 sw=8 et: -->
