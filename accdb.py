@@ -15,6 +15,8 @@ import uuid
 from collections import OrderedDict
 from base64 import b64encode, b64decode
 
+debug = os.environ.get("DEBUG", "")
+
 field_names = {
 	"hostname":	"host",
 	"machine":	"host",
@@ -76,6 +78,9 @@ def expand_range(string):
 		items.extend(range(m, n))
 	return items
 
+def trace(msg, *args):
+	print("accdb: %s" % msg, *args, file=sys.stderr)
+
 def start_editor(path):
 	if "VISUAL" in os.environ:
 		editor = shlex.split(os.environ["VISUAL"])
@@ -128,7 +133,8 @@ def split_filter(text):
 
 def compile_filter(pattern):
 	tokens = split_filter(pattern)
-	#print("compiling filter %r -> %r" % (pattern, tokens))
+	if debug:
+		trace("parsing filter %r -> %r" % (pattern, tokens))
 
 	if len(tokens) > 1:
 		if tokens[0] in ("AND", "and"):
