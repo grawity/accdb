@@ -122,9 +122,9 @@ def split_filter(text):
 			tokens.append(text[start:])
 		return tokens
 	elif depth > 0:
-		raise FilterSyntaxError("unclosed '('")
+		raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
 	elif depth < 0:
-		raise FilterSyntaxError("too many ')'s")
+		raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
 
 def compile_filter(pattern):
 	tokens = split_filter(pattern)
