@@ -78,6 +78,11 @@ def expand_range(string):
 		items.extend(range(m, n))
 	return items
 
+def re_compile_glob(glob, flags=None):
+	if flags is None:
+		flags = re.I | re.U
+	return re.compile(fnmatch.translate(glob), flags)
+
 def trace(msg, *args):
 	print("accdb: %s" % msg, *args, file=sys.stderr)
 
@@ -166,14 +171,12 @@ def compile_pattern(pattern):
 	func = None
 
 	if pattern.startswith("+"):
-		regex = fnmatch.translate(pattern[1:])
-		regex = re.compile(regex, re.I | re.U)
+		regex = re_compile_glob(pattern[1:])
 		func = lambda entry: any(regex.match(tag) for tag in entry.tags)
 	elif pattern.startswith("@"):
 		if "=" in pattern:
 			attr, glob = pattern[1:].split("=", 1)
-			regex = fnmatch.translate(glob)
-			regex = re.compile(regex, re.I | re.U)
+			regex = re_compile_glob(glob)
 			func = lambda entry:\
 				attr in entry.attributes \
 				and any(regex.match(value)
@@ -186,8 +189,7 @@ def compile_pattern(pattern):
 				and any(regex.search(value)
 					for value in entry.attributes[attr])
 		elif "*" in pattern:
-			regex = fnmatch.translate(pattern[1:])
-			regex = re.compile(regex, re.I | re.U)
+			regex = re_compile_glob(pattern[1:])
 			func = lambda entry:\
 				any(regex.match(attr) for attr in entry.attributes)
 		else:
@@ -197,8 +199,7 @@ def compile_pattern(pattern):
 		regex = re.compile(pattern[1:], re.I | re.U)
 		func = lambda entry: regex.match(entry.name)
 	else:
-		regex = fnmatch.translate(pattern + "*")
-		regex = re.compile(regex, re.I | re.U)
+		regex = re_compile_glob(pattern + "*")
 		func = lambda entry: regex.match(entry.name)
 
 	return func
