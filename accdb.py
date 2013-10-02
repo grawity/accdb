@@ -201,7 +201,7 @@ def compile_pattern(pattern):
 			func = lambda entry: attr in entry.attributes
 	elif pattern.startswith("~"):
 		regex = re.compile(pattern[1:], re.I | re.U)
-		func = lambda entry: regex.match(entry.name)
+		func = lambda entry: regex.search(entry.name)
 	else:
 		regex = re_compile_glob(pattern + "*")
 		func = lambda entry: regex.match(entry.name)
