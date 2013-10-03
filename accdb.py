@@ -31,7 +31,7 @@ field_names = {
 }
 
 field_groups = {
-	"object":	["host", "uri"],
+	"object":	["host", "uri", "realm"],
 	"username":	["login", "nic-hdl"],
 	"password":	["pass", "!pass"],
 	"email":	["email"],
