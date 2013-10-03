@@ -808,6 +808,11 @@ class Interactive(cmd.Cmd):
 		db.sort()
 		db.modified = True
 
+	def do_lstags(self, arg):
+		"""List all tags used by the database's entries"""
+		for tag in sorted(db.tags()):
+			print(tag)
+
 	do_c	= do_copy
 	do_g	= do_grep
 	do_re	= do_reveal
