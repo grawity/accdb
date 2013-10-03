@@ -26,6 +26,7 @@ field_names = {
 	"username":	"login",
 	"nicname":	"nic-hdl",
 	"password":	"pass",
+	"!pass":	"pass",
 	"mail":		"email",
 }
 
