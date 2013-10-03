@@ -704,13 +704,15 @@ class Interactive(cmd.Cmd):
 		return True
 
 	def do_rgrep(self, arg):
+		"""Search for entries and export their full contents"""
 		return self.do_grep(arg, full=True)
 
 	def do_ls(self, arg):
+		"""Search for entries and list their names"""
 		return self.do_grep(arg, ls=True)
 
 	def do_grep(self, arg, full=False, ls=False):
-		"""Search for an entry"""
+		"""Search for entries"""
 
 		if full and not sys.stdout.isatty():
 			print(db._modeline)
