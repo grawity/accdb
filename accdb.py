@@ -648,7 +648,7 @@ class PrivateAttribute(Attribute):
 class Interactive(cmd.Cmd):
 	def __init__(self, *args, **kwargs):
 		cmd.Cmd.__init__(self, *args, **kwargs)
-		self.prompt = "accdb> "
+		self.prompt = "\001\033[34m\002" "accdb>" "\001\033[m\002" " "
 		self.banner = "Using %s" % db_path
 
 	def emptyline(self):
