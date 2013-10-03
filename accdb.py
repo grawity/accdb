@@ -755,7 +755,7 @@ class Interactive(cmd.Cmd):
 
 		if sys.stdout.isatty():
 			print("(%d %s matching '%s')" % \
-				(num, ("entry" if num == 1 else "entries"), arg))
+				(num, ("entry" if num == 1 else "entries"), filter))
 
 	def do_convert(self, arg):
 		"""Read entries from stdin and dump to stdout"""
