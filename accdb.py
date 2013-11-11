@@ -430,7 +430,7 @@ class Database(object):
 			return
 		if self.path is None:
 			return
-		print("(Storing database)", file=sys.stderr)
+		#print("(Storing database)", file=sys.stderr)
 		self.to_file(self.path)
 		self.modified = False
 
