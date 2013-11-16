@@ -173,6 +173,13 @@ def compile_pattern(pattern):
 
 	if pattern == "*":
 		func = lambda entry: True
+	elif pattern.startswith("#"):
+		try:
+			val = int(pattern[1:])
+		except ValueError:
+			func = lambda entry: False
+		else:
+			func = lambda entry: entry.itemno == val
 	elif pattern.startswith("+"):
 		regex = re_compile_glob(pattern[1:])
 		func = lambda entry: any(regex.match(tag) for tag in entry.tags)

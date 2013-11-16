@@ -115,6 +115,8 @@ Dumping the entire database:
 
   - `@foo~bar` – attribute `foo` present (exact) and has value matching `bar` (regex)
 
+  - `#123` – item number
+
   - `AND x y ...`, `OR x y ...`, `NOT x` – boolean operators
 
   - `(` and `)` for grouping patterns (Lisp/Logo style)
