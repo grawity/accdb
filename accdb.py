@@ -488,6 +488,9 @@ class Entry(object):
             elif line.startswith("(") and line.endswith(")"):
                 # annotations in search output
                 pass
+            elif line.startswith("█") and line.endswith("█"):
+                # QR code
+                pass
             elif line.startswith("{") and line.endswith("}"):
                 if self.uuid:
                     print("Line %d: ignoring multiple UUID headers" \
@@ -806,6 +809,24 @@ class Interactive(cmd.Cmd):
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
             print(entry.dump())
+
+    def do_qr(self, arg):
+        for itemno in expand_range(arg):
+            entry = db.find_by_itemno(itemno)
+            print(entry.dump())
+            try:
+                psk = entry.attributes["!2fa.oath-psk"][0].dump()
+            except KeyError:
+                print("\t(No OATH preshared key for this entry.)")
+            else:
+                issuer = entry.name
+                login = entry.attributes["login"][0]
+                uri = "otpauth://totp/%s?secret=%s&issuer=%s" % (login, psk, issuer)
+                with subprocess.Popen(["qrencode", "-o-", "-tUTF8", uri],
+                                      stdout=subprocess.PIPE) as proc:
+                    for line in proc.stdout:
+                        print("\t" + line.decode("utf-8"), end="")
+                print()
 
     def do_touch(self, arg):
         """Rewrite the accounts.db file"""
