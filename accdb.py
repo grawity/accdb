@@ -14,7 +14,7 @@ import time
 import uuid
 from collections import OrderedDict
 from base64 import b64encode, b64decode, b32decode
-#from nullroute import oath
+from nullroute import err
 import hotpie as oath
 
 debug = os.environ.get("DEBUG", "")
@@ -822,6 +822,7 @@ class Interactive(cmd.Cmd):
             print(entry.dump())
 
     def do_qr(self, arg):
+        """Display the entry's OATH PSK as a Qr code"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
             print(entry.dump())
@@ -839,7 +840,8 @@ class Interactive(cmd.Cmd):
                         print("\t" + line.decode("utf-8"), end="")
                 print()
 
-    def do_gen(self, arg):
+    def do_totp(self, arg):
+        """Generate an OATH TOTP response"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
             psk = entry.oath_psk
@@ -849,6 +851,23 @@ class Interactive(cmd.Cmd):
             else:
                 otp = oath.TOTP(b32decode(psk))
                 print(otp)
+
+    def do_t(self, arg):
+        """Copy OATH TOTP response to clipboard"""
+        items = expand_range(arg)
+        if len(items) > 1:
+            err("too many arguments")
+            exit(1)
+        entry = db.find_by_itemno(items[0])
+        print(entry)
+        psk = entry.oath_psk
+        if psk is None:
+            print("(No OATH preshared key for this entry.)", file=sys.stderr)
+            sys.exit(1)
+        else:
+            otp = oath.TOTP(b32decode(psk))
+            Clipboard.put(str(otp))
+            print("; OATH response copied to clipboard")
 
     def do_touch(self, arg):
         """Rewrite the accounts.db file"""
