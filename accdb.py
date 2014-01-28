@@ -13,7 +13,9 @@ import sys
 import time
 import uuid
 from collections import OrderedDict
-from base64 import b64encode, b64decode
+from base64 import b64encode, b64decode, b32decode
+#from nullroute import oath
+import hotpie as oath
 
 debug = os.environ.get("DEBUG", "")
 
@@ -634,6 +636,15 @@ class Entry(object):
     def normalized_name(self):
         return re.search(self.RE_COLL, self.name).group(0).lower()
 
+    @property
+    def oath_psk(self):
+        try:
+            psk = self.attributes["!2fa.oath-psk"][0].dump()
+        except KeyError:
+            return None
+        else:
+            return psk.replace(" ", "")
+
 class Attribute(str):
     # Nothing special about this class. Exists only for consistency
     # with PrivateAttribute providing a dump() method.
@@ -814,12 +825,10 @@ class Interactive(cmd.Cmd):
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
             print(entry.dump())
-            try:
-                psk = entry.attributes["!2fa.oath-psk"][0].dump()
-            except KeyError:
+            psk = entry.oath_psk
+            if psk is None:
                 print("\t(No OATH preshared key for this entry.)")
             else:
-                psk = psk.replace(" ", "")
                 issuer = entry.name
                 login = entry.attributes["login"][0]
                 # https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
@@ -829,6 +838,17 @@ class Interactive(cmd.Cmd):
                     for line in proc.stdout:
                         print("\t" + line.decode("utf-8"), end="")
                 print()
+
+    def do_gen(self, arg):
+        for itemno in expand_range(arg):
+            entry = db.find_by_itemno(itemno)
+            psk = entry.oath_psk
+            if psk is None:
+                print("(No OATH preshared key for this entry.)", file=sys.stderr)
+                sys.exit(1)
+            else:
+                otp = oath.TOTP(b32decode(psk))
+                print(otp)
 
     def do_touch(self, arg):
         """Rewrite the accounts.db file"""
