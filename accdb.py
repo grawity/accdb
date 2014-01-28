@@ -819,8 +819,10 @@ class Interactive(cmd.Cmd):
             except KeyError:
                 print("\t(No OATH preshared key for this entry.)")
             else:
+                psk = psk.replace(" ", "")
                 issuer = entry.name
                 login = entry.attributes["login"][0]
+                # https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
                 uri = "otpauth://totp/%s?secret=%s&issuer=%s" % (login, psk, issuer)
                 with subprocess.Popen(["qrencode", "-o-", "-tUTF8", uri],
                                       stdout=subprocess.PIPE) as proc:
