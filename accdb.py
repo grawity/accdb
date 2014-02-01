@@ -944,15 +944,18 @@ if len(sys.argv) > 1:
 else:
     interp.cmdloop()
 
+want_backup = db.modified
+
 db.flush()
 
-if "cache" in db.flags and db.path != db_cache_path:
-    db.to_file(db_cache_path)
+if want_backup:
+    if "cache" in db.flags and db.path != db_cache_path:
+        db.to_file(db_cache_path)
 
-if "backup" in db.flags and db.path != db_backup_path:
-    with open(db_backup_path, "wb") as db_backup_fh:
-        with subprocess.Popen(["gpg", "-e"],
-                              stdin=subprocess.PIPE,
-                              stdout=db_backup_fh) as proc:
-            with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
-                db.dump(backup_in)
+    if "backup" in db.flags and db.path != db_backup_path:
+        with open(db_backup_path, "wb") as db_backup_fh:
+            with subprocess.Popen(["gpg", "-e"],
+                                  stdin=subprocess.PIPE,
+                                  stdout=db_backup_fh) as proc:
+                with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
+                    db.dump(backup_in)
