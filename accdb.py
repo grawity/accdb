@@ -955,7 +955,7 @@ if want_backup:
 
     if "backup" in db.flags and db.path != db_backup_path:
         with open(db_backup_path, "wb") as db_backup_fh:
-            with subprocess.Popen(["gpg", "-e"],
+            with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
                                   stdin=subprocess.PIPE,
                                   stdout=db_backup_fh) as proc:
                 with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
