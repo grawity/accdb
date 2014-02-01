@@ -14,6 +14,7 @@ import time
 import uuid
 from collections import OrderedDict
 from base64 import b64encode, b64decode, b32decode
+from io import TextIOWrapper
 from nullroute import err
 import hotpie as oath
 
@@ -925,6 +926,8 @@ db_path = os.environ.get("ACCDB",
 
 db_cache_path = os.path.expanduser("~/Private/accounts.cache.txt")
 
+db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
+
 if os.path.exists(db_path):
     db = Database.from_file(db_path)
 else:
@@ -945,3 +948,11 @@ db.flush()
 
 if "cache" in db.flags and db.path != db_cache_path:
     db.to_file(db_cache_path)
+
+if "backup" in db.flags and db.path != db_backup_path:
+    with open(db_backup_path, "wb") as db_backup_fh:
+        with subprocess.Popen(["gpg", "-e"],
+                              stdin=subprocess.PIPE,
+                              stdout=db_backup_fh) as proc:
+            with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
+                db.dump(backup_in)
