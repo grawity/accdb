@@ -102,11 +102,38 @@ def decode_psk(s):
         return bytes.fromhex(s)
     elif s.endswith(b64_tag):
         s = s[:-len(b64_tag)]
+        s = s.replace(" ", "")
         s = pad(s, 4)
         return base64.b64decode(s)
     else:
+        s = s.replace(" ", "")
         s = pad(s, 8)
         return base64.b32decode(s)
+
+class OATHParameters(object):
+    def __init__(self, raw_psk, digits=6, otype="totp"):
+        if otype != "totp":
+            err("OATH %r is not supported yet" % otype)
+        self.raw_psk = raw_psk
+        self.digits = digits
+        self.otype = otype
+
+    @property
+    def text_psk(self):
+        return encode_psk(self.raw_psk)
+
+    def make_uri(self, login, issuer=None):
+        # https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
+        label = "%s:%s" % (issuer, login) if issuer else login
+        uri = "otpauth://totp/%s?secret=%s" % (label, self.text_psk)
+        if issuer:
+            uri += "&issuer=%s" % issuer
+        if self.digits != 6:
+            uri += "&digits=%d" % self.digits
+        return uri
+
+    def generate(self):
+        return oath.TOTP(self.raw_psk, digits=self.digits)
 
 def trace(msg, *args):
     print("accdb: %s" % msg, *args, file=sys.stderr)
@@ -659,13 +686,20 @@ class Entry(object):
         return re.search(self.RE_COLL, self.name).group(0).lower()
 
     @property
-    def oath_psk(self):
-        try:
-            psk = self.attributes["!2fa.oath-psk"][0].dump()
-        except KeyError:
+    def oath_params(self):
+        tmp = self.attributes.get("!2fa.oath-psk")
+        if not tmp:
             return None
-        else:
-            return psk.replace(" ", "")
+
+        psk = decode_psk(tmp[0].dump())
+
+        p = OATHParameters(psk)
+
+        tmp = self.attributes.get("2fa.oath-digits")
+        if tmp:
+            p.digits = int(tmp[0])
+
+        return p
 
 class Attribute(str):
     # Nothing special about this class. Exists only for consistency
@@ -848,14 +882,13 @@ class Interactive(cmd.Cmd):
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
             print(entry.dump())
-            psk = entry.oath_psk
-            if psk is None:
+            params = entry.oath_params
+            if params is None:
                 print("\t(No OATH preshared key for this entry.)")
             else:
                 issuer = entry.name
                 login = entry.attributes["login"][0]
-                # https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
-                uri = "otpauth://totp/%s?secret=%s&issuer=%s" % (login, psk, issuer)
+                uri = params.make_uri(login, issuer)
                 with subprocess.Popen(["qrencode", "-o-", "-tUTF8", uri],
                                       stdout=subprocess.PIPE) as proc:
                     for line in proc.stdout:
@@ -866,13 +899,13 @@ class Interactive(cmd.Cmd):
         """Generate an OATH TOTP response"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            psk = entry.oath_psk
-            if psk is None:
+            params = entry.oath_params
+            if params:
+                otp = params.generate()
+                print(otp)
+            else:
                 print("(No OATH preshared key for this entry.)", file=sys.stderr)
                 sys.exit(1)
-            else:
-                otp = oath.TOTP(decode_psk(psk))
-                print(otp)
 
     def do_t(self, arg):
         """Copy OATH TOTP response to clipboard"""
@@ -882,14 +915,14 @@ class Interactive(cmd.Cmd):
             exit(1)
         entry = db.find_by_itemno(items[0])
         print(entry)
-        psk = entry.oath_psk
-        if psk is None:
-            print("(No OATH preshared key for this entry.)", file=sys.stderr)
-            sys.exit(1)
-        else:
-            otp = oath.TOTP(decode_psk(psk))
+        params = entry.oath_params
+        if params:
+            otp = params.generate()
             Clipboard.put(str(otp))
             print("; OATH response copied to clipboard")
+        else:
+            print("(No OATH preshared key for this entry.)", file=sys.stderr)
+            sys.exit(1)
 
     def do_touch(self, arg):
         """Rewrite the accounts.db file"""
