@@ -82,6 +82,16 @@ def expand_range(string):
         items.extend(range(m, n))
     return items
 
+def split_kvlist(string):
+    items = {}
+    for token in string.split():
+        if "=" in token:
+            k, v = token.split("=", 1)
+            items[k] = v
+        else:
+            items[token] = None
+    return items
+
 def re_compile_glob(glob, flags=None):
     if flags is None:
         flags = re.I | re.U
@@ -697,9 +707,13 @@ class Entry(object):
 
         p = OATHParameters(psk)
 
-        tmp = self.attributes.get("2fa.oath-digits")
+        tmp = self.attributes.get("2fa.oath-params")
         if tmp:
-            p.digits = int(tmp[0])
+            tmp = split_kvlist(tmp[0].dump())
+            if "type" in tmp:
+                p.otype = tmp["type"]
+            if "digits" in tmp:
+                p.digits = int(tmp["digits"])
 
         return p
 
