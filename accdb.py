@@ -710,7 +710,7 @@ class Entry(object):
 
     @property
     def oath_params(self):
-        tmp = self.attributes.get("!2fa.oath-psk")
+        tmp = self.attributes.get("!2fa.oath.psk")
         if not tmp:
             return None
 
@@ -723,17 +723,17 @@ class Entry(object):
         else:
             p.login = self.name
 
-        tmp = self.attributes.get("2fa.oath-issuer")
+        tmp = self.attributes.get("2fa.oath.issuer")
         if tmp:
             p.issuer = tmp[0].dump()
         else:
             p.issuer = self.name
 
-        tmp = self.attributes.get("2fa.oath-type")
+        tmp = self.attributes.get("2fa.oath.type")
         if tmp:
             p.otype = tmp[0].dump()
 
-        tmp = self.attributes.get("2fa.oath-digits")
+        tmp = self.attributes.get("2fa.oath.digits")
         if tmp:
             p.digits = int(tmp[0].dump())
 
