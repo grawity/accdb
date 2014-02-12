@@ -123,25 +123,35 @@ def decode_psk(s):
         return base64.b32decode(s)
 
 class OATHParameters(object):
-    def __init__(self, raw_psk, digits=6, otype="totp"):
+    def __init__(self, raw_psk, digits=6, otype="totp", login=None, issuer=None):
         if otype != "totp":
             err("OATH %r is not supported yet" % otype)
         self.raw_psk = raw_psk
         self.digits = digits
         self.otype = otype
+        self.login = login
+        self.issuer = issuer
 
     @property
     def text_psk(self):
         return encode_psk(self.raw_psk)
 
-    def make_uri(self, login, issuer=None):
+    def make_uri(self):
         # https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
-        label = "%s:%s" % (issuer, login) if issuer else login
+        # TODO: url-encode label & issuer
+        if self.issuer and (self.issuer != self.login):
+            issuer = self.issuer
+            label = "%s:%s" % (issuer, self.login)
+        else:
+            issuer = None
+            label = self.login
+
         uri = "otpauth://totp/%s?secret=%s" % (label, self.text_psk)
         if issuer:
             uri += "&issuer=%s" % issuer
         if self.digits != 6:
             uri += "&digits=%d" % self.digits
+
         return uri
 
     def generate(self):
@@ -704,8 +714,19 @@ class Entry(object):
             return None
 
         psk = decode_psk(tmp[0].dump())
-
         p = OATHParameters(psk)
+
+        tmp = self.attributes.get("login")
+        if tmp:
+            p.login = tmp[0].dump()
+        else:
+            p.login = self.name
+
+        tmp = self.attributes.get("2fa.oath-issuer")
+        if tmp:
+            p.issuer = tmp[0].dump()
+        else:
+            p.issuer = self.name
 
         tmp = self.attributes.get("2fa.oath-type")
         if tmp:
@@ -902,9 +923,7 @@ class Interactive(cmd.Cmd):
             if params is None:
                 print("\t(No OATH preshared key for this entry.)")
             else:
-                issuer = entry.name
-                login = entry.attributes["login"][0]
-                uri = params.make_uri(login, issuer)
+                uri = params.make_uri()
                 with subprocess.Popen(["qrencode", "-o-", "-tUTF8", uri],
                                       stdout=subprocess.PIPE) as proc:
                     for line in proc.stdout:
