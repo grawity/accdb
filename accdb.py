@@ -707,13 +707,13 @@ class Entry(object):
 
         p = OATHParameters(psk)
 
-        tmp = self.attributes.get("2fa.oath-params")
+        tmp = self.attributes.get("2fa.oath-type")
         if tmp:
-            tmp = split_kvlist(tmp[0].dump())
-            if "type" in tmp:
-                p.otype = tmp["type"]
-            if "digits" in tmp:
-                p.digits = int(tmp["digits"])
+            p.otype = tmp[0].dump()
+
+        tmp = self.attributes.get("2fa.oath-digits")
+        if tmp:
+            p.digits = int(tmp[0].dump())
 
         return p
 
