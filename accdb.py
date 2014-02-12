@@ -92,7 +92,7 @@ def pad(s, c):
     return s.ljust(n + c - (n % c), "=")
 
 def encode_psk(b):
-    return base64.b32encode(b).rstrip(b"=")
+    return base64.b32encode(b).decode("us-ascii").rstrip("=")
 
 def decode_psk(s):
     hex_tag = "(hex)"
