@@ -89,7 +89,9 @@ def re_compile_glob(glob, flags=None):
 
 def pad(s, c):
     n = len(s)
-    return s.ljust(n + c - (n % c), "=")
+    if n % c:
+        s = s.ljust(n + c - (n % c), "=")
+    return s
 
 def encode_psk(b):
     return base64.b32encode(b).decode("us-ascii").rstrip("=")
