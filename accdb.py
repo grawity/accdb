@@ -119,6 +119,7 @@ def decode_psk(s):
         return base64.b64decode(s)
     else:
         s = s.replace(" ", "")
+        s = s.upper()
         s = pad(s, 8)
         return base64.b32decode(s)
 
