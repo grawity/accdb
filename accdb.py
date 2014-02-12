@@ -3,6 +3,7 @@
 # accdb - account database using human-editable flat files as storage
 
 from __future__ import print_function
+import base64
 import cmd
 import fnmatch
 import os
@@ -13,7 +14,6 @@ import sys
 import time
 import uuid
 from collections import OrderedDict
-from base64 import b64encode, b64decode, b32decode
 from io import TextIOWrapper
 from nullroute import err
 import hotpie as oath
@@ -87,9 +87,26 @@ def re_compile_glob(glob, flags=None):
         flags = re.I | re.U
     return re.compile(fnmatch.translate(glob), flags)
 
-def b32pad(s):
+def pad(s, c):
     n = len(s)
-    return s.ljust(n + 8 - (n % 8), "=")
+    return s.ljust(n + c - (n % c), "=")
+
+def encode_psk(b):
+    return base64.b32encode(b).rstrip(b"=")
+
+def decode_psk(s):
+    hex_tag = "(hex)"
+    b64_tag = "(b64)"
+    if s.endswith(hex_tag):
+        s = s[:-len(hex_tag)]
+        return bytes.fromhex(s)
+    elif s.endswith(b64_tag):
+        s = s[:-len(b64_tag)]
+        s = pad(s, 4)
+        return base64.b64decode(s)
+    else:
+        s = pad(s, 8)
+        return base64.b32decode(s)
 
 def trace(msg, *args):
     print("accdb: %s" % msg, *args, file=sys.stderr)
@@ -530,7 +547,7 @@ class Entry(object):
                     self._broken = True
                 elif val.startswith("<base64> "):
                     nval = val[len("<base64> "):]
-                    nval = b64decode(nval)
+                    nval = base64.b64decode(nval)
                     try:
                         val = nval.decode("utf-8")
                     except UnicodeDecodeError:
@@ -600,7 +617,7 @@ class Entry(object):
                 if storage and conceal and self.is_private_attr(key) \
                     and not value.startswith("<base64> "):
                     value = value.encode("utf-8")
-                    value = b64encode(value)
+                    value = base64.b64encode(value)
                     value = value.decode("utf-8")
                     value = "<base64> %s" % value
                 data += "\t%s: %s\n" % (key, value)
@@ -854,7 +871,7 @@ class Interactive(cmd.Cmd):
                 print("(No OATH preshared key for this entry.)", file=sys.stderr)
                 sys.exit(1)
             else:
-                otp = oath.TOTP(b32decode(b32pad(psk)))
+                otp = oath.TOTP(decode_psk(psk))
                 print(otp)
 
     def do_t(self, arg):
@@ -870,7 +887,7 @@ class Interactive(cmd.Cmd):
             print("(No OATH preshared key for this entry.)", file=sys.stderr)
             sys.exit(1)
         else:
-            otp = oath.TOTP(b32decode(psk))
+            otp = oath.TOTP(decode_psk(psk))
             Clipboard.put(str(otp))
             print("; OATH response copied to clipboard")
 
