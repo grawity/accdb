@@ -723,7 +723,7 @@ class Entry(object):
         else:
             p.login = self.name
 
-        tmp = self.attributes.get("2fa.oath.issuer")
+        tmp = self.attributes.get("2fa.issuer")
         if tmp:
             p.issuer = tmp[0].dump()
         else:
