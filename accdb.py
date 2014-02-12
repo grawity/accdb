@@ -87,6 +87,10 @@ def re_compile_glob(glob, flags=None):
         flags = re.I | re.U
     return re.compile(fnmatch.translate(glob), flags)
 
+def b32pad(s):
+    n = len(s)
+    return s.ljust(n + 8 - (n % 8), "=")
+
 def trace(msg, *args):
     print("accdb: %s" % msg, *args, file=sys.stderr)
 
@@ -850,7 +854,7 @@ class Interactive(cmd.Cmd):
                 print("(No OATH preshared key for this entry.)", file=sys.stderr)
                 sys.exit(1)
             else:
-                otp = oath.TOTP(b32decode(psk))
+                otp = oath.TOTP(b32decode(b32pad(psk)))
                 print(otp)
 
     def do_t(self, arg):
