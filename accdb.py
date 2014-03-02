@@ -790,6 +790,7 @@ class Interactive(cmd.Cmd):
         entry = db.find_by_itemno(arg)
         print(entry)
         if "pass" in entry.attributes:
+            print("(Password copied to clipboard.)")
             Clipboard.put(entry.attributes["pass"][0].dump())
         else:
             print("No password found!",
