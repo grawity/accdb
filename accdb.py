@@ -35,7 +35,7 @@ field_names = {
 
 field_groups = {
     "object":   ["host", "uri", "realm"],
-    "username": ["login", "nic-hdl"],
+    "username": ["login", "login.", "nic-hdl"],
     "password": ["pass", "!pass"],
     "email":    ["email"],
 }
@@ -51,11 +51,12 @@ def sort_fields(entry, terse=False):
     names = []
     for group in field_order:
         for field in field_groups[group]:
-            names += sorted((k for k in entry.attributes \
-                     if k == field),
-                    key=strip_field_prefix)
+            names += sorted([k for k in entry.attributes \
+                               if (k == field or (field.endswith(".")
+                                                  and k.startswith(field)))],
+                            key=strip_field_prefix)
     if not terse:
-        names += sorted((k for k in entry.attributes if k not in names),
+        names += sorted([k for k in entry.attributes if k not in names],
                 key=strip_field_prefix)
     return names
 
