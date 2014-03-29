@@ -110,6 +110,7 @@ def encode_psk(b):
 def decode_psk(s):
     hex_tag = "(hex)"
     b64_tag = "(b64)"
+    str_tag = "(str)"
     if s.endswith(hex_tag):
         s = s[:-len(hex_tag)]
         return bytes.fromhex(s)
@@ -118,6 +119,9 @@ def decode_psk(s):
         s = s.replace(" ", "")
         s = pad(s, 4)
         return base64.b64decode(s)
+    elif s.endswith(str_tag):
+        s = s[:-len(str_tag)]
+        return s.encode("utf-8")
     else:
         s = s.replace(" ", "")
         s = s.upper()
