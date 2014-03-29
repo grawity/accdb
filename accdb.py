@@ -125,12 +125,14 @@ def decode_psk(s):
         return base64.b32decode(s)
 
 class OATHParameters(object):
-    def __init__(self, raw_psk, digits=6, otype="totp", login=None, issuer=None):
+    def __init__(self, raw_psk, digits=6, otype="totp", window=30,
+                 login=None, issuer=None):
         if otype != "totp":
             err("OATH %r is not supported yet" % otype)
         self.raw_psk = raw_psk
         self.digits = digits
         self.otype = otype
+        self.window = window
         self.login = login
         self.issuer = issuer
 
@@ -157,7 +159,7 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
-        return oath.TOTP(self.raw_psk, digits=self.digits)
+        return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
 
 def trace(msg, *args):
     print("accdb: %s" % msg, *args, file=sys.stderr)
@@ -737,6 +739,10 @@ class Entry(object):
         tmp = self.attributes.get("2fa.oath.digits")
         if tmp:
             p.digits = int(tmp[0].dump())
+
+        tmp = self.attributes.get("2fa.oath.window")
+        if tmp:
+            p.window = int(tmp[0].dump())
 
         return p
 
