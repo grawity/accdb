@@ -163,7 +163,10 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
-        return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
+        if self.otype == "totp":
+            return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
+        else:
+            err("OATH %r is not supported yet" % self.otype)
 
 def trace(msg, *args):
     print("accdb: %s" % msg, *args, file=sys.stderr)
