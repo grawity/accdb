@@ -17,6 +17,7 @@ from collections import OrderedDict
 from io import TextIOWrapper
 from nullroute import err
 import hotpie as oath
+import nullroute.oath as xoath
 
 debug = os.environ.get("DEBUG", "")
 
@@ -110,6 +111,7 @@ def encode_psk(b):
 def decode_psk(s):
     hex_tag = "(hex)"
     b64_tag = "(b64)"
+    str_tag = "(str)"
     if s.endswith(hex_tag):
         s = s[:-len(hex_tag)]
         return bytes.fromhex(s)
@@ -118,6 +120,9 @@ def decode_psk(s):
         s = s.replace(" ", "")
         s = pad(s, 4)
         return base64.b64decode(s)
+    elif s.endswith(str_tag):
+        s = s[:-len(str_tag)]
+        return s.encode("utf-8")
     else:
         s = s.replace(" ", "")
         s = s.upper()
@@ -125,12 +130,14 @@ def decode_psk(s):
         return base64.b32decode(s)
 
 class OATHParameters(object):
-    def __init__(self, raw_psk, digits=6, otype="totp", login=None, issuer=None):
-        if otype != "totp":
+    def __init__(self, raw_psk, digits=6, otype="totp", window=30,
+                 login=None, issuer=None):
+        if otype not in {"totp", "dynadot-totp"}:
             err("OATH %r is not supported yet" % otype)
         self.raw_psk = raw_psk
         self.digits = digits
         self.otype = otype
+        self.window = window
         self.login = login
         self.issuer = issuer
 
@@ -157,7 +164,12 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
-        return oath.TOTP(self.raw_psk, digits=self.digits)
+        if self.otype == "totp":
+            return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
+        elif self.otype == "dynadot-totp":
+            return xoath.DynadotTOTP(self.raw_psk, digits=6, window=60)
+        else:
+            err("OATH %r is not supported yet" % self.otype)
 
 def trace(msg, *args):
     print("accdb: %s" % msg, *args, file=sys.stderr)
@@ -737,6 +749,10 @@ class Entry(object):
         tmp = self.attributes.get("2fa.oath.digits")
         if tmp:
             p.digits = int(tmp[0].dump())
+
+        tmp = self.attributes.get("2fa.oath.window")
+        if tmp:
+            p.window = int(tmp[0].dump())
 
         return p
 
