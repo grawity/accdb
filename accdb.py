@@ -17,6 +17,7 @@ from collections import OrderedDict
 from io import TextIOWrapper
 from nullroute import err
 import hotpie as oath
+import nullroute.oath as xoath
 
 debug = os.environ.get("DEBUG", "")
 
@@ -131,7 +132,7 @@ def decode_psk(s):
 class OATHParameters(object):
     def __init__(self, raw_psk, digits=6, otype="totp", window=30,
                  login=None, issuer=None):
-        if otype != "totp":
+        if otype not in {"totp", "dynadot-totp"}:
             err("OATH %r is not supported yet" % otype)
         self.raw_psk = raw_psk
         self.digits = digits
@@ -165,6 +166,8 @@ class OATHParameters(object):
     def generate(self):
         if self.otype == "totp":
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
+        elif self.otype == "dynadot-totp":
+            return xoath.DynadotTOTP(self.raw_psk, digits=6, window=60)
         else:
             err("OATH %r is not supported yet" % self.otype)
 
