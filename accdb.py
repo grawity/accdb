@@ -264,10 +264,15 @@ def compile_filter(pattern):
         return PatternFilter(tokens[0])
 
 def compile_pattern(pattern):
+    if debug:
+        trace("compiling pattern %r" % pattern)
+
     func = None
 
     if pattern == "*":
         func = lambda entry: True
+    elif pattern.startswith("#"):
+        func = ItemNumberFilter(pattern[1:])
     elif pattern.startswith("+"):
         regex = re_compile_glob(pattern[1:])
         func = lambda entry: any(regex.match(tag) for tag in entry.tags)
@@ -325,7 +330,10 @@ class PatternFilter(Filter):
             return self.func(entry)
 
     def __repr__(self):
-        return "(PATTERN %s)" % self.pattern
+        if isinstance(self.func, Filter):
+            return repr(self.func)
+        else:
+            return "(PATTERN %s)" % self.pattern
 
 class ItemNumberFilter(Filter):
     def __init__(self, pattern):
