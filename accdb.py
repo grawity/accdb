@@ -260,6 +260,8 @@ def compile_filter(pattern):
         return compile_filter(tokens[0])
     elif tokens[0].startswith("#"):
         return ItemNumberFilter(tokens[0][1:])
+    elif tokens[0].startswith("{"):
+        return ItemUuidFilter(tokens[0])
     else:
         return PatternFilter(tokens[0])
 
@@ -304,12 +306,7 @@ def compile_pattern(pattern):
         regex = re.compile(pattern[1:], re.I | re.U)
         func = lambda entry: regex.search(entry.name)
     elif pattern.startswith("{"):
-        try:
-            val = uuid.UUID(pattern)
-        except ValueError:
-            func = lambda entry: False
-        else:
-            func = lambda entry: entry.uuid == val
+        func = ItemUuidFilter(pattern)
     else:
         regex = re_compile_glob(pattern + "*")
         func = lambda entry: regex.match(entry.name)
@@ -347,6 +344,19 @@ class ItemNumberFilter(Filter):
 
     def __repr__(self):
         return "(ITEM %d)" % self.value
+
+class ItemUuidFilter(Filter):
+    def __init__(self, pattern):
+        try:
+            self.value = uuid.UUID(pattern)
+        except ValueError:
+            raise FilterSyntaxError("integer value expected for 'UUID'")
+
+    def test(self, entry):
+        return entry.uuid == self.value
+
+    def __repr__(self):
+        return "(UUID %s)" % self.value
 
 class ConjunctionFilter(Filter):
     def __init__(self, *filters):
