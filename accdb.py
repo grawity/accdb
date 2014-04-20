@@ -232,6 +232,7 @@ def compile_filter(pattern):
         trace("parsing filter %r -> %r" % (pattern, tokens))
 
     if len(tokens) > 1:
+        # boolean operators
         if tokens[0] in {"AND", "and"}:
             filters = [compile_filter(x) for x in tokens[1:]]
             return ConjunctionFilter(*filters)
@@ -243,15 +244,22 @@ def compile_filter(pattern):
                 raise FilterSyntaxError("too many arguments for 'NOT'")
             filter = compile_filter(tokens[1])
             return NegationFilter(filter)
+        # search filters
+        elif tokens[0] in {"ITEM", "item"}:
+            if len(tokens) > 2:
+                raise FilterSyntaxError("too many arguments for 'ITEM'")
+            return ItemNumberFilter(tokens[1])
         elif tokens[0] in {"PATTERN", "pattern"}:
             if len(tokens) > 2:
                 raise FilterSyntaxError("too many arguments for 'PATTERN'")
             return PatternFilter(tokens[1])
+        # etc.
         else:
-            raise FilterSyntaxError("unknown operator %r in (%s)" \
-                % (tokens[0], pattern))
+            raise FilterSyntaxError("unknown operator %r in (%s)" % (tokens[0], pattern))
     elif " " in tokens[0] or "(" in tokens[0] or ")" in tokens[0]:
         return compile_filter(tokens[0])
+    elif tokens[0].startswith("#"):
+        return ItemNumberFilter(tokens[0][1:])
     else:
         return PatternFilter(tokens[0])
 
@@ -260,13 +268,6 @@ def compile_pattern(pattern):
 
     if pattern == "*":
         func = lambda entry: True
-    elif pattern.startswith("#"):
-        try:
-            val = int(pattern[1:])
-        except ValueError:
-            func = lambda entry: False
-        else:
-            func = lambda entry: entry.itemno == val
     elif pattern.startswith("+"):
         regex = re_compile_glob(pattern[1:])
         func = lambda entry: any(regex.match(tag) for tag in entry.tags)
@@ -325,6 +326,19 @@ class PatternFilter(Filter):
 
     def __repr__(self):
         return "(PATTERN %s)" % self.pattern
+
+class ItemNumberFilter(Filter):
+    def __init__(self, pattern):
+        try:
+            self.value = int(pattern)
+        except ValueError:
+            raise FilterSyntaxError("integer value expected for 'ITEM'")
+
+    def test(self, entry):
+        return entry.itemno == self.value
+
+    def __repr__(self):
+        return "(ITEM %d)" % self.value
 
 class ConjunctionFilter(Filter):
     def __init__(self, *filters):
