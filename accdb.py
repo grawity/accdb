@@ -297,6 +297,13 @@ def compile_pattern(pattern):
     elif pattern.startswith("~"):
         regex = re.compile(pattern[1:], re.I | re.U)
         func = lambda entry: regex.search(entry.name)
+    elif pattern.startswith("{"):
+        try:
+            val = uuid.UUID(pattern)
+        except ValueError:
+            func = lambda entry: False
+        else:
+            func = lambda entry: entry.uuid == val
     else:
         regex = re_compile_glob(pattern + "*")
         func = lambda entry: regex.match(entry.name)
