@@ -681,7 +681,7 @@ class Entry(object):
 
     # Export
 
-    def dump(self, storage=False, terse=False, conceal=True):
+    def dump(self, storage=False, terse=False, conceal=True, color=False):
         """
         storage:
             output !private data
@@ -697,21 +697,26 @@ class Entry(object):
         if storage:
             terse = False
 
+        if color:
+            f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
+        else:
+            f = lambda arg, fmt: arg
+
         data = ""
 
         if not storage:
             if self.itemno:
-                data += "(item %d)\n" % self.itemno
+                data += f("(item %d)\n" % self.itemno, "1;30")
             elif self.lineno:
-                data += "(line %d)\n" % self.lineno
+                data += f("(line %d)\n" % self.lineno, "1;30")
 
-        data += "= %s\n" % self.name
+        data += "= %s\n" % f(self.name, "1;36")
 
         for line in self.comment.splitlines():
-            data += ";%s\n" % line
+            data += ";%s\n" % f(line, "32")
 
         if self.uuid and storage:
-            data += "\t{%s}\n" % self.uuid
+            data += "\t{%s}\n" % f(self.uuid, "1;30")
 
         for key in sort_fields(self, terse):
             for value in self.attributes[key]:
@@ -723,7 +728,8 @@ class Entry(object):
                     value = base64.b64encode(value)
                     value = value.decode("utf-8")
                     value = "<base64> %s" % value
-                data += "\t%s: %s\n" % (key, value)
+                data += "\t%s: %s\n" % (f(key, "33"),
+                    (f(value, "34") if self.is_private_attr(key) else value))
 
         if self.tags:
             tags = list(self.tags)
@@ -732,7 +738,7 @@ class Entry(object):
             while tags or line:
                 linelen = 8 + sum([len(i) + 2 for i in line])
                 if not tags or (line and linelen + len(tags[0]) + 2 > 80):
-                    data += "\t+ %s\n" % ", ".join(line)
+                    data += "\t+ %s\n" % f(", ".join(line), "35")
                     line = []
                 if tags:
                     line.append(tags.pop(0))
