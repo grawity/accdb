@@ -214,7 +214,7 @@ def split_filter(text):
             if depth == 0 and start >= 0:
                 tokens.append(text[start:pos])
                 start = -1
-        elif char == " ":
+        elif char in " \t\r\n":
             if depth == 0 and start >= 0:
                 tokens.append(text[start:pos])
                 start = -1
