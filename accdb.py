@@ -894,7 +894,9 @@ class Interactive(cmd.Cmd):
     def do_grep(self, arg, full=False, ls=False):
         """Search for entries"""
 
-        if full and not sys.stdout.isatty():
+        tty = sys.stdout.isatty()
+
+        if full and not tty:
             print(db._modeline)
 
         args = shlex.split(arg)
@@ -925,11 +927,11 @@ class Interactive(cmd.Cmd):
             if entry.deleted:
                 continue
             if full:
-                print(entry.dump(storage=True, conceal=False))
+                print(entry.dump(color=tty, storage=True, conceal=False))
             elif ls:
                 print("%5d │ %s" % (entry.itemno, entry.name))
             else:
-                print(entry)
+                print(entry.dump(color=tty))
             num += 1
 
         if sys.stdout.isatty():
@@ -971,13 +973,13 @@ class Interactive(cmd.Cmd):
         """Display entry (including sensitive information)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            print(entry.dump(conceal=False))
+            print(entry.dump(color=sys.stdout.isatty(), conceal=False))
 
     def do_show(self, arg):
         """Display entry (safe)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            print(entry.dump())
+            print(entry.dump(color=sys.stdout.isatty()))
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
