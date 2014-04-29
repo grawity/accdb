@@ -45,6 +45,9 @@ field_order = ["object", "username", "password", "email"]
 
 field_prefix_re = re.compile(r"^\W+")
 
+def trace(msg, *args):
+    print("accdb: %s" % msg, *args, file=sys.stderr)
+
 def strip_field_prefix(name):
     return field_prefix_re.sub("", name)
 
@@ -109,23 +112,24 @@ def encode_psk(b):
     return base64.b32encode(b).decode("us-ascii").rstrip("=")
 
 def decode_psk(s):
-    hex_tag = "(hex)"
-    b64_tag = "(b64)"
-    str_tag = "(str)"
-    if s.endswith(hex_tag):
-        s = s[:-len(hex_tag)]
+    raw_tag = "{raw} "
+    hex_tag = "{hex} "
+    b64_tag = "{b64} "
+
+    if s.startswith(raw_tag):
+        s = s[len(raw_tag):]
+        return s.encode("utf-8")
+    elif s.startswith(hex_tag):
+        s = s[len(hex_tag):]
         return bytes.fromhex(s)
-    elif s.endswith(b64_tag):
-        s = s[:-len(b64_tag)]
+    elif s.startswith(b64_tag):
+        s = s[len(b64_tag):]
         s = s.replace(" ", "")
         s = pad(s, 4)
         return base64.b64decode(s)
-    elif s.endswith(str_tag):
-        s = s[:-len(str_tag)]
-        return s.encode("utf-8")
     else:
-        s = s.replace(" ", "")
         s = s.upper()
+        s = s.replace(" ", "")
         s = pad(s, 8)
         return base64.b32decode(s)
 
@@ -164,15 +168,15 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
+        if debug:
+            trace("generating OTP from:", base64.b32encode(self.raw_psk).decode("us-ascii"))
+
         if self.otype == "totp":
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
         elif self.otype == "dynadot-totp":
             return xoath.DynadotTOTP(self.raw_psk, digits=6, window=60)
         else:
             err("OATH %r is not supported yet" % self.otype)
-
-def trace(msg, *args):
-    print("accdb: %s" % msg, *args, file=sys.stderr)
 
 def start_editor(path):
     if "VISUAL" in os.environ:
