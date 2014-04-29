@@ -684,9 +684,10 @@ class Entry(object):
     def dump(self, storage=False, terse=False, conceal=True):
         """
         storage:
-            output private data
-            output metadata
+            output !private data
+            output metadata (UUIDs, etc.)
             never skip fields (disables terse)
+            do not output line numbers
         terse
             skip fields not listed in groups
         conceal
@@ -750,7 +751,7 @@ class Entry(object):
         return dis
 
     def __str__(self):
-        return self.dump(storage=False)
+        return self.dump()
 
     def __bool__(self):
         return bool((self.name and self.name != "(Unnamed)")
