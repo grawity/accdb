@@ -46,11 +46,11 @@ Syntax notes:
 
   * The field `pass` is also hidden for historical reasons, despite having no `!` prefix. Fields `pass.*` aren't hidden.
 
-  * Field values starting with "`<base64> `" will be Base64-decoded when reading.
+  * Field values starting with "`<base64> `" will be Base64-decoded when reading (see the `conceal` flag below).
 
   * In fields named `date.*`, the values "now" and "today" are expanded to current date.
 
-  * Entries tagged `\deleted` will be discarded when writing.
+  * Entries tagged `\deleted` will be discarded when writing or merging. So you can remove entries in a pipeline, not just add/modify.
 
   * Entry UUIDs are used by `ad merge`.
 
@@ -62,7 +62,7 @@ Syntax notes:
 
     If the `cache` flag is set, accdb will write a second copy of the database at `~/Private/accounts.cache.txt` when updating the main database. accdb uses this cache when the main database is not found.
 
-    If the `conceal` flag is set, accdb will base64-encode private fields when saving the database. This doesn't really add security, it just helps against people glancing at my screen.
+    If the `conceal` flag is set, accdb will base64-encode private fields when saving the database. This _doesn't_ really add security, it just helps against people glancing at my screen.
 
 Some OATH TOTP support:
 
