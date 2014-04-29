@@ -64,6 +64,16 @@ Syntax notes:
 
     If the `conceal` flag is set, accdb will base64-encode private fields when saving the database. This doesn't really add security, it just helps against people glancing at my screen.
 
+Some OATH TOTP support:
+
+  * Running `ad totp <id>` will generate an OATH TOTP password based on the `!2fa.oath.psk` attribute. (`2fa.oath.type` can be set to "dynadot-totp" for Dynadot's broken TOTP, `2fa.oath.digits` to 8 for Battle.net, `2fa.oath.window` to 60 for some sites.)
+
+  * Running `ad qr <id>` will generate a Qr code for importing the OATH TOTP key into a softtoken, including the `login` and optional `2fa.issuer` attributes.
+
+  * The PSK can be prefixed with `{hex} `, `{b64} `, or `{raw} ` (e.g. the latter for Dynadot token serial numbers), otherwise it's in Base32.
+
+  * Yes, **I know** this is so stupid it hurts. It's for testing only. I promise. (I have future plans for this though.) Don't actually use it.
+
 ## Usage
 
 Searching for a title prefix:
