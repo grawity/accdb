@@ -855,7 +855,7 @@ class Interactive(cmd.Cmd):
         arg = int(arg)
 
         entry = db.find_by_itemno(arg)
-        print(entry)
+        print(entry.dump(color=sys.stdout.isatty()))
         if "pass" in entry.attributes:
             print("(Password copied to clipboard.)")
             Clipboard.put(entry.attributes["pass"][0].dump())
