@@ -685,8 +685,7 @@ class Entry(object):
 
     # Export
 
-    def dump(self, storage=False, terse=False, conceal=True, except_conceal={},
-             color=False):
+    def dump(self, storage=False, terse=False, conceal=True, color=False):
         """
         storage:
             output !private data
@@ -725,7 +724,7 @@ class Entry(object):
 
         for key in sort_fields(self, terse):
             for value in self.attributes[key]:
-                if storage or not conceal or key in except_conceal:
+                if storage or not conceal:
                     value = value.dump()
                 if storage and conceal and self.is_private_attr(key) \
                     and not value.startswith("<base64> "):
@@ -990,7 +989,7 @@ class Interactive(cmd.Cmd):
         """Display the entry's OATH PSK as a Qr code"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            print(entry.dump(color=sys.stdout.isatty(), except_conceal={"!2fa.oath.psk"}))
+            print(entry.dump(color=sys.stdout.isatty()))
             params = entry.oath_params
             if params is None:
                 print("\t(No OATH preshared key for this entry.)")
