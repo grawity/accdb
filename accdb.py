@@ -989,7 +989,7 @@ class Interactive(cmd.Cmd):
         """Display the entry's OATH PSK as a Qr code"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            print(entry.dump())
+            print(entry.dump(color=sys.stdout.isatty()))
             params = entry.oath_params
             if params is None:
                 print("\t(No OATH preshared key for this entry.)")
@@ -1020,7 +1020,7 @@ class Interactive(cmd.Cmd):
             err("too many arguments")
             exit(1)
         entry = db.find_by_itemno(items[0])
-        print(entry)
+        print(entry.dump(color=sys.stdout.isatty()))
         params = entry.oath_params
         if params:
             otp = params.generate()
