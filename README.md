@@ -115,7 +115,7 @@ Dumping the entire database:
 
 ## Search patterns
 
-  - `foo` – matching title (prefix glob)
+  - `foo` – matching title (glob)
 
   - `~foo` – matching title (regex)
 

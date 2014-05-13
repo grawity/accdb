@@ -312,7 +312,9 @@ def compile_pattern(pattern):
     elif pattern.startswith("{"):
         func = ItemUuidFilter(pattern)
     else:
-        regex = re_compile_glob(pattern + "*")
+        if "*" not in pattern:
+            pattern = "*" + pattern + "*"
+        regex = re_compile_glob(pattern)
         func = lambda entry: regex.match(entry.name)
 
     return func
