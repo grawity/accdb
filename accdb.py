@@ -1046,6 +1046,31 @@ class Interactive(cmd.Cmd):
         for tag in sorted(db.tags()):
             print(tag)
 
+    def do_tag(self, arg):
+        arg      = arg.split()
+        items    = expand_range(arg[0])
+        all_tags = set(arg[1:])
+
+        add_tags = {t[1:] for t in all_tags if t.startswith("+")}
+        rem_tags = {t[1:] for t in all_tags if t.startswith("-")}
+        bad_args = [t for t in all_tags if not (t.startswith("+") or t.startswith("-"))]
+
+        if bad_args:
+            err("bad arguments: %r" % bad_args)
+            sys.exit(1)
+
+        for item in items:
+            entry = db.find_by_itemno(item)
+            entry.tags |= add_tags
+            entry.tags -= rem_tags
+            print(entry.dump(color=sys.stdout.isatty()))
+
+        if sys.stdout.isatty():
+            print("(%d %s updated)" % \
+                (len(items), ("entry" if len(items) == 1 else "entries")))
+
+        db.modified = True
+
     do_c    = do_copy
     do_g    = do_grep
     do_re   = do_reveal
