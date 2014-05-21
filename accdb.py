@@ -1041,7 +1041,7 @@ class Interactive(cmd.Cmd):
         db.sort()
         db.modified = True
 
-    def do_lstags(self, arg):
+    def do_tags(self, arg):
         """List all tags used by the database's entries"""
         for tag in sorted(db.tags()):
             print(tag)
