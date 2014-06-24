@@ -782,7 +782,8 @@ class Entry(object):
         psk = decode_psk(tmp[0].dump())
         p = OATHParameters(psk)
 
-        tmp = self.attributes.get("login")
+        tmp = self.attributes.get("2fa.subject",
+              self.attributes.get("login"))
         if tmp:
             p.login = tmp[0].dump()
         else:
