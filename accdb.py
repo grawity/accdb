@@ -840,7 +840,7 @@ class Interactive(cmd.Cmd):
         pass
 
     def default(self, line):
-        print("Are you on drugs?", file=sys.stderr)
+        lib.die("unknown command %r" % line.split()[0])
 
     def do_EOF(self, arg):
         """Save changes and exit"""
@@ -1020,8 +1020,7 @@ class Interactive(cmd.Cmd):
         """Copy OATH TOTP response to clipboard"""
         items = expand_range(arg)
         if len(items) > 1:
-            lib.err("too many arguments")
-            exit(1)
+            lib.die("too many arguments")
         entry = db.find_by_itemno(items[0])
         print(entry.dump(color=sys.stdout.isatty()))
         params = entry.oath_params
@@ -1057,8 +1056,7 @@ class Interactive(cmd.Cmd):
         bad_args = [t for t in all_tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
-            lib.err("bad arguments: %r" % bad_args)
-            sys.exit(1)
+            lib.die("bad arguments: %r" % bad_args)
 
         for item in items:
             entry = db.find_by_itemno(item)
