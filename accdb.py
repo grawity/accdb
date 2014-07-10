@@ -15,7 +15,7 @@ import time
 import uuid
 from collections import OrderedDict
 from io import TextIOWrapper
-from nullroute import err
+import nullroute as lib
 import hotpie as oath
 import nullroute.oath as xoath
 
@@ -137,7 +137,7 @@ class OATHParameters(object):
     def __init__(self, raw_psk, digits=6, otype="totp", window=30,
                  login=None, issuer=None):
         if otype not in {"totp", "dynadot-totp"}:
-            err("OATH %r is not supported yet" % otype)
+            lib.err("OATH %r is not supported yet" % otype)
         self.raw_psk = raw_psk
         self.digits = digits
         self.otype = otype
@@ -176,7 +176,7 @@ class OATHParameters(object):
         elif self.otype == "dynadot-totp":
             return xoath.DynadotTOTP(self.raw_psk, digits=6, window=60)
         else:
-            err("OATH %r is not supported yet" % self.otype)
+            lib.err("OATH %r is not supported yet" % self.otype)
 
 def start_editor(path):
     if "VISUAL" in os.environ:
@@ -1020,7 +1020,7 @@ class Interactive(cmd.Cmd):
         """Copy OATH TOTP response to clipboard"""
         items = expand_range(arg)
         if len(items) > 1:
-            err("too many arguments")
+            lib.err("too many arguments")
             exit(1)
         entry = db.find_by_itemno(items[0])
         print(entry.dump(color=sys.stdout.isatty()))
@@ -1057,7 +1057,7 @@ class Interactive(cmd.Cmd):
         bad_args = [t for t in all_tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
-            err("bad arguments: %r" % bad_args)
+            lib.err("bad arguments: %r" % bad_args)
             sys.exit(1)
 
         for item in items:
