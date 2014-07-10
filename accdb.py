@@ -847,7 +847,7 @@ class Interactive(cmd.Cmd):
         return True
 
     def do_help(self, arg):
-        """Well, duh."""
+        """Print this text"""
         cmds = [k for k in dir(self) if k.startswith("do_")]
         for cmd in cmds:
             doc = getattr(self, cmd).__doc__ or "?"
@@ -1047,6 +1047,7 @@ class Interactive(cmd.Cmd):
             print(tag)
 
     def do_tag(self, arg):
+        """Add or remove tags to an entry"""
         arg      = arg.split()
         items    = expand_range(arg[0])
         all_tags = set(arg[1:])
