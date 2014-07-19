@@ -687,7 +687,7 @@ class Entry(object):
 
     # Export
 
-    def dump(self, storage=False, terse=False, conceal=True, color=False):
+    def dump(self, storage=False, terse=False, conceal=True, color=False, itemno=None):
         """
         storage:
             output !private data
@@ -703,6 +703,9 @@ class Entry(object):
         if storage:
             terse = False
 
+        if itemno is None:
+            itemno = not storage
+
         if color:
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
@@ -710,7 +713,7 @@ class Entry(object):
 
         data = ""
 
-        if not storage:
+        if itemno:
             if self.itemno:
                 data += f("(item %d)\n" % self.itemno, "1;30")
             elif self.lineno:
@@ -934,7 +937,7 @@ class Interactive(cmd.Cmd):
             if entry.deleted:
                 continue
             if full:
-                print(entry.dump(color=tty, storage=True, conceal=False))
+                print(entry.dump(color=tty, storage=True, conceal=False, itemno=tty))
             elif ls:
                 print("%5d │ %s" % (entry.itemno, entry.name))
             else:
