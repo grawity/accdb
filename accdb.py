@@ -294,7 +294,10 @@ def compile_pattern(pattern):
         elif "~" in pattern:
             attr, regex = pattern[1:].split("~", 1)
             attr = translate_field(attr)
-            regex = re.compile(regex, re.I | re.U)
+            try:
+                regex = re.compile(regex, re.I | re.U)
+            except re.error as e:
+                lib.die("invalid regex %r (%s)" % (regex, e))
             func = lambda entry:\
                 attr in entry.attributes \
                 and any(regex.search(value)
@@ -307,7 +310,10 @@ def compile_pattern(pattern):
             attr = translate_field(pattern[1:])
             func = lambda entry: attr in entry.attributes
     elif pattern.startswith("~"):
-        regex = re.compile(pattern[1:], re.I | re.U)
+        try:
+            regex = re.compile(pattern[1:], re.I | re.U)
+        except re.error as e:
+            lib.die("invalid regex %r (%s)" % (pattern[1:], e))
         func = lambda entry: regex.search(entry.name)
     elif pattern.startswith("{"):
         func = ItemUuidFilter(pattern)
