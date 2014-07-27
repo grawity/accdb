@@ -1123,7 +1123,7 @@ db_path = os.environ.get("ACCDB",
 db_newcache_path = os.path.expanduser("~/Private/accounts.cache.txt")
 db_oldcache_path = os.path.expanduser("~/Private/accounts.cache.txt~")
 
-db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.%s.gpg" \
+db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accdb/accounts.%s.gpg" \
                                     % time.strftime("%Y-%m-%d"))
 
 if os.path.exists(db_path):
