@@ -960,10 +960,10 @@ class Interactive(cmd.Cmd):
         for entry in results:
             if entry.deleted:
                 continue
-            if full:
-                print(entry.dump(color=tty, storage=True, conceal=False, itemno=tty))
-            elif ls:
+            if ls:
                 print("%5d │ %s" % (entry.itemno, entry.name))
+            elif full:
+                print(entry.dump(color=tty, storage=True, conceal=False, itemno=tty))
             else:
                 print(entry.dump(color=tty))
             num += 1
