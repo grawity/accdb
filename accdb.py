@@ -1104,11 +1104,12 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
-    do_c    = do_copy
-    do_g    = do_grep
-    do_re   = do_reveal
-    do_s    = do_show
-    do_w    = do_touch
+    do_c     = do_copy
+    do_g     = do_grep
+    do_re    = do_reveal
+    do_rshow = do_reveal
+    do_s     = do_show
+    do_w     = do_touch
 
 class Clipboard():
     @classmethod
