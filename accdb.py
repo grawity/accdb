@@ -852,6 +852,9 @@ class Interactive(cmd.Cmd):
     def default(self, line):
         lib.die("unknown command %r" % line.split()[0])
 
+    def _show_entry(self, entry, **kwargs):
+        print(entry.dump(color=sys.stdout.isatty(), **kwargs))
+
     def do_EOF(self, arg):
         """Save changes and exit"""
         return True
@@ -868,7 +871,7 @@ class Interactive(cmd.Cmd):
         arg = int(arg)
 
         entry = db.find_by_itemno(arg)
-        print(entry.dump(color=sys.stdout.isatty()))
+        self._show_entry(entry)
         if "pass" in entry.attributes:
             print("(Password copied to clipboard.)")
             Clipboard.put(entry.attributes["pass"][0].dump())
@@ -990,19 +993,19 @@ class Interactive(cmd.Cmd):
         """Display entry (including sensitive information)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            print(entry.dump(color=sys.stdout.isatty(), conceal=False))
+            self._show_entry(entry, conceal=False)
 
     def do_show(self, arg):
         """Display entry (safe)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            print(entry.dump(color=sys.stdout.isatty()))
+            self._show_entry(entry)
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            print(entry.dump(color=sys.stdout.isatty()))
+            self._show_entry(entry)
             params = entry.oath_params
             if params is None:
                 print("\t(No OATH preshared key for this entry.)")
@@ -1032,7 +1035,7 @@ class Interactive(cmd.Cmd):
         if len(items) > 1:
             lib.die("too many arguments")
         entry = db.find_by_itemno(items[0])
-        print(entry.dump(color=sys.stdout.isatty()))
+        self._show_entry(entry)
         params = entry.oath_params
         if params:
             otp = params.generate()
@@ -1073,7 +1076,7 @@ class Interactive(cmd.Cmd):
             entry = db.find_by_itemno(item)
             entry.tags |= add_tags
             entry.tags -= rem_tags
-            print(entry.dump(color=sys.stdout.isatty()))
+            self._show_entry(entry)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % \
