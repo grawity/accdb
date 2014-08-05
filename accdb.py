@@ -712,6 +712,8 @@ class Entry(object):
         if itemno is None:
             itemno = not storage
 
+        raw = (storage == True) or (conceal == False)
+
         if color:
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
@@ -735,7 +737,7 @@ class Entry(object):
 
         for key in sort_fields(self):
             for value in self.attributes[key]:
-                if storage or not conceal:
+                if raw:
                     value = value.dump()
                 if self.is_private_attr(key):
                     if storage and conceal and not value.startswith("<base64> "):
@@ -745,7 +747,7 @@ class Entry(object):
                         value = "<base64> %s" % value
                     data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                 elif self.is_link_attr(key):
-                    if not (storage or not conceal):
+                    if not raw:
                         sub_entry = db.find_by_uuid(value)
                         if sub_entry:
                             value = sub_entry.name
