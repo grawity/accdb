@@ -747,11 +747,14 @@ class Entry(object):
                         value = "<base64> %s" % value
                     data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                 elif self.is_link_attr(key):
+                    value_color = "32"
                     if not raw:
-                        sub_entry = db.find_by_uuid(value)
-                        if sub_entry:
+                        try:
+                            sub_entry = db.find_by_uuid(value)
                             value = sub_entry.name
-                    data += "\t%s: %s\n" % (f(key, "38;5;188"), f(value, "32"))
+                        except KeyError:
+                            value_color = "33"
+                    data += "\t%s: %s\n" % (f(key, "38;5;188"), f(value, value_color))
                 else:
                     data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
 
@@ -760,8 +763,8 @@ class Entry(object):
             tags.sort()
             line = []
             while tags or line:
-                linelen = 8 + sum([len(i) + 2 for i in line])
-                if not tags or (line and linelen + len(tags[0]) + 2 > 80):
+                line_len = 8 + sum([len(i) + 2 for i in line])
+                if not tags or (line and line_len + len(tags[0]) + 2 > 80):
                     data += "\t+ %s\n" % f(", ".join(line), "38;5;13")
                     line = []
                 if tags:
@@ -866,8 +869,11 @@ class Interactive(cmd.Cmd):
             for attr in entry.attributes:
                 if attr.startswith("ref."):
                     for value in entry.attributes[attr]:
-                        sub_entry = db.find_by_uuid(value)
-                        self._show_entry(sub_entry, **kwargs)
+                        try:
+                            sub_entry = db.find_by_uuid(value)
+                            self._show_entry(sub_entry, **kwargs)
+                        except KeyError:
+                            pass
 
     def do_EOF(self, arg):
         """Save changes and exit"""
