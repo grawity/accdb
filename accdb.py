@@ -714,17 +714,17 @@ class Entry(object):
 
         if itemno:
             if self.itemno:
-                data += f("(item %d)\n" % self.itemno, "1;30")
+                data += f("(item %d)\n" % self.itemno, "38;5;8")
             elif self.lineno:
-                data += f("(line %d)\n" % self.lineno, "1;30")
+                data += f("(line %d)\n" % self.lineno, "38;5;8")
 
-        data += "= %s\n" % f(self.name, "1;36")
+        data += "= %s\n" % f(self.name, "38;5;50")
 
         for line in self.comment.splitlines():
-            data += ";%s\n" % f(line, "32")
+            data += "%s%s\n" % (f(";", "38;5;8"), f(line, "38;5;30"))
 
-        if self.uuid and storage:
-            data += "\t{%s}\n" % f(self.uuid, "1;30")
+        if self.uuid:
+            data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
         for key in sort_fields(self):
             for value in self.attributes[key]:
@@ -736,9 +736,9 @@ class Entry(object):
                         value = base64.b64encode(value)
                         value = value.decode("utf-8")
                         value = "<base64> %s" % value
-                    data += "\t%s: %s\n" % (f(key, "33"), f(value, "34"))
+                    data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                 else:
-                    data += "\t%s: %s\n" % (f(key, "33"), value)
+                    data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
 
         if self.tags:
             tags = list(self.tags)
@@ -747,7 +747,7 @@ class Entry(object):
             while tags or line:
                 linelen = 8 + sum([len(i) + 2 for i in line])
                 if not tags or (line and linelen + len(tags[0]) + 2 > 80):
-                    data += "\t+ %s\n" % f(", ".join(line), "35")
+                    data += "\t+ %s\n" % f(", ".join(line), "38;5;13")
                     line = []
                 if tags:
                     line.append(tags.pop(0))
