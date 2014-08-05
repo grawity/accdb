@@ -51,7 +51,7 @@ def trace(msg, *args):
 def strip_field_prefix(name):
     return field_prefix_re.sub("", name)
 
-def sort_fields(entry, terse=False):
+def sort_fields(entry):
     names = []
     for group in field_order:
         for field in field_groups[group]:
@@ -59,9 +59,8 @@ def sort_fields(entry, terse=False):
                                if (k == field or (field.endswith(".")
                                                   and k.startswith(field)))],
                             key=strip_field_prefix)
-    if not terse:
-        names += sorted([k for k in entry.attributes if k not in names],
-                key=strip_field_prefix)
+    names += sorted([k for k in entry.attributes if k not in names],
+            key=strip_field_prefix)
     return names
 
 def translate_field(name):
@@ -693,21 +692,15 @@ class Entry(object):
 
     # Export
 
-    def dump(self, storage=False, terse=False, conceal=True, color=False, itemno=None):
+    def dump(self, storage=False, conceal=True, color=False, itemno=None):
         """
         storage:
             output !private data
             output metadata (UUIDs, etc.)
-            never skip fields (disables terse)
             do not output line numbers
-        terse
-            skip fields not listed in groups
         conceal
             base64-encode private data
         """
-
-        if storage:
-            terse = False
 
         if itemno is None:
             itemno = not storage
@@ -733,7 +726,7 @@ class Entry(object):
         if self.uuid and storage:
             data += "\t{%s}\n" % f(self.uuid, "1;30")
 
-        for key in sort_fields(self, terse):
+        for key in sort_fields(self):
             for value in self.attributes[key]:
                 if storage or not conceal:
                     value = value.dump()
