@@ -510,6 +510,10 @@ class Database(object):
         assert entry.itemno == itemno
         return entry
 
+    def find_by_uuid(self, uuid_str):
+        uuid_parsed = uuid.UUID(uuid_str)
+        return self[uuid_parsed]
+
     def find(self, filter):
         for entry in self:
             if filter(entry):
@@ -690,6 +694,9 @@ class Entry(object):
     def is_private_attr(self, key):
         return key == "pass" or key.startswith("!")
 
+    def is_link_attr(self, key):
+        return key.startswith("ref.")
+
     # Export
 
     def dump(self, storage=False, conceal=True, color=False, itemno=None):
@@ -737,6 +744,12 @@ class Entry(object):
                         value = value.decode("utf-8")
                         value = "<base64> %s" % value
                     data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
+                elif self.is_link_attr(key):
+                    if not (storage or not conceal):
+                        sub_entry = db.find_by_uuid(value)
+                        if sub_entry:
+                            value = sub_entry.name
+                    data += "\t%s: %s\n" % (f(key, "38;5;188"), f(value, "32"))
                 else:
                     data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
 
@@ -845,8 +858,14 @@ class Interactive(cmd.Cmd):
     def default(self, line):
         lib.die("unknown command %r" % line.split()[0])
 
-    def _show_entry(self, entry, **kwargs):
+    def _show_entry(self, entry, recurse=False, **kwargs):
         print(entry.dump(color=sys.stdout.isatty(), **kwargs))
+        if recurse:
+            for attr in entry.attributes:
+                if attr.startswith("ref."):
+                    for value in entry.attributes[attr]:
+                        sub_entry = db.find_by_uuid(value)
+                        self._show_entry(sub_entry, **kwargs)
 
     def do_EOF(self, arg):
         """Save changes and exit"""
@@ -986,13 +1005,13 @@ class Interactive(cmd.Cmd):
         """Display entry (including sensitive information)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            self._show_entry(entry, conceal=False)
+            self._show_entry(entry, recurse=True, conceal=False)
 
     def do_show(self, arg):
         """Display entry (safe)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            self._show_entry(entry)
+            self._show_entry(entry, recurse=True)
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
