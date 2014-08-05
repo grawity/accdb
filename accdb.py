@@ -737,14 +737,15 @@ class Entry(object):
             for value in self.attributes[key]:
                 if storage or not conceal:
                     value = value.dump()
-                if storage and conceal and self.is_private_attr(key) \
-                    and not value.startswith("<base64> "):
-                    value = value.encode("utf-8")
-                    value = base64.b64encode(value)
-                    value = value.decode("utf-8")
-                    value = "<base64> %s" % value
-                data += "\t%s: %s\n" % (f(key, "33"),
-                    (f(value, "34") if self.is_private_attr(key) else value))
+                if self.is_private_attr(key):
+                    if storage and conceal and not value.startswith("<base64> "):
+                        value = value.encode("utf-8")
+                        value = base64.b64encode(value)
+                        value = value.decode("utf-8")
+                        value = "<base64> %s" % value
+                    data += "\t%s: %s\n" % (f(key, "33"), f(value, "34"))
+                else:
+                    data += "\t%s: %s\n" % (f(key, "33"), value)
 
         if self.tags:
             tags = list(self.tags)
