@@ -573,12 +573,10 @@ class Database(object):
         if not self.modified:
             return
         if self.readonly:
-            print("(Discarding changes, database read-only)",
-                file=sys.stderr)
+            print("(Discarding changes, database read-only)", file=sys.stderr)
             return
         if self.path is None:
             return
-        #print("(Storing database)", file=sys.stderr)
         self.to_file(self.path)
         self.modified = False
 
@@ -1145,19 +1143,16 @@ class Clipboard():
 db_path = os.environ.get("ACCDB",
             os.path.expanduser("~/accounts.db.txt"))
 
-db_newcache_path = os.path.expanduser("~/Private/accounts.cache.txt")
-db_oldcache_path = os.path.expanduser("~/Private/accounts.cache.txt~")
-
 db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accdb/accounts.%s.gpg" \
                                     % time.strftime("%Y-%m-%d"))
 
 if os.path.exists(db_path):
     db = Database.from_file(db_path)
 else:
-    db = Database.from_file(db_newcache_path)
-    db.readonly = True
+    db = Database()
+    db.path = db_path
     if sys.stderr.isatty():
-        print("(Using read-only cache.)", file=sys.stderr)
+        print("(Database is empty.)", file=sys.stderr)
 
 interp = Interactive()
 
@@ -1172,13 +1167,6 @@ want_backup = db.modified
 db.flush()
 
 if want_backup:
-    if "cache" in db.flags and db.path != db_newcache_path:
-        try:
-            os.rename(db_newcache_path, db_oldcache_path)
-        except:
-            pass
-        db.to_file(db_newcache_path)
-
     if "backup" in db.flags and db.path != db_backup_path:
         with open(db_backup_path, "wb") as db_backup_fh:
             with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
