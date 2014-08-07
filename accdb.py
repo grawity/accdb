@@ -1162,11 +1162,18 @@ if len(sys.argv) > 1:
 else:
     interp.cmdloop()
 
-want_backup = db.modified
+if db.modified:
+    db.flush()
 
-db.flush()
+    db_dir = os.path.dirname(db_path)
+    repo_dir = os.path.join(db_dir, ".git")
 
-if want_backup:
+    if os.path.exists(repo_dir):
+        with open("/dev/null", "r+b") as null_fh:
+            subprocess.call(["git", "-C", db_dir,
+                             "commit", "-m", "snapshot", db_path],
+                            stdout=null_fh)
+
     if "backup" in db.flags and db.path != db_backup_path:
         with open(db_backup_path, "wb") as db_backup_fh:
             with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
