@@ -1146,6 +1146,8 @@ db_path = os.environ.get("ACCDB",
 db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accdb/accounts.%s.gpg" \
                                     % time.strftime("%Y-%m-%d"))
 
+db_mirror_path = "/run/media/grawity/grawpqi/Private/accdb"
+
 if os.path.exists(db_path):
     db = Database.from_file(db_path)
 else:
@@ -1173,6 +1175,10 @@ if db.modified:
             subprocess.call(["git", "-C", db_dir,
                              "commit", "-m", "snapshot", db_path],
                             stdout=null_fh)
+            if os.path.exists(db_mirror_path):
+                subprocess.call(["git", "-C", db_mirror_path,
+                                 "pull", "-q", "--ff-only", db_dir, "master"],
+                                stdout=null_fh)
 
     if "backup" in db.flags and db.path != db_backup_path:
         with open(db_backup_path, "wb") as db_backup_fh:
