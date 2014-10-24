@@ -1102,6 +1102,17 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
+    def do_rm(self, arg):
+        """Delete an entry"""
+        items = expand_range(arg)
+
+        for item in items:
+            entry = db.find_by_itemno(item)
+            entry.deleted = True
+            self._show_entry(entry)
+
+        db.modified = True
+
     do_c     = do_copy
     do_g     = do_grep
     do_re    = do_reveal
