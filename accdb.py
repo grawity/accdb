@@ -861,7 +861,12 @@ class Interactive(cmd.Cmd):
     def default(self, line):
         lib.die("unknown command %r" % line.split()[0])
 
-    def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
+    def _show_entry(self, entry, recurse=False, indent=False, seen=None, depth=0, **kwargs):
+        if seen is None:
+            seen = set()
+        if entry in seen:
+            return
+        seen.add(entry)
         text = entry.dump(color=sys.stdout.isatty(), **kwargs)
         if indent:
             for line in text.split("\n"):
@@ -875,8 +880,10 @@ class Interactive(cmd.Cmd):
                         try:
                             sub_entry = db.find_by_uuid(value)
                             self._show_entry(sub_entry,
+                                             recurse=recurse,
                                              indent=indent,
                                              depth=depth+1,
+                                             seen=seen,
                                              **kwargs)
                         except KeyError:
                             pass
