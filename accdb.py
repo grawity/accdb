@@ -861,15 +861,23 @@ class Interactive(cmd.Cmd):
     def default(self, line):
         lib.die("unknown command %r" % line.split()[0])
 
-    def _show_entry(self, entry, recurse=False, **kwargs):
-        print(entry.dump(color=sys.stdout.isatty(), **kwargs))
+    def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
+        text = entry.dump(color=sys.stdout.isatty(), **kwargs)
+        if indent:
+            for line in text.split("\n"):
+                print("\t"*depth + line)
+        else:
+            print(text)
         if recurse:
             for attr in entry.attributes:
                 if attr.startswith("ref."):
                     for value in entry.attributes[attr]:
                         try:
                             sub_entry = db.find_by_uuid(value)
-                            self._show_entry(sub_entry, **kwargs)
+                            self._show_entry(sub_entry,
+                                             indent=indent,
+                                             depth=depth+1,
+                                             **kwargs)
                         except KeyError:
                             pass
 
@@ -1017,7 +1025,7 @@ class Interactive(cmd.Cmd):
         """Display entry (safe)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
-            self._show_entry(entry, recurse=True)
+            self._show_entry(entry, recurse=True, indent=True)
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
