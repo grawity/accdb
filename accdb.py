@@ -1127,12 +1127,12 @@ class Interactive(cmd.Cmd):
         if key.startswith("+"):
             if not values:
                 lib.die("missing values")
-            op = key[1]
+            op = key[0]
             key = key[1:]
         elif key.startswith("-"):
-            op = key[1]
+            op = key[0]
             key = key[1:]
-        elif values[0] in {"+", "-"}:
+        elif values[0] in {"+", "-", "="}:
             op = values.pop(0)
         else:
             op = "="
@@ -1148,6 +1148,9 @@ class Interactive(cmd.Cmd):
             entry = db.find_by_itemno(item)
             if op == "=":
                 entry.attributes[key] = values[:]
+            elif op == "-" and not values:
+                if key in entry.attributes:
+                    del entry.attributes[key]
             else:
                 for v in values:
                     if v in {"+", "-"}:
