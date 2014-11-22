@@ -1117,6 +1117,55 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
+    def do_set(self, arg):
+        """Change attributes of an entry"""
+        arg    = arg.split()
+        items  = expand_range(arg[0])
+        key    = arg[1]
+        values = arg[2:]
+
+        if key.startswith("+"):
+            if not values:
+                lib.die("missing values")
+            op = key[1]
+            key = key[1:]
+        elif key.startswith("-"):
+            op = key[1]
+            key = key[1:]
+        elif values[0] in {"+", "-"}:
+            op = values.pop(0)
+        else:
+            op = "="
+            if not values:
+                lib.die("missing values")
+
+        if Entry.is_private_attr(key):
+            values = [PrivateAttribute(v) for v in values]
+        else:
+            values = [Attribute(v) for v in values]
+
+        for item in items:
+            entry = db.find_by_itemno(item)
+            if op == "=":
+                entry.attributes[key] = values[:]
+            else:
+                for v in values:
+                    if v in {"+", "-"}:
+                        op = v
+                    elif op == "+":
+                        if v not in entry.attributes[key]:
+                            entry.attributes[key].append(v)
+                    elif op == "-":
+                        if v in entry.attributes[key]:
+                            entry.attributes[key].remove(v)
+            self._show_entry(entry)
+
+        if sys.stdout.isatty():
+            print("(%d %s updated)" % \
+                (len(items), ("entry" if len(items) == 1 else "entries")))
+
+        db.modified = True
+
     def do_rm(self, arg):
         """Delete an entry"""
         items = expand_range(arg)
