@@ -1032,6 +1032,12 @@ class Interactive(cmd.Cmd):
         """Display entry (safe)"""
         for itemno in expand_range(arg):
             entry = db.find_by_itemno(itemno)
+            self._show_entry(entry)
+
+    def do_rshow(self, arg):
+        """Display entry (safe, recursive)"""
+        for itemno in expand_range(arg):
+            entry = db.find_by_itemno(itemno)
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_qr(self, arg):
@@ -1185,7 +1191,6 @@ class Interactive(cmd.Cmd):
     do_c     = do_copy
     do_g     = do_grep
     do_re    = do_reveal
-    do_rshow = do_reveal
     do_s     = do_show
     do_w     = do_touch
 
