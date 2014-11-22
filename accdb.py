@@ -745,14 +745,17 @@ class Entry(object):
                         value = "<base64> %s" % value
                     data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                 elif self.is_link_attr(key):
+                    sub_entry = None
                     value_color = "32"
                     if not raw:
                         try:
                             sub_entry = db.find_by_uuid(value)
-                            value = sub_entry.name
                         except KeyError:
                             value_color = "33"
-                    data += "\t%s: %s\n" % (f(key, "38;5;188"), f(value, value_color))
+                    if sub_entry:
+                        text = f(sub_entry.name, value_color)
+                        text += f(" (item %d)" % sub_entry.itemno, "38;5;8")
+                    data += "\t%s: %s\n" % (f(key, "38;5;188"), text)
                 else:
                     data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
 
