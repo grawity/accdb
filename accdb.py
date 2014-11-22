@@ -689,9 +689,11 @@ class Entry(object):
 
         return self
 
+    @classmethod
     def is_private_attr(self, key):
         return key == "pass" or key.startswith("!")
 
+    @classmethod
     def is_link_attr(self, key):
         return key.startswith("ref.")
 
@@ -755,6 +757,8 @@ class Entry(object):
                     if sub_entry:
                         text = f(sub_entry.name, value_color)
                         text += f(" (item %d)" % sub_entry.itemno, "38;5;8")
+                    else:
+                        text = value
                     data += "\t%s: %s\n" % (f(key, "38;5;188"), text)
                 else:
                     data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
