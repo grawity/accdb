@@ -870,7 +870,7 @@ class Interactive(cmd.Cmd):
             print(text)
         if recurse:
             for attr in entry.attributes:
-                if attr.startswith("ref."):
+                if entry.is_link_attr(attr):
                     for value in entry.attributes[attr]:
                         try:
                             sub_entry = db.find_by_uuid(value)
