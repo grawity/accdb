@@ -1152,6 +1152,8 @@ class Interactive(cmd.Cmd):
                 if key in entry.attributes:
                     del entry.attributes[key]
             else:
+                if key not in entry.attributes:
+                    entry.attributes[key] = []
                 for v in values:
                     if v in {"+", "-"}:
                         op = v
