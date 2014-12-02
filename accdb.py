@@ -132,8 +132,11 @@ def decode_psk(s):
         s = pad(s, 8)
         return base64.b32decode(s)
 
+class UnknownAlgorithmError(Exception):
+    pass
+
 class SecretStore(object):
-    default_algo = "aes128-cfb"
+    default_algo = "aes-128-cfb"
 
     def __init__(self, key):
         self.key = key
@@ -143,24 +146,42 @@ class SecretStore(object):
         return self.key[:bytes]
 
     def wrap(self, clear: "bytes", algo: "str") -> "bytes":
-        if algo == "aes128-cfb":
+        algo = algo.split("-")
+
+        if algo == "none":
+            pass
+        elif algo[0] == "aes" \
+         and algo[1] in {"128", "192", "256"} \
+         and algo[2] == "cfb":
             from Crypto.Cipher import AES
-            key = self.get_key(128)
+            bits = int(algo[1])
+            key = self.get_key(bits)
             iv = os.urandom(AES.block_size)
             cipher = AES.new(key, AES.MODE_CFB, iv)
             wrapped = cipher.encrypt(clear)
             wrapped = iv + wrapped
+        else:
+            raise UnknownAlgorithmError()
 
         return wrapped
 
     def unwrap(self, wrapped: "bytes", algo: "str") -> "bytes":
-        if algo == "aes128-cfb":
+        algo = algo.split("-")
+
+        if algo == "none":
+            pass
+        elif algo[0] == "aes" \
+         and algo[1] in {"128", "192", "256"} \
+         and algo[2] == "cfb":
             from Crypto.Cipher import AES
-            key = self.get_key(128)
+            key = self.get_key(bits)
             iv = wrapped[:AES.block_size]
             wrapped = wrapped[AES.block_size:]
             cipher = AES.new(key, AES.MODE_CFB, iv)
             clear = cipher.decrypt(wrapped)
+        else:
+            raise UnknownAlgorithmError()
+
         return clear
 
 # @clear: (string) plain data
