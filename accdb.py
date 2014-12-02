@@ -132,6 +132,64 @@ def decode_psk(s):
         s = pad(s, 8)
         return base64.b32decode(s)
 
+class SecretStore(object):
+    default_algo = "aes128-cfb"
+
+    def __init__(self, key):
+        self.key = key
+
+    def get_key(self, bits) -> "bytes":
+        bytes = int(bits >> 3)
+        return self.key[:bytes]
+
+    def wrap(self, clear: "bytes", algo: "str") -> "bytes":
+        if algo == "aes128-cfb":
+            from Crypto.Cipher import AES
+            key = self.get_key(128)
+            iv = os.urandom(AES.block_size)
+            cipher = AES.new(key, AES.MODE_CFB, iv)
+            wrapped = cipher.encrypt(clear)
+            wrapped = iv + wrapped
+
+        return wrapped
+
+    def unwrap(self, wrapped: "bytes", algo: "str") -> "bytes":
+        if algo == "aes128-cfb":
+            from Crypto.Cipher import AES
+            key = self.get_key(128)
+            iv = wrapped[:AES.block_size]
+            wrapped = wrapped[AES.block_size:]
+            cipher = AES.new(key, AES.MODE_CFB, iv)
+            clear = cipher.decrypt(wrapped)
+        return clear
+
+# @clear: (string) plain data
+# -> (base64-encoded string) encrypted data
+
+def wrap_secret(clear: "str") -> "base64: str":
+    global ss
+
+    algo = ss.default_algo
+    clear = clear.encode("utf-8")
+    wrapped = ss.wrap(clear, algo)
+    wrapped = base64.b64encode(wrapped)
+    wrapped = wrapped.decode("utf-8")
+    wrapped = "%s;%s" % (algo, wrapped)
+    return wrapped
+
+# @wrapped: (base64-encoded string) encrypted data
+# -> (string) plain data
+
+def unwrap_secret(wrapped):
+    global ss
+
+    algo, wrapped = wrapped.split(";", 1)
+    wrapped = wrapped.encode("utf-8")
+    wrapped = base64.b64decode(wrapped)
+    clear = ss.unwrap(wrapped, algo)
+    clear = clear.decode("utf-8")
+    return clear
+
 class OATHParameters(object):
     def __init__(self, raw_psk, digits=6, otype="totp", window=30,
                  login=None, issuer=None):
@@ -666,7 +724,15 @@ class Entry(object):
                     try:
                         val = nval.decode("utf-8")
                     except UnicodeDecodeError:
-                        pass # leave the old value assigned
+                        pass
+                elif val.startswith("<wrapped> "):
+                    nval = val[len("<wrapped> "):]
+                    try:
+                        nval = unwrap_secret(nval)
+                        val = nval
+                        #val = nval.decode("utf-8")
+                    except UnicodeDecodeError:
+                        pass
                 elif key.startswith("date.") and val in {"now", "today"}:
                     val = time.strftime("%Y-%m-%d")
 
@@ -740,11 +806,16 @@ class Entry(object):
                 if raw:
                     value = value.dump()
                 if self.is_private_attr(key):
-                    if storage and conceal and not value.startswith("<base64> "):
-                        value = value.encode("utf-8")
-                        value = base64.b64encode(value)
-                        value = value.decode("utf-8")
-                        value = "<base64> %s" % value
+                    if storage and conceal:
+                        _v = value
+                        #value = value.encode("utf-8")
+                        value = wrap_secret(value)
+                        #value = base64.b64encode(value)
+                        #value = value.decode("utf-8")
+                        #value = "<base64> %s" % value
+                        value = "<wrapped> %s" % value
+                        #print("maybe encoding %r as %r" % (_v, value))
+                        #value = _v
                     data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                 elif self.is_link_attr(key):
                     sub_entry = None
@@ -1232,6 +1303,8 @@ db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accdb/accounts.%s.
                                     % time.strftime("%Y-%m-%d"))
 
 db_mirror_path = "/run/media/grawity/grawpqi/Private/accdb"
+
+ss = SecretStore(key=open("/mnt/keycard/grawity/accdb.key", "rb").read())
 
 if os.path.exists(db_path):
     db = Database.from_file(db_path)
