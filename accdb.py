@@ -1222,6 +1222,7 @@ class Interactive(cmd.Cmd):
         key    = arg[1]
         values = arg[2:]
 
+        trace("key: %r" % key)
         if key.startswith("+"):
             if not values:
                 lib.die("missing values")
@@ -1236,29 +1237,40 @@ class Interactive(cmd.Cmd):
             op = "="
             if not values:
                 lib.die("missing values")
+        trace(" -> op %r key %r" % (op, key))
 
+        trace("values: %r" % values)
         if Entry.is_private_attr(key):
             values = [PrivateAttribute(v) for v in values]
         else:
             values = [Attribute(v) for v in values]
 
         for item in items:
+            trace("item: %r" % item)
             entry = db.find_by_itemno(item)
             if op == "=":
+                trace("  assign-op %r, assigning values" % op)
                 entry.attributes[key] = values[:]
             elif op == "-" and not values:
+                trace("  del-op %r with no values, removing whole key" % op)
                 if key in entry.attributes:
                     del entry.attributes[key]
             else:
+                trace("  modify-op %r" % op)
                 if key not in entry.attributes:
+                    trace("    emptying values" % op)
                     entry.attributes[key] = []
                 for v in values:
+                    trace("    handling value %r" % v)
                     if v in {"+", "-"}:
                         op = v
+                        trace("      op is now %r" % op)
                     elif op == "+":
+                        trace("      add-op, appending value")
                         if v not in entry.attributes[key]:
                             entry.attributes[key].append(v)
                     elif op == "-":
+                        trace("      del-op, removing value")
                         if v in entry.attributes[key]:
                             entry.attributes[key].remove(v)
             self._show_entry(entry)
