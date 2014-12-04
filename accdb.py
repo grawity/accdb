@@ -139,13 +139,30 @@ def parse_changeset(args):
 
 def apply_changeset(mod, target):
     trace("deleting keys: %r" % mod["del"])
-    # TODO: del-key
+    for k in mod["del"]:
+        if k in target:
+            del target[k]
+
     trace("setting values: %r" % mod["set"])
-    # TODO: set-value
+    for k, vs in mod["set"].items():
+        target[k] = vs[:]
+
     trace("adding values: %r" % mod["add"])
-    # TODO: add-value
+    for k, vs in mod["add"].items():
+        if k not in target:
+            target[k] = []
+        for v in vs:
+            if v not in target[k]:
+                target[k].append(v)
+
     trace("removing values: %r" % mod["rem"])
-    # TODO: rem-value
+    for k, vs in mod["rem"].items():
+        if k in target:
+            for v in vs:
+                if v in target[k]:
+                    target[k].remove(v)
+
+    return target
 
 def re_compile_glob(glob, flags=None):
     if flags is None:
