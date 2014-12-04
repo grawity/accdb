@@ -408,6 +408,8 @@ def compile_filter(pattern):
         return ItemNumberFilter(op[1:])
     elif op.startswith("{"):
         return ItemUuidFilter(op)
+    elif op.isdecimal():
+        return ItemNumberFilter(op)
     else:
         return PatternFilter(op)
 
