@@ -109,7 +109,6 @@ def parse_changeset(args):
             trace("  del-key %r" % k)
         elif "=" in a:
             k, v = a.split("=", 1)
-            # handle foo+=bar, foo-=bar
             if k.endswith("+"):
                 k = k[:-1]
                 op = "add"
@@ -119,17 +118,16 @@ def parse_changeset(args):
                 op = "rem"
                 trace("  rem-value %r = %r" % (k, v))
             else:
-                # add all values for "foo=bar foo=baz"
                 if k in dwim:
                     op = "add"
                     trace("  set-value %r = %r, DWIM to add-value" % (k, v))
                 else:
                     op = "set"
                     trace("  set-value %r = %r" % (k, v))
-                    dwim.add(k)
             if k not in mod:
                 mod[k] = []
             mod[k].append((op, v))
+            dwim.add(k)
         else:
             lib.err("syntax error in %r" % a)
     trace("changes: %r" % mod)
