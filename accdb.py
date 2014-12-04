@@ -96,6 +96,69 @@ def split_kvlist(string):
             items[token] = None
     return items
 
+def parse_changeset(args):
+    mod = {}
+    dwim = set()
+    for a in args:
+        trace("arg %r" % a)
+        if a.startswith("-"):
+            k = a[1:]
+            if k not in mod:
+                mod[k] = []
+            mod[k].append(("del", None))
+            trace("  del-key %r" % k)
+        elif "=" in a:
+            k, v = a.split("=", 1)
+            if k.endswith("+"):
+                k = k[:-1]
+                op = "add"
+                trace("  add-value %r = %r" % (k, v))
+            elif k.endswith("-"):
+                k = k[:-1]
+                op = "rem"
+                trace("  rem-value %r = %r" % (k, v))
+            elif k.endswith(":"):
+                k = k[:-1]
+                op = "set"
+                trace("  set-value %r = %r" % (k, v))
+            else:
+                if k in dwim:
+                    op = "add"
+                    trace("  set-value %r = %r, DWIM to add-value" % (k, v))
+                else:
+                    op = "set"
+                    trace("  set-value %r = %r" % (k, v))
+            if k not in mod:
+                mod[k] = []
+            mod[k].append((op, v))
+            dwim.add(k)
+        else:
+            lib.err("syntax error in %r" % a)
+    trace("changes: %r" % mod)
+    return mod
+
+def apply_changeset(mod, target):
+    for k, changes in mod.items():
+        trace("changeset: key %r" % k)
+        for op, v in changes:
+            trace("changeset:   op %r val %r" % (op, v))
+            if op == "set":
+                target[k] = [v]
+            elif op == "add":
+                if k not in target:
+                    target[k] = [v]
+                if v not in target[k]:
+                    target[k].append(v)
+            elif op == "rem":
+                if k not in target:
+                    continue
+                if v in target[k]:
+                    target[k].remove(v)
+            elif op == "del":
+                if k in target:
+                    del target[k]
+    return target
+
 def re_compile_glob(glob, flags=None):
     if flags is None:
         flags = re.I | re.U
@@ -1219,55 +1282,22 @@ class Interactive(cmd.Cmd):
         """Change attributes of an entry"""
         arg    = arg.split()
         items  = expand_range(arg[0])
-        key    = arg[1]
-        values = arg[2:]
+        args   = arg[1:]
 
-        if key.startswith("+"):
-            if not values:
-                lib.die("missing values")
-            op = key[0]
-            key = key[1:]
-        elif key.startswith("-"):
-            op = key[0]
-            key = key[1:]
-        elif values[0] in {"+", "-", "="}:
-            op = values.pop(0)
-        else:
-            op = "="
-            if not values:
-                lib.die("missing values")
-
-        if Entry.is_private_attr(key):
-            values = [PrivateAttribute(v) for v in values]
-        else:
-            values = [Attribute(v) for v in values]
-
+        mod = parse_changeset(args)
+        # FIXME: cast to Attribute or PrivateAttribute where needed
         for item in items:
+            trace("item: %r" % item)
             entry = db.find_by_itemno(item)
-            if op == "=":
-                entry.attributes[key] = values[:]
-            elif op == "-" and not values:
-                if key in entry.attributes:
-                    del entry.attributes[key]
-            else:
-                if key not in entry.attributes:
-                    entry.attributes[key] = []
-                for v in values:
-                    if v in {"+", "-"}:
-                        op = v
-                    elif op == "+":
-                        if v not in entry.attributes[key]:
-                            entry.attributes[key].append(v)
-                    elif op == "-":
-                        if v in entry.attributes[key]:
-                            entry.attributes[key].remove(v)
+            apply_changeset(mod, entry.attributes)
             self._show_entry(entry)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % \
                 (len(items), ("entry" if len(items) == 1 else "entries")))
 
-        db.modified = True
+        if "DEBUG" not in os.environ:
+            db.modified = True
 
     def do_rm(self, arg):
         """Delete an entry"""
