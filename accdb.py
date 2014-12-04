@@ -97,16 +97,16 @@ def split_kvlist(string):
     return items
 
 def parse_changeset(args):
-    mod = {"add": {}, "rem": {}, "set": {}, "del": set()}
+    mod = {}
+    dwim = set()
     for a in args:
         trace("arg %r" % a)
         if a.startswith("-"):
             k = a[1:]
-            mod["del"].add(k)
-            for op in {"add", "rem", "set"}:
-                if k in mod[op]:
-                    del mod[op][k]
-            trace("  del-key %r, discarding other ops" % k)
+            if k not in mod:
+                mod[k] = []
+            mod[k].append(("del", None))
+            trace("  del-key %r" % k)
         elif "=" in a:
             k, v = a.split("=", 1)
             # handle foo+=bar, foo-=bar
@@ -120,48 +120,41 @@ def parse_changeset(args):
                 trace("  rem-value %r = %r" % (k, v))
             else:
                 # add all values for "foo=bar foo=baz"
-                if k in mod["set"]:
+                if k in dwim:
                     op = "add"
                     trace("  set-value %r = %r, DWIM to add-value" % (k, v))
                 else:
                     op = "set"
-                    trace("  set-value %r = %r, discarding other ops" % (k, v))
-                    for _op in {"add", "rem", "set"}:
-                        if k in mod[_op]:
-                            del mod[_op][k]
-            if k not in mod[op]:
-                mod[op][k] = []
-            mod[op][k].append(v)
+                    trace("  set-value %r = %r" % (k, v))
+                    dwim.add(k)
+            if k not in mod:
+                mod[k] = []
+            mod[k].append((op, v))
         else:
             lib.err("syntax error in %r" % a)
     trace("changes: %r" % mod)
     return mod
 
 def apply_changeset(mod, target):
-    trace("deleting keys: %r" % mod["del"])
-    for k in mod["del"]:
-        if k in target:
-            del target[k]
-
-    trace("setting values: %r" % mod["set"])
-    for k, vs in mod["set"].items():
-        target[k] = vs[:]
-
-    trace("adding values: %r" % mod["add"])
-    for k, vs in mod["add"].items():
-        if k not in target:
-            target[k] = []
-        for v in vs:
-            if v not in target[k]:
-                target[k].append(v)
-
-    trace("removing values: %r" % mod["rem"])
-    for k, vs in mod["rem"].items():
-        if k in target:
-            for v in vs:
+    for k, changes in mod.items():
+        trace("changeset: key %r" % k)
+        for op, v in changes:
+            trace("changeset:   op %r val %r" % (op, v))
+            if op == "set":
+                target[k] = [v]
+            elif op == "add":
+                if k not in target:
+                    target[k] = [v]
+                if v not in target[k]:
+                    target[k].append(v)
+            elif op == "rem":
+                if k not in target:
+                    continue
                 if v in target[k]:
                     target[k].remove(v)
-
+            elif op == "del":
+                if k in target:
+                    del target[k]
     return target
 
 def re_compile_glob(glob, flags=None):
