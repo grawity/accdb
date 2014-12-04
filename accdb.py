@@ -376,39 +376,40 @@ def compile_filter(pattern):
     if debug:
         trace("parsing filter %r -> %r" % (pattern, tokens))
 
-    if len(tokens) > 1:
+    op, *args = tokens
+    if len(args) > 0:
         # boolean operators
-        if tokens[0] in {"AND", "and"}:
-            filters = [compile_filter(x) for x in tokens[1:]]
+        if op in {"AND", "and"}:
+            filters = [compile_filter(x) for x in args]
             return ConjunctionFilter(*filters)
-        elif tokens[0] in {"OR", "or"}:
-            filters = [compile_filter(x) for x in tokens[1:]]
+        elif op in {"OR", "or"}:
+            filters = [compile_filter(x) for x in args]
             return DisjunctionFilter(*filters)
-        elif tokens[0] in {"NOT", "not"}:
-            if len(tokens) > 2:
+        elif op in {"NOT", "not"}:
+            if len(args) > 1:
                 raise FilterSyntaxError("too many arguments for 'NOT'")
-            filter = compile_filter(tokens[1])
+            filter = compile_filter(args[0])
             return NegationFilter(filter)
         # search filters
-        elif tokens[0] in {"ITEM", "item"}:
-            if len(tokens) > 2:
+        elif op in {"ITEM", "item"}:
+            if len(args) > 1:
                 raise FilterSyntaxError("too many arguments for 'ITEM'")
-            return ItemNumberFilter(tokens[1])
-        elif tokens[0] in {"PATTERN", "pattern"}:
-            if len(tokens) > 2:
+            return ItemNumberFilter(args[0])
+        elif op in {"PATTERN", "pattern"}:
+            if len(args) > 1:
                 raise FilterSyntaxError("too many arguments for 'PATTERN'")
-            return PatternFilter(tokens[1])
+            return PatternFilter(args[0])
         # etc.
         else:
-            raise FilterSyntaxError("unknown operator %r in (%s)" % (tokens[0], pattern))
-    elif " " in tokens[0] or "(" in tokens[0] or ")" in tokens[0]:
-        return compile_filter(tokens[0])
-    elif tokens[0].startswith("#"):
-        return ItemNumberFilter(tokens[0][1:])
-    elif tokens[0].startswith("{"):
-        return ItemUuidFilter(tokens[0])
+            raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
+    elif " " in op or "(" in op or ")" in op:
+        return compile_filter(op)
+    elif op.startswith("#"):
+        return ItemNumberFilter(op[1:])
+    elif op.startswith("{"):
+        return ItemUuidFilter(op)
     else:
-        return PatternFilter(tokens[0])
+        return PatternFilter(op)
 
 def compile_pattern(pattern):
     if debug:
