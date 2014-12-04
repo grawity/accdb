@@ -1289,77 +1289,20 @@ class Interactive(cmd.Cmd):
         items  = expand_range(arg[0])
         args   = arg[1:]
 
-        if "DEBUG" in os.environ:
-            mod = parse_changeset(args)
-            # FIXME: cast to Attribute or PrivateAttribute where needed
-            for item in items:
-                trace("item: %r" % item)
-                entry = db.find_by_itemno(item)
-                apply_changeset(mod, entry.attributes)
-                self._show_entry(entry)
-            return
-
-        key    = arg[1]
-        values = arg[2:]
-
-        trace("key: %r" % key)
-        if key.startswith("+"):
-            if not values:
-                lib.die("missing values")
-            op = key[0]
-            key = key[1:]
-        elif key.startswith("-"):
-            op = key[0]
-            key = key[1:]
-        elif values[0] in {"+", "-", "="}:
-            op = values.pop(0)
-        else:
-            op = "="
-            if not values:
-                lib.die("missing values")
-        trace(" -> op %r key %r" % (op, key))
-
-        trace("values: %r" % values)
-        if Entry.is_private_attr(key):
-            values = [PrivateAttribute(v) for v in values]
-        else:
-            values = [Attribute(v) for v in values]
-
+        mod = parse_changeset(args)
+        # FIXME: cast to Attribute or PrivateAttribute where needed
         for item in items:
             trace("item: %r" % item)
             entry = db.find_by_itemno(item)
-            if op == "=":
-                trace("  assign-op %r, assigning values" % op)
-                entry.attributes[key] = values[:]
-            elif op == "-" and not values:
-                trace("  del-op %r with no values, removing whole key" % op)
-                if key in entry.attributes:
-                    del entry.attributes[key]
-            else:
-                trace("  modify-op %r" % op)
-                if key not in entry.attributes:
-                    trace("    emptying values" % op)
-                    entry.attributes[key] = []
-                for v in values:
-                    trace("    handling value %r" % v)
-                    if v in {"+", "-"}:
-                        op = v
-                        trace("      op is now %r" % op)
-                    elif op == "+":
-                        trace("      add-op, appending value")
-                        if v not in entry.attributes[key]:
-                            entry.attributes[key].append(v)
-                    elif op == "-":
-                        trace("      del-op, removing value")
-                        if v in entry.attributes[key]:
-                            entry.attributes[key].remove(v)
+            apply_changeset(mod, entry.attributes)
             self._show_entry(entry)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % \
                 (len(items), ("entry" if len(items) == 1 else "entries")))
 
-        db.modified = True
+        if "DEBUG" not in os.environ:
+            db.modified = True
 
     def do_rm(self, arg):
         """Delete an entry"""
