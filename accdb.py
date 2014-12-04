@@ -408,6 +408,10 @@ def compile_filter(pattern):
         return ItemNumberFilter(op[1:])
     elif op.startswith("{"):
         return ItemUuidFilter(op)
+    elif op.isdecimal():
+        return ItemNumberFilter(op)
+    elif re.match(r"^[0-9,-]+$", op):
+        return ItemNumberRangeFilter(op)
     else:
         return PatternFilter(op)
 
@@ -498,6 +502,17 @@ class ItemNumberFilter(Filter):
 
     def __repr__(self):
         return "(ITEM %d)" % self.value
+
+class ItemNumberRangeFilter(Filter):
+    def __init__(self, pattern):
+        self.pattern = pattern
+        self.items = set(expand_range(pattern))
+
+    def test(self, entry):
+        return entry.itemno in self.items
+
+    def __repr__(self):
+        return "(ITEMS %s)" % self.pattern
 
 class ItemUuidFilter(Filter):
     def __init__(self, pattern):
