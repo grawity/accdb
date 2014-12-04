@@ -137,6 +137,16 @@ def parse_changeset(args):
     trace("changes: %r" % mod)
     return mod
 
+def apply_changeset(mod, target):
+    trace("deleting keys: %r" % mod["del"])
+    # TODO: del-key
+    trace("setting values: %r" % mod["set"])
+    # TODO: set-value
+    trace("adding values: %r" % mod["add"])
+    # TODO: add-value
+    trace("removing values: %r" % mod["rem"])
+    # TODO: rem-value
+
 def re_compile_glob(glob, flags=None):
     if flags is None:
         flags = re.I | re.U
@@ -1264,6 +1274,12 @@ class Interactive(cmd.Cmd):
 
         if "DEBUG" in os.environ:
             mod = parse_changeset(args)
+            # FIXME: cast to Attribute or PrivateAttribute where needed
+            for item in items:
+                trace("item: %r" % item)
+                entry = db.find_by_itemno(item)
+                apply_changeset(mod, entry.attributes)
+                self._show_entry(entry)
             return
 
         key    = arg[1]
