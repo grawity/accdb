@@ -96,6 +96,47 @@ def split_kvlist(string):
             items[token] = None
     return items
 
+def parse_changeset(args):
+    mod = {"add": {}, "rem": {}, "set": {}, "del": set()}
+    for a in args:
+        trace("arg %r" % a)
+        if a.startswith("-"):
+            k = a[1:]
+            mod["del"].add(k)
+            for op in {"add", "rem", "set"}:
+                if k in mod[op]:
+                    del mod[op][k]
+            trace("  del-key %r, discarding other ops" % k)
+        elif "=" in a:
+            k, v = a.split("=", 1)
+            # handle foo+=bar, foo-=bar
+            if k.endswith("+"):
+                k = k[:-1]
+                op = "add"
+                trace("  add-value %r = %r" % (k, v))
+            elif k.endswith("-"):
+                k = k[:-1]
+                op = "rem"
+                trace("  rem-value %r = %r" % (k, v))
+            else:
+                # add all values for "foo=bar foo=baz"
+                if k in mod["set"]:
+                    op = "add"
+                    trace("  set-value %r = %r, DWIM to add-value" % (k, v))
+                else:
+                    op = "set"
+                    trace("  set-value %r = %r, discarding other ops" % (k, v))
+                    for op in {"add", "rem", "set"}:
+                        if k in mod[op]:
+                            del mod[op][k]
+            if k not in mod[op]:
+                mod[op][k] = []
+            mod[op][k].append(v)
+        else:
+            lib.err("syntax error in %r" % a)
+    trace("changes: %r" % mod)
+    return mod
+
 def re_compile_glob(glob, flags=None):
     if flags is None:
         flags = re.I | re.U
@@ -1219,6 +1260,12 @@ class Interactive(cmd.Cmd):
         """Change attributes of an entry"""
         arg    = arg.split()
         items  = expand_range(arg[0])
+        args   = arg[1:]
+
+        if "DEBUG" in os.environ:
+            mod = parse_changeset(args)
+            return
+
         key    = arg[1]
         values = arg[2:]
 
