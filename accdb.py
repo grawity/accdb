@@ -117,6 +117,10 @@ def parse_changeset(args):
                 k = k[:-1]
                 op = "rem"
                 trace("  rem-value %r = %r" % (k, v))
+            elif k.endswith(":"):
+                k = k[:-1]
+                op = "set"
+                trace("  set-value %r = %r" % (k, v))
             else:
                 if k in dwim:
                     op = "add"
