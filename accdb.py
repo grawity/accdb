@@ -126,9 +126,9 @@ def parse_changeset(args):
                 else:
                     op = "set"
                     trace("  set-value %r = %r, discarding other ops" % (k, v))
-                    for op in {"add", "rem", "set"}:
-                        if k in mod[op]:
-                            del mod[op][k]
+                    for _op in {"add", "rem", "set"}:
+                        if k in mod[_op]:
+                            del mod[_op][k]
             if k not in mod[op]:
                 mod[op][k] = []
             mod[op][k].append(v)
