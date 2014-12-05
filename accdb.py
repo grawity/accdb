@@ -125,6 +125,14 @@ def parse_changeset(args):
                 k = k[:-1]
                 op = "set"
                 _debug("  set-value %r = %r" % (k, v))
+            elif k.endswith("<"):
+                k = k[:-1]
+                op = "copy"
+                _debug("  copy-values %r = %r" % (k, v))
+            elif k.endswith("^"):
+                k = k[:-1]
+                op = "move"
+                _debug("  move-values %r = %r" % (k, v))
             else:
                 if k in dwim:
                     op = "add"
@@ -158,9 +166,24 @@ def apply_changeset(mod, target):
                     continue
                 if v in target[k]:
                     target[k].remove(v)
+            elif op == "copy":
+                if v in target:
+                    target[k] = target[v][:]
+                else:
+                    if k in target:
+                        del target[k]
+            elif op == "move":
+                if v in target:
+                    target[k] = target[v]
+                    del target[v]
+                else:
+                    if k in target:
+                        del target[k]
             elif op == "del":
                 if k in target:
                     del target[k]
+            else:
+                lib.die("unknown changeset operation %r" % op)
     return target
 
 def re_compile_glob(glob, flags=None):
