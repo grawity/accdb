@@ -1281,26 +1281,28 @@ class Interactive(cmd.Cmd):
 
     def do_tag(self, arg):
         """Add or remove tags to an entry"""
-        arg      = arg.split()
-        items    = expand_range(arg[0])
-        all_tags = set(arg[1:])
+        query, *tags = shlex.split(arg)
 
-        add_tags = {t[1:] for t in all_tags if t.startswith("+")}
-        rem_tags = {t[1:] for t in all_tags if t.startswith("-")}
-        bad_args = [t for t in all_tags if not (t.startswith("+") or t.startswith("-"))]
+        items = _compile_and_search(query)
+        tags  = set(tags)
+        num   = 0
+
+        add_tags = {t[1:] for t in tags if t.startswith("+")}
+        rem_tags = {t[1:] for t in tags if t.startswith("-")}
+        bad_args = [t for t in tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
             lib.die("bad arguments: %r" % bad_args)
 
-        for item in items:
-            entry = db.find_by_itemno(item)
+        for entry in items:
             entry.tags |= add_tags
             entry.tags -= rem_tags
+            num += 1
             self._show_entry(entry)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % \
-                (len(items), ("entry" if len(items) == 1 else "entries")))
+                (num, ("entry" if num == 1 else "entries")))
 
         db.modified = True
 
