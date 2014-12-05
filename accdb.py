@@ -108,15 +108,13 @@ def parse_changeset(args):
         "<": "copy",
         "^": "move",
     }
-    mod = {}
+    mod = []
     dwim = set()
     for a in args:
         _debug("arg %r" % a)
         if a.startswith("-"):
             k = a[1:]
-            if k not in mod:
-                mod[k] = []
-            mod[k].append(("del", None))
+            mod.append(("del", k, None))
             _debug("  del-key %r" % k)
         elif "=" in a:
             k, v = a.split("=", 1)
@@ -131,9 +129,7 @@ def parse_changeset(args):
                 else:
                     op = "set"
                     _debug("  set-value %r = %r" % (k, v))
-            if k not in mod:
-                mod[k] = []
-            mod[k].append((op, v))
+            mod.append((op, k, v))
             dwim.add(k)
         else:
             lib.err("syntax error in %r" % a)
@@ -141,40 +137,38 @@ def parse_changeset(args):
     return mod
 
 def apply_changeset(mod, target):
-    for k, changes in mod.items():
-        _debug("changeset: key %r" % k)
-        for op, v in changes:
-            _debug("changeset:   op %r val %r" % (op, v))
-            if op == "set":
+    for op, k, v in mod:
+        _debug("changeset: key %r op %r val %r" % (k, op, v))
+        if op == "set":
+            target[k] = [v]
+        elif op == "add":
+            if k not in target:
                 target[k] = [v]
-            elif op == "add":
-                if k not in target:
-                    target[k] = [v]
-                if v not in target[k]:
-                    target[k].append(v)
-            elif op == "rem":
-                if k not in target:
-                    continue
-                if v in target[k]:
-                    target[k].remove(v)
-            elif op == "copy":
-                if v in target:
-                    target[k] = target[v][:]
-                else:
-                    if k in target:
-                        del target[k]
-            elif op == "move":
-                if v in target:
-                    target[k] = target[v]
-                    del target[v]
-                else:
-                    if k in target:
-                        del target[k]
-            elif op == "del":
+            if v not in target[k]:
+                target[k].append(v)
+        elif op == "rem":
+            if k not in target:
+                continue
+            if v in target[k]:
+                target[k].remove(v)
+        elif op == "copy":
+            if v in target:
+                target[k] = target[v][:]
+            else:
                 if k in target:
                     del target[k]
+        elif op == "move":
+            if v in target:
+                target[k] = target[v]
+                del target[v]
             else:
-                lib.die("unknown changeset operation %r" % op)
+                if k in target:
+                    del target[k]
+        elif op == "del":
+            if k in target:
+                del target[k]
+        else:
+            lib.die("unknown changeset operation %r" % op)
     return target
 
 def re_compile_glob(glob, flags=None):
