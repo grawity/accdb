@@ -1287,7 +1287,7 @@ class Interactive(cmd.Cmd):
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
         if not debug:
-            db.modified = true
+            db.modified = True
 
     def do_tag(self, arg):
         """Add or remove tags to an entry"""
@@ -1314,7 +1314,7 @@ class Interactive(cmd.Cmd):
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
         if not debug:
-            db.modified = true
+            db.modified = True
 
     def do_set(self, arg):
         """Change attributes of an entry"""
