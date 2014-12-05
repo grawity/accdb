@@ -1266,16 +1266,16 @@ class Interactive(cmd.Cmd):
         """Add or remove tags to an entry"""
         query, *tags = shlex.split(arg)
 
-        items = _compile_and_search(query)
-        tags  = set(tags)
-        num   = 0
-
         add_tags = {t[1:] for t in tags if t.startswith("+")}
         rem_tags = {t[1:] for t in tags if t.startswith("-")}
         bad_args = [t for t in tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
             lib.die("bad arguments: %r" % bad_args)
+
+        items = _compile_and_search(query)
+        tags  = set(tags)
+        num   = 0
 
         for entry in items:
             entry.tags |= add_tags
