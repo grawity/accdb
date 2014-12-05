@@ -1272,6 +1272,8 @@ class Interactive(cmd.Cmd):
 
         if bad_args:
             lib.die("bad arguments: %r" % bad_args)
+        elif not old_tags:
+            lib.die("no old tags specified")
 
         query = "OR " + " ".join(["+%s" % tag for tag in old_tags])
         items = _compile_and_search(query)
