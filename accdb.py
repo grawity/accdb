@@ -657,8 +657,8 @@ class Database(object):
             if "!pass.old" not in entry.attributes:
                 entry.attributes["!pass.old"] = []
             for p in oldpass:
-                p = "%s (until %s)" % (p.dump(), time.strftime("%Y-%m-%d"))
-                entry.attributes["!pass.old"].append(PrivateAttribute(p))
+                p = "%s (until %s)" % (p, time.strftime("%Y-%m-%d"))
+                entry.attributes["!pass.old"].append(p)
 
         self.entries[entry.uuid] = entry
 
@@ -848,15 +848,10 @@ class Entry(object):
 
                 key = translate_field(key)
 
-                if self.is_private_attr(key):
-                    attr = PrivateAttribute(val)
-                else:
-                    attr = Attribute(val)
-
                 if key in self.attributes:
-                    self.attributes[key].append(attr)
+                    self.attributes[key].append(val)
                 else:
-                    self.attributes[key] = [attr]
+                    self.attributes[key] = [val]
 
             lineno += 1
 
@@ -913,8 +908,6 @@ class Entry(object):
 
         for key in sort_fields(self):
             for value in self.attributes[key]:
-                if raw:
-                    value = value.dump()
                 if self.is_private_attr(key):
                     if storage and conceal:
                         _v = value
@@ -926,6 +919,8 @@ class Entry(object):
                         value = "<wrapped> %s" % value
                         #print("maybe encoding %r as %r" % (_v, value))
                         #value = _v
+                    elif not raw:
+                        value = "<private[%d]>" % len(value)
                     data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                 elif self.is_link_attr(key):
                     sub_entry = None
@@ -986,56 +981,35 @@ class Entry(object):
         if not tmp:
             return None
 
-        psk = decode_psk(tmp[0].dump())
+        psk = decode_psk(tmp[0])
         p = OATHParameters(psk)
 
         tmp = self.attributes.get("2fa.subject",
               self.attributes.get("login"))
         if tmp:
-            p.login = tmp[0].dump()
+            p.login = tmp[0]
         else:
             p.login = self.name
 
         tmp = self.attributes.get("2fa.issuer")
         if tmp:
-            p.issuer = tmp[0].dump()
+            p.issuer = tmp[0]
         else:
             p.issuer = self.name
 
         tmp = self.attributes.get("2fa.oath.type")
         if tmp:
-            p.otype = tmp[0].dump()
+            p.otype = tmp[0]
 
         tmp = self.attributes.get("2fa.oath.digits")
         if tmp:
-            p.digits = int(tmp[0].dump())
+            p.digits = int(tmp[0])
 
         tmp = self.attributes.get("2fa.oath.window")
         if tmp:
-            p.window = int(tmp[0].dump())
+            p.window = int(tmp[0])
 
         return p
-
-class Attribute(str):
-    # Nothing special about this class. Exists only for consistency
-    # with PrivateAttribute providing a dump() method.
-
-    def dump(self):
-        return str.__str__(self)
-
-class PrivateAttribute(Attribute):
-    # Safeguard class to prevent accidential disclosure of private values.
-    # Inherits a dump() method from Attribute for obtaining the actual data.
-
-    def __repr__(self):
-        if self == "<private[data lost]>":
-            return self.dump()
-        return "<private[%d]>" % len(self)
-
-    def __str__(self):
-        if self == "<private[data lost]>":
-            return self.dump()
-        return "<private[%d]>" % len(self)
 
 class Interactive(cmd.Cmd):
     def __init__(self, *args, **kwargs):
@@ -1088,7 +1062,7 @@ class Interactive(cmd.Cmd):
         self._show_entry(entry)
         if "pass" in entry.attributes:
             print("(Password copied to clipboard.)")
-            Clipboard.put(entry.attributes["pass"][0].dump())
+            Clipboard.put(entry.attributes["pass"][0])
         else:
             print("No password found!",
                 file=sys.stderr)
@@ -1313,7 +1287,6 @@ class Interactive(cmd.Cmd):
         args   = arg[1:]
 
         mod = parse_changeset(args)
-        # FIXME: cast to Attribute or PrivateAttribute where needed
         for item in items:
             trace("item: %r" % item)
             entry = db.find_by_itemno(item)
