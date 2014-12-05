@@ -101,6 +101,13 @@ def split_kvlist(string):
     return items
 
 def parse_changeset(args):
+    _ops = {
+        "+": "add",
+        "-": "rem",
+        ":": "set",
+        "<": "copy",
+        "^": "move",
+    }
     mod = {}
     dwim = set()
     for a in args:
@@ -113,26 +120,10 @@ def parse_changeset(args):
             _debug("  del-key %r" % k)
         elif "=" in a:
             k, v = a.split("=", 1)
-            if k.endswith("+"):
+            if k[-1] in _ops:
+                op = _ops[k[-1]]
                 k = k[:-1]
-                op = "add"
-                _debug("  add-value %r = %r" % (k, v))
-            elif k.endswith("-"):
-                k = k[:-1]
-                op = "rem"
-                _debug("  rem-value %r = %r" % (k, v))
-            elif k.endswith(":"):
-                k = k[:-1]
-                op = "set"
-                _debug("  set-value %r = %r" % (k, v))
-            elif k.endswith("<"):
-                k = k[:-1]
-                op = "copy"
-                _debug("  copy-values %r = %r" % (k, v))
-            elif k.endswith("^"):
-                k = k[:-1]
-                op = "move"
-                _debug("  move-values %r = %r" % (k, v))
+                _debug("  %s: %r = %r" % (op, k, v))
             else:
                 if k in dwim:
                     op = "add"
