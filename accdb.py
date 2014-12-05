@@ -48,6 +48,10 @@ field_prefix_re = re.compile(r"^\W+")
 def trace(msg, *args):
     print("accdb: %s" % msg, *args, file=sys.stderr)
 
+def _debug(msg, *args):
+    if debug:
+        return trace(msg, *args)
+
 def strip_field_prefix(name):
     return field_prefix_re.sub("", name)
 
@@ -100,48 +104,48 @@ def parse_changeset(args):
     mod = {}
     dwim = set()
     for a in args:
-        trace("arg %r" % a)
+        _debug("arg %r" % a)
         if a.startswith("-"):
             k = a[1:]
             if k not in mod:
                 mod[k] = []
             mod[k].append(("del", None))
-            trace("  del-key %r" % k)
+            _debug("  del-key %r" % k)
         elif "=" in a:
             k, v = a.split("=", 1)
             if k.endswith("+"):
                 k = k[:-1]
                 op = "add"
-                trace("  add-value %r = %r" % (k, v))
+                _debug("  add-value %r = %r" % (k, v))
             elif k.endswith("-"):
                 k = k[:-1]
                 op = "rem"
-                trace("  rem-value %r = %r" % (k, v))
+                _debug("  rem-value %r = %r" % (k, v))
             elif k.endswith(":"):
                 k = k[:-1]
                 op = "set"
-                trace("  set-value %r = %r" % (k, v))
+                _debug("  set-value %r = %r" % (k, v))
             else:
                 if k in dwim:
                     op = "add"
-                    trace("  set-value %r = %r, DWIM to add-value" % (k, v))
+                    _debug("  set-value %r = %r, DWIM to add-value" % (k, v))
                 else:
                     op = "set"
-                    trace("  set-value %r = %r" % (k, v))
+                    _debug("  set-value %r = %r" % (k, v))
             if k not in mod:
                 mod[k] = []
             mod[k].append((op, v))
             dwim.add(k)
         else:
             lib.err("syntax error in %r" % a)
-    trace("changes: %r" % mod)
+    _debug("changes: %r" % mod)
     return mod
 
 def apply_changeset(mod, target):
     for k, changes in mod.items():
-        trace("changeset: key %r" % k)
+        _debug("changeset: key %r" % k)
         for op, v in changes:
-            trace("changeset:   op %r val %r" % (op, v))
+            _debug("changeset:   op %r val %r" % (op, v))
             if op == "set":
                 target[k] = [v]
             elif op == "add":
@@ -309,8 +313,7 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
-        if debug:
-            trace("generating OTP from:", base64.b32encode(self.raw_psk).decode("us-ascii"))
+        _debug("generating OTP from:", base64.b32encode(self.raw_psk).decode("us-ascii"))
 
         if self.otype == "totp":
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
@@ -383,8 +386,7 @@ def split_filter(text):
 
 def compile_filter(pattern):
     tokens = split_filter(pattern)
-    if debug:
-        trace("parsing filter %r -> %r" % (pattern, tokens))
+    _debug("parsing filter %r -> %r" % (pattern, tokens))
 
     op, *args = tokens
     if len(args) > 0:
@@ -426,8 +428,7 @@ def compile_filter(pattern):
         return PatternFilter(op)
 
 def compile_pattern(pattern):
-    if debug:
-        trace("compiling pattern %r" % pattern)
+    _debug("compiling pattern %r" % pattern)
 
     func = None
 
@@ -1288,7 +1289,7 @@ class Interactive(cmd.Cmd):
 
         mod = parse_changeset(args)
         for item in items:
-            trace("item: %r" % item)
+            _debug("item: %r" % item)
             entry = db.find_by_itemno(item)
             apply_changeset(mod, entry.attributes)
             self._show_entry(entry)
