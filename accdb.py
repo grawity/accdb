@@ -1262,6 +1262,33 @@ class Interactive(cmd.Cmd):
         for tag in sorted(db.tags()):
             print(tag)
 
+    def do_retag(self, arg):
+        """Rename tags on all entries"""
+        tags = shlex.split(arg)
+
+        new_tags = {t[1:] for t in tags if t.startswith("+")}
+        old_tags = {t[1:] for t in tags if t.startswith("-")}
+        bad_args = [t for t in tags if not (t.startswith("+") or t.startswith("-"))]
+
+        if bad_args:
+            lib.die("bad arguments: %r" % bad_args)
+
+        query = "OR " + " ".join(["+%s" % tag for tag in old_tags])
+        items = _compile_and_search(query)
+        num   = 0
+
+        for entry in items:
+            entry.tags -= old_tags
+            entry.tags |= new_tags
+            num += 1
+            self._show_entry(entry)
+
+        if sys.stdout.isatty():
+            print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
+
+        if not debug:
+            db.modified = true
+
     def do_tag(self, arg):
         """Add or remove tags to an entry"""
         query, *tags = shlex.split(arg)
@@ -1284,10 +1311,10 @@ class Interactive(cmd.Cmd):
             self._show_entry(entry)
 
         if sys.stdout.isatty():
-            print("(%d %s updated)" % \
-                (num, ("entry" if num == 1 else "entries")))
+            print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
-        db.modified = True
+        if not debug:
+            db.modified = true
 
     def do_set(self, arg):
         """Change attributes of an entry"""
