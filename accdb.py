@@ -339,6 +339,16 @@ def start_editor(path):
 class FilterSyntaxError(Exception):
     pass
 
+def _compile_and_search(text):
+    try:
+        filter = compile_filter(text)
+    except FilterSyntaxError as e:
+        trace("syntax error in filter:", *e.args)
+        sys.exit(1)
+    if debug:
+        trace("compiled filter:", filter)
+    return db.find(filter)
+
 def split_filter(text):
     tokens = []
     depth = 0
