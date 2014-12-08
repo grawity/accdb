@@ -1214,6 +1214,7 @@ class Interactive(cmd.Cmd):
                 print("\t(No OATH preshared key for this entry.)")
             else:
                 uri = params.make_uri()
+                _debug("Qr code for %r" % uri)
                 with subprocess.Popen(["qrencode", "-o-", "-tUTF8", uri],
                                       stdout=subprocess.PIPE) as proc:
                     for line in proc.stdout:
