@@ -906,9 +906,8 @@ class Entry(object):
 
         data = ""
 
-        if itemno:
-            if self.itemno:
-                data += "%s\n" % f("(item %d)" % self.itemno, "38;5;8")
+        if itemno and self.itemno:
+            data += "%s\n" % f("(item %s)" % self.itemno, "38;5;244")
 
         data += "= %s\n" % f(self.name, "38;5;50")
 
