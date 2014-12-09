@@ -106,76 +106,78 @@ def split_kvlist(string):
             items[token] = None
     return items
 
-def parse_changeset(args):
-    _ops = {
-        "+": "add",
-        "-": "rem",
-        ":": "set",
-        "<": "copy",
-        "^": "move",
-    }
-    mod = []
-    dwim = set()
-    for a in args:
-        _debug("arg %r" % a)
-        if a.startswith("-"):
-            k = a[1:]
-            mod.append(("del", k, None))
-            _debug("  del-key %r" % k)
-        elif "=" in a:
-            k, v = a.split("=", 1)
-            if k[-1] in _ops:
-                op = _ops[k[-1]]
-                k = k[:-1]
-                _debug("  %s: %r = %r" % (op, k, v))
-            else:
-                if k in dwim:
-                    op = "add"
-                    _debug("  set-value %r = %r, DWIM to add-value" % (k, v))
+class Changeset(list):
+    @classmethod
+    def parse(_class, args):
+        _ops = {
+            "+": "add",
+            "-": "rem",
+            ":": "set",
+            "<": "copy",
+            "^": "move",
+        }
+        self = _class()
+        dwim = set()
+        for a in args:
+            _debug("arg %r" % a)
+            if a.startswith("-"):
+                k = a[1:]
+                self.append(("del", k, None))
+                _debug("  del-key %r" % k)
+            elif "=" in a:
+                k, v = a.split("=", 1)
+                if k[-1] in _ops:
+                    op = _ops[k[-1]]
+                    k = k[:-1]
+                    _debug("  %s: %r = %r" % (op, k, v))
                 else:
-                    op = "set"
-                    _debug("  set-value %r = %r" % (k, v))
-            mod.append((op, k, v))
-            dwim.add(k)
-        else:
-            lib.err("syntax error in %r" % a)
-    _debug("changes: %r" % mod)
-    return mod
+                    if k in dwim:
+                        op = "add"
+                        _debug("  set-value %r = %r, DWIM to add-value" % (k, v))
+                    else:
+                        op = "set"
+                        _debug("  set-value %r = %r" % (k, v))
+                self.append((op, k, v))
+                dwim.add(k)
+            else:
+                lib.err("syntax error in %r" % a)
+        _debug("changes: %r" % self)
+        return self
 
-def apply_changeset(mod, target):
-    for op, k, v in mod:
-        _debug("changeset: key %r op %r val %r" % (k, op, v))
-        if op == "set":
-            target[k] = [v]
-        elif op == "add":
-            if k not in target:
+    def apply_to(self, target):
+        for op, k, v in self:
+            _debug("changeset: key %r op %r val %r" % (k, op, v))
+            if op == "set":
                 target[k] = [v]
-            if v not in target[k]:
-                target[k].append(v)
-        elif op == "rem":
-            if k not in target:
-                continue
-            if v in target[k]:
-                target[k].remove(v)
-        elif op == "copy":
-            if v in target:
-                target[k] = target[v][:]
-            else:
+            elif op == "add":
+                if k not in target:
+                    target[k] = [v]
+                if v not in target[k]:
+                    target[k].append(v)
+            elif op == "rem":
+                if k not in target:
+                    continue
+                if v in target[k]:
+                    target[k].remove(v)
+            elif op == "copy":
+                if v in target:
+                    target[k] = target[v][:]
+                else:
+                    if k in target:
+                        del target[k]
+            elif op == "move":
+                if v in target:
+                    target[k] = target[v]
+                    del target[v]
+                else:
+                    if k in target:
+                        del target[k]
+            elif op == "del":
                 if k in target:
                     del target[k]
-        elif op == "move":
-            if v in target:
-                target[k] = target[v]
-                del target[v]
             else:
-                if k in target:
-                    del target[k]
-        elif op == "del":
-            if k in target:
-                del target[k]
-        else:
-            lib.die("unknown changeset operation %r" % op)
-    return target
+                lib.die("unknown changeset operation %r" % op)
+        return target
 
 def re_compile_glob(glob, flags=None):
     if flags is None:
@@ -1349,11 +1351,11 @@ class Interactive(cmd.Cmd):
         items  = expand_range(arg[0])
         args   = arg[1:]
 
-        mod = parse_changeset(args)
+        changes = Changeset.parse(args)
         for item in items:
             _debug("item: %r" % item)
             entry = db.find_by_itemno(item)
-            apply_changeset(mod, entry.attributes)
+            changes.apply_to(entry.attributes)
             self._show_entry(entry)
 
         if sys.stdout.isatty():
