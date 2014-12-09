@@ -1292,7 +1292,7 @@ class Interactive(cmd.Cmd):
             entry.tags -= old_tags
             entry.tags |= new_tags
             num += 1
-            self._show_entry(entry, show_contents=False)
+            self._show_entry(entry, itemno=False, show_contents=False)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
@@ -1319,7 +1319,7 @@ class Interactive(cmd.Cmd):
             entry.tags |= add_tags
             entry.tags -= rem_tags
             num += 1
-            self._show_entry(entry, show_contents=False)
+            self._show_entry(entry, itemno=False, show_contents=False)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
