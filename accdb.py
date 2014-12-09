@@ -649,7 +649,7 @@ class Database(object):
                 self.flags = split_tags(line[10:])
             elif line.startswith("="):
                 entry = Entry.parse(data, lineno=lastno)
-                if entry:
+                if entry and not entry.deleted:
                     self.add(entry)
                 data = line
                 lastno = lineno
@@ -658,7 +658,7 @@ class Database(object):
 
         if data:
             entry = Entry.parse(data, lineno=lastno)
-            if entry:
+            if entry and not entry.deleted:
                 self.add(entry)
 
         return self
@@ -1159,8 +1159,6 @@ class Interactive(cmd.Cmd):
 
         num = 0
         for entry in results:
-            if entry.deleted:
-                continue
             if ls:
                 name = entry.name
                 user = entry.attributes.get("login",
