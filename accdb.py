@@ -1117,6 +1117,11 @@ class Interactive(cmd.Cmd):
 
         tty = sys.stdout.isatty()
 
+        if tty:
+            f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
+        else:
+            f = lambda arg, fmt: arg
+
         if full and not tty:
             print(db._modeline)
 
@@ -1148,7 +1153,12 @@ class Interactive(cmd.Cmd):
             if entry.deleted:
                 continue
             if ls:
-                print("%5d │ %s" % (entry.itemno, entry.name))
+                name = entry.name
+                user = entry.attributes.get("login",
+                        entry.attributes.get("email", []))
+                if user:
+                    name += f(" (%s)" % user[0], "38;5;244")
+                print("%5d │ %s" % (entry.itemno, name))
             elif full:
                 print(entry.dump(color=tty, storage=True, conceal=False, itemno=tty))
             else:
