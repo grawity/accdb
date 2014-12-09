@@ -1335,7 +1335,7 @@ class Interactive(cmd.Cmd):
 
     def do_set(self, arg):
         """Change attributes of an entry"""
-        arg    = arg.split()
+        arg    = shlex.split(arg)
         items  = expand_range(arg[0])
         args   = arg[1:]
 
