@@ -507,9 +507,9 @@ class PatternFilter(Filter):
         if self.func:
             return self.func(entry)
 
-    def __repr__(self):
+    def __str__(self):
         if isinstance(self.func, Filter):
-            return repr(self.func)
+            return str(self.func)
         else:
             return "(PATTERN %s)" % self.pattern
 
@@ -523,7 +523,7 @@ class ItemNumberFilter(Filter):
     def test(self, entry):
         return entry.itemno == self.value
 
-    def __repr__(self):
+    def __str__(self):
         return "(ITEM %d)" % self.value
 
 class ItemNumberRangeFilter(Filter):
@@ -534,7 +534,7 @@ class ItemNumberRangeFilter(Filter):
     def test(self, entry):
         return entry.itemno in self.items
 
-    def __repr__(self):
+    def __str__(self):
         return "(RANGE %s)" % self.pattern
 
 class ItemUuidFilter(Filter):
@@ -547,7 +547,7 @@ class ItemUuidFilter(Filter):
     def test(self, entry):
         return entry.uuid == self.value
 
-    def __repr__(self):
+    def __str__(self):
         return "(UUID %s)" % self.value
 
 class ConjunctionFilter(Filter):
@@ -557,8 +557,8 @@ class ConjunctionFilter(Filter):
     def test(self, entry):
         return all(filter.test(entry) for filter in self.filters)
 
-    def __repr__(self):
-        return "(AND %s)" % " ".join(repr(f) for f in self.filters)
+    def __str__(self):
+        return "(AND %s)" % " ".join(str(f) for f in self.filters)
 
 class DisjunctionFilter(Filter):
     def __init__(self, *filters):
@@ -567,8 +567,8 @@ class DisjunctionFilter(Filter):
     def test(self, entry):
         return any(filter.test(entry) for filter in self.filters)
 
-    def __repr__(self):
-        return "(OR %s)" % " ".join(repr(f) for f in self.filters)
+    def __str__(self):
+        return "(OR %s)" % " ".join(str(f) for f in self.filters)
 
 class NegationFilter(Filter):
     def __init__(self, filter):
@@ -577,8 +577,8 @@ class NegationFilter(Filter):
     def test(self, entry):
         return not self.filter.test(entry)
 
-    def __repr__(self):
-        return "(NOT %r)" % self.filter
+    def __str__(self):
+        return "(NOT %s)" % self.filter
 
 class Database(object):
     def __init__(self):
