@@ -356,61 +356,6 @@ def start_editor(path):
 class FilterSyntaxError(Exception):
     pass
 
-def compile_pattern(pattern):
-    _debug("compiling pattern %r" % pattern)
-
-    func = None
-
-    if pattern == "*":
-        func = lambda entry: True
-    elif pattern.startswith("#"):
-        func = ItemNumberFilter(pattern[1:])
-    elif pattern.startswith("+"):
-        regex = re_compile_glob(pattern[1:])
-        func = lambda entry: any(regex.match(tag) for tag in entry.tags)
-    elif pattern.startswith("@"):
-        if "=" in pattern:
-            attr, glob = pattern[1:].split("=", 1)
-            attr = translate_field(attr)
-            regex = re_compile_glob(glob)
-            func = lambda entry:\
-                attr in entry.attributes \
-                and any(regex.match(value)
-                    for value in entry.attributes[attr])
-        elif "~" in pattern:
-            attr, regex = pattern[1:].split("~", 1)
-            attr = translate_field(attr)
-            try:
-                regex = re.compile(regex, re.I | re.U)
-            except re.error as e:
-                lib.die("invalid regex %r (%s)" % (regex, e))
-            func = lambda entry:\
-                attr in entry.attributes \
-                and any(regex.search(value)
-                    for value in entry.attributes[attr])
-        elif "*" in pattern:
-            regex = re_compile_glob(pattern[1:])
-            func = lambda entry:\
-                any(regex.match(attr) for attr in entry.attributes)
-        else:
-            attr = translate_field(pattern[1:])
-            func = lambda entry: attr in entry.attributes
-    elif pattern.startswith("~"):
-        try:
-            regex = re.compile(pattern[1:], re.I | re.U)
-        except re.error as e:
-            lib.die("invalid regex %r (%s)" % (pattern[1:], e))
-        func = lambda entry: regex.search(entry.name)
-    elif pattern.startswith("{"):
-        func = ItemUuidFilter(pattern)
-    else:
-        if "*" not in pattern:
-            pattern = "*" + pattern + "*"
-        regex = re_compile_glob(pattern)
-        func = lambda entry: regex.match(entry.name)
-
-    return func
-
 class Filter(object):
     def __call__(self, entry):
         return bool(self.test(entry))
@@ -537,7 +482,7 @@ class Filter(object):
 class PatternFilter(Filter):
     def __init__(self, pattern):
         self.pattern = pattern
-        self.func = compile_pattern(self.pattern)
+        self.func = PatternFilter.compile(self.pattern)
 
     def test(self, entry):
         if self.func:
@@ -548,6 +493,62 @@ class PatternFilter(Filter):
             return str(self.func)
         else:
             return "(PATTERN %s)" % self.pattern
+
+    @staticmethod
+    def compile(pattern):
+        _debug("compiling pattern %r" % pattern)
+
+        func = None
+
+        if pattern == "*":
+            func = lambda entry: True
+        elif pattern.startswith("#"):
+            func = ItemNumberFilter(pattern[1:])
+        elif pattern.startswith("+"):
+            regex = re_compile_glob(pattern[1:])
+            func = lambda entry: any(regex.match(tag) for tag in entry.tags)
+        elif pattern.startswith("@"):
+            if "=" in pattern:
+                attr, glob = pattern[1:].split("=", 1)
+                attr = translate_field(attr)
+                regex = re_compile_glob(glob)
+                func = lambda entry:\
+                    attr in entry.attributes \
+                    and any(regex.match(value)
+                        for value in entry.attributes[attr])
+            elif "~" in pattern:
+                attr, regex = pattern[1:].split("~", 1)
+                attr = translate_field(attr)
+                try:
+                    regex = re.compile(regex, re.I | re.U)
+                except re.error as e:
+                    lib.die("invalid regex %r (%s)" % (regex, e))
+                func = lambda entry:\
+                    attr in entry.attributes \
+                    and any(regex.search(value)
+                        for value in entry.attributes[attr])
+            elif "*" in pattern:
+                regex = re_compile_glob(pattern[1:])
+                func = lambda entry:\
+                    any(regex.match(attr) for attr in entry.attributes)
+            else:
+                attr = translate_field(pattern[1:])
+                func = lambda entry: attr in entry.attributes
+        elif pattern.startswith("~"):
+            try:
+                regex = re.compile(pattern[1:], re.I | re.U)
+            except re.error as e:
+                lib.die("invalid regex %r (%s)" % (pattern[1:], e))
+            func = lambda entry: regex.search(entry.name)
+        elif pattern.startswith("{"):
+            func = ItemUuidFilter(pattern)
+        else:
+            if "*" not in pattern:
+                pattern = "*" + pattern + "*"
+            regex = re_compile_glob(pattern)
+            func = lambda entry: regex.match(entry.name)
+
+        return func
 
 class ItemNumberFilter(Filter):
     def __init__(self, pattern):
