@@ -1160,7 +1160,7 @@ class Interactive(cmd.Cmd):
             if ls:
                 name = entry.name
                 user = entry.attributes.get("login",
-                        entry.attributes.get("email", []))
+                       entry.attributes.get("email", []))
                 if user:
                     name += f(" (%s)" % ellipsize(user[0], 18), "38;5;244")
                 print("%5d │ %s" % (entry.itemno, name))
