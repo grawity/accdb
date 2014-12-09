@@ -997,7 +997,7 @@ class Entry(object):
         dis["name"] = self.name
         dis["comment"] = self.comment
         dis["data"] = {key: list(val for val in self.attributes[key])
-                for key in sort_fields(self, False)}
+                for key in sort_fields(self)}
         dis["lineno"] = self.lineno
         dis["tags"] = list(self.tags)
         dis["uuid"] = str(self.uuid)
