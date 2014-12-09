@@ -446,7 +446,7 @@ class Filter(object):
         return db.find(filter)
 
     @staticmethod
-    def _cli_compile_and_search(arg):
+    def _cli_compile(arg):
         args = shlex.split(arg)
         try:
             if len(args) > 1:
@@ -466,7 +466,11 @@ class Filter(object):
             sys.exit(1)
         if debug:
             trace("compiled filter:", filter)
-        return db.find(filter)
+        return filter
+
+    @staticmethod
+    def _cli_compile_and_search(arg):
+        return db.find(Filter._cli_compile(arg))
 
 class PatternFilter(Filter):
     def __init__(self, pattern):
@@ -1150,7 +1154,8 @@ class Interactive(cmd.Cmd):
         if full and not tty:
             print(db._modeline)
 
-        results = Filter._cli_compile_and_search(arg)
+        filter = Filter._cli_compile(arg)
+        results = db.find(filter)
 
         num = 0
         for entry in results:
