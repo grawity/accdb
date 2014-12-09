@@ -451,6 +451,10 @@ def compile_filter(pattern):
             if len(args) > 1:
                 raise FilterSyntaxError("too many arguments for 'RANGE'")
             return ItemNumberRangeFilter(args[0])
+        elif op in {"UUID", "uuid"}:
+            if len(args) > 1:
+                raise FilterSyntaxError("too many arguments for 'UUID'")
+            return ItemUuidFilter(args[0])
         # etc.
         else:
             raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
@@ -570,7 +574,7 @@ class ItemUuidFilter(Filter):
         try:
             self.value = uuid.UUID(pattern)
         except ValueError:
-            raise FilterSyntaxError("integer value expected for 'UUID'")
+            raise FilterSyntaxError("malformed value for 'UUID'")
 
     def test(self, entry):
         return entry.uuid == self.value
