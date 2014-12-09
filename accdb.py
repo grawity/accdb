@@ -1208,22 +1208,22 @@ class Interactive(cmd.Cmd):
 
     def do_reveal(self, arg):
         """Display entry (including sensitive information)"""
-        for entry in _compile_and_search(arg):
+        for entry in _cli_compile_and_search(arg):
             self._show_entry(entry, recurse=True, conceal=False)
 
     def do_show(self, arg):
         """Display entry (safe)"""
-        for entry in _compile_and_search(arg):
+        for entry in _cli_compile_and_search(arg):
             self._show_entry(entry)
 
     def do_rshow(self, arg):
         """Display entry (safe, recursive)"""
-        for entry in _compile_and_search(arg):
+        for entry in _cli_compile_and_search(arg):
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
-        for entry in _compile_and_search(arg):
+        for entry in _cli_compile_and_search(arg):
             self._show_entry(entry)
             params = entry.oath_params
             if params is None:
@@ -1239,7 +1239,7 @@ class Interactive(cmd.Cmd):
 
     def do_totp(self, arg):
         """Generate an OATH TOTP response"""
-        for entry in _compile_and_search(arg):
+        for entry in _cli_compile_and_search(arg):
             params = entry.oath_params
             if params:
                 otp = params.generate()
@@ -1250,7 +1250,7 @@ class Interactive(cmd.Cmd):
 
     def do_t(self, arg):
         """Copy OATH TOTP response to clipboard"""
-        items = list(_compile_and_search(arg))
+        items = list(_cli_compile_and_search(arg))
         if len(items) > 1:
             lib.die("too many arguments")
         entry = items[0]
@@ -1356,7 +1356,7 @@ class Interactive(cmd.Cmd):
 
     def do_rm(self, arg):
         """Delete an entry"""
-        for entry in _compile_and_search(arg):
+        for entry in _cli_compile_and_search(arg):
             entry.deleted = True
             self._show_entry(entry)
 
