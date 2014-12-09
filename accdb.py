@@ -834,7 +834,7 @@ class Entry(object):
                     self.comment += line + "\n"
                     continue
 
-                if val.startswith("<private[") and val.endswith("]>"):
+                if val == "<private>":
                     # trying to load a safe dump
                     print("Line %d: lost private data, you're fucked" \
                         % lineno,
@@ -932,7 +932,7 @@ class Entry(object):
                             #print("maybe encoding %r as %r" % (_v, value))
                             #value = _v
                         elif not raw:
-                            value = "<private[%d]>" % len(value)
+                            value = "<private>"
                         data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                     elif self.is_link_attr(key):
                         sub_entry = None
