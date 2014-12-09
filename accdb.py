@@ -419,6 +419,10 @@ def compile_filter(pattern):
             if len(args) > 1:
                 raise FilterSyntaxError("too many arguments for 'PATTERN'")
             return PatternFilter(args[0])
+        elif op in {"RANGE", "item"}:
+            if len(args) > 1:
+                raise FilterSyntaxError("too many arguments for 'RANGE'")
+            return ItemNumberRangeFilter(args[0])
         # etc.
         else:
             raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
@@ -531,7 +535,7 @@ class ItemNumberRangeFilter(Filter):
         return entry.itemno in self.items
 
     def __repr__(self):
-        return "(ITEMS %s)" % self.pattern
+        return "(RANGE %s)" % self.pattern
 
 class ItemUuidFilter(Filter):
     def __init__(self, pattern):
