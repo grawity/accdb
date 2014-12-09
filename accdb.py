@@ -107,8 +107,7 @@ def split_kvlist(string):
     return items
 
 class Changeset(list):
-    @classmethod
-    def parse(_class, args):
+    def __init__(self, args):
         _ops = {
             "+": "add",
             "-": "rem",
@@ -116,7 +115,6 @@ class Changeset(list):
             "<": "copy",
             "^": "move",
         }
-        self = _class()
         dwim = set()
         for a in args:
             _debug("arg %r" % a)
@@ -142,7 +140,6 @@ class Changeset(list):
             else:
                 lib.err("syntax error in %r" % a)
         _debug("changes: %r" % self)
-        return self
 
     def apply_to(self, target):
         for op, k, v in self:
@@ -1351,7 +1348,7 @@ class Interactive(cmd.Cmd):
         items  = expand_range(arg[0])
         args   = arg[1:]
 
-        changes = Changeset.parse(args)
+        changes = Changeset(args)
         for item in items:
             _debug("item: %r" % item)
             entry = db.find_by_itemno(item)
