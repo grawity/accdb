@@ -1188,26 +1188,22 @@ class Interactive(cmd.Cmd):
 
     def do_reveal(self, arg):
         """Display entry (including sensitive information)"""
-        for itemno in expand_range(arg):
-            entry = db.find_by_itemno(itemno)
+        for entry in _compile_and_search(arg):
             self._show_entry(entry, recurse=True, conceal=False)
 
     def do_show(self, arg):
         """Display entry (safe)"""
-        for itemno in expand_range(arg):
-            entry = db.find_by_itemno(itemno)
+        for entry in _compile_and_search(arg):
             self._show_entry(entry)
 
     def do_rshow(self, arg):
         """Display entry (safe, recursive)"""
-        for itemno in expand_range(arg):
-            entry = db.find_by_itemno(itemno)
+        for entry in _compile_and_search(arg):
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
-        for itemno in expand_range(arg):
-            entry = db.find_by_itemno(itemno)
+        for entry in _compile_and_search(arg):
             self._show_entry(entry)
             params = entry.oath_params
             if params is None:
@@ -1223,8 +1219,7 @@ class Interactive(cmd.Cmd):
 
     def do_totp(self, arg):
         """Generate an OATH TOTP response"""
-        for itemno in expand_range(arg):
-            entry = db.find_by_itemno(itemno)
+        for entry in _compile_and_search(arg):
             params = entry.oath_params
             if params:
                 otp = params.generate()
@@ -1235,10 +1230,10 @@ class Interactive(cmd.Cmd):
 
     def do_t(self, arg):
         """Copy OATH TOTP response to clipboard"""
-        items = expand_range(arg)
+        items = list(_compile_and_search(arg))
         if len(items) > 1:
             lib.die("too many arguments")
-        entry = db.find_by_itemno(items[0])
+        entry = items[0]
         self._show_entry(entry)
         params = entry.oath_params
         if params:
@@ -1341,10 +1336,7 @@ class Interactive(cmd.Cmd):
 
     def do_rm(self, arg):
         """Delete an entry"""
-        items = expand_range(arg)
-
-        for item in items:
-            entry = db.find_by_itemno(item)
+        for entry in _compile_and_search(arg):
             entry.deleted = True
             self._show_entry(entry)
 
