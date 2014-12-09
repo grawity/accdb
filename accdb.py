@@ -676,9 +676,6 @@ class Database(object):
         if entry.lineno is None:
             entry.lineno = lineno
 
-        # Two uuid.UUID objects for the same UUID will also have the same hash.
-        # Hence, it is okay to use an uuid.UUID as a dict key. For now, anyway.
-        # TODO: Can this be relied upon? Not documented anywhere.
         self.entries[entry.uuid] = entry
         self.order.append(entry.uuid)
 
