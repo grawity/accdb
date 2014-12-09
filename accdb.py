@@ -1189,9 +1189,9 @@ class Interactive(cmd.Cmd):
         """Read entries from stdin and merge to main database"""
 
         newdb = Database()
-        newdb.parseinto(sys.stdin)
-
         outdb = Database()
+
+        newdb.parseinto(sys.stdin)
 
         for newentry in newdb:
             if newentry._broken:
@@ -1205,7 +1205,7 @@ class Interactive(cmd.Cmd):
                 entry = db.add(newentry)
             outdb.add(entry)
 
-            db.modified = True
+        db.modified = True
 
         self.do_dump("", outdb)
 
@@ -1307,8 +1307,7 @@ class Interactive(cmd.Cmd):
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
-        if not debug:
-            db.modified = True
+        db.modified = True
 
     def do_tag(self, arg):
         """Add or remove tags to an entry"""
@@ -1334,8 +1333,7 @@ class Interactive(cmd.Cmd):
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
-        if not debug:
-            db.modified = True
+        db.modified = True
 
     def do_set(self, arg):
         """Change attributes of an entry"""
@@ -1354,8 +1352,7 @@ class Interactive(cmd.Cmd):
             print("(%d %s updated)" % \
                 (len(items), ("entry" if len(items) == 1 else "entries")))
 
-        if "DEBUG" not in os.environ:
-            db.modified = True
+        db.modified = True
 
     def do_rm(self, arg):
         """Delete an entry"""
@@ -1428,7 +1425,7 @@ if len(sys.argv) > 1:
 else:
     interp.cmdloop()
 
-if db.modified:
+if db.modified and not debug:
     db.flush()
 
     db_dir = os.path.dirname(db_path)
