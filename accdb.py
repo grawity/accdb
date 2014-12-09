@@ -52,6 +52,12 @@ def _debug(msg, *args):
     if debug:
         return trace(msg, *args)
 
+def ellipsize(string, max):
+    if len(string) <= max:
+        return string
+    else:
+        return string[:max-1] + "…"
+
 def strip_field_prefix(name):
     return field_prefix_re.sub("", name)
 
@@ -1156,7 +1162,7 @@ class Interactive(cmd.Cmd):
                 user = entry.attributes.get("login",
                         entry.attributes.get("email", []))
                 if user:
-                    name += f(" (%s)" % user[0], "38;5;244")
+                    name += f(" (%s)" % ellipsize(user[0], 18), "38;5;244")
                 print("%5d │ %s" % (entry.itemno, name))
             elif full:
                 print(entry.dump(color=tty, storage=True, conceal=False, itemno=tty))
