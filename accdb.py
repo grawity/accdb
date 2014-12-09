@@ -356,121 +356,6 @@ def start_editor(path):
 class FilterSyntaxError(Exception):
     pass
 
-def _compile_and_search(text):
-    try:
-        filter = compile_filter(text)
-    except FilterSyntaxError as e:
-        trace("syntax error in filter:", *e.args)
-        sys.exit(1)
-    if debug:
-        trace("compiled filter:", filter)
-    return db.find(filter)
-
-def _cli_compile_and_search(arg):
-    args = shlex.split(arg)
-    try:
-        if len(args) > 1:
-            arg = "AND"
-            for x in args:
-                arg += (" (%s)" if " " in x else " %s") % x
-            filters = [compile_filter(x) for x in args]
-            filter = ConjunctionFilter(*filters)
-        elif len(args) > 0:
-            arg = args[0]
-            filter = compile_filter(arg)
-        else:
-            arg = "*"
-            filter = compile_filter(arg)
-    except FilterSyntaxError as e:
-        trace("syntax error in filter:", *e.args)
-        sys.exit(1)
-    if debug:
-        trace("compiled filter:", filter)
-    return db.find(filter)
-
-def split_filter(text):
-    tokens = []
-    depth = 0
-    start = -1
-    for pos, char in enumerate(text):
-        if char == "(":
-            if depth == 0:
-                if start >= 0:
-                    tokens.append(text[start:pos])
-                start = pos+1
-            depth += 1
-        elif char == ")":
-            depth -= 1
-            if depth == 0 and start >= 0:
-                tokens.append(text[start:pos])
-                start = -1
-        elif char in " \t\r\n":
-            if depth == 0 and start >= 0:
-                tokens.append(text[start:pos])
-                start = -1
-        else:
-            if start < 0:
-                start = pos
-    if depth == 0:
-        if start >= 0:
-            tokens.append(text[start:])
-        return tokens
-    elif depth > 0:
-        raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
-    elif depth < 0:
-        raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
-
-def compile_filter(pattern):
-    tokens = split_filter(pattern)
-    _debug("parsing filter %r -> %r" % (pattern, tokens))
-
-    op, *args = tokens
-    if len(args) > 0:
-        # boolean operators
-        if op in {"AND", "and"}:
-            filters = [compile_filter(x) for x in args]
-            return ConjunctionFilter(*filters)
-        elif op in {"OR", "or"}:
-            filters = [compile_filter(x) for x in args]
-            return DisjunctionFilter(*filters)
-        elif op in {"NOT", "not"}:
-            if len(args) > 1:
-                raise FilterSyntaxError("too many arguments for 'NOT'")
-            filter = compile_filter(args[0])
-            return NegationFilter(filter)
-        # search filters
-        elif op in {"ITEM", "item"}:
-            if len(args) > 1:
-                raise FilterSyntaxError("too many arguments for 'ITEM'")
-            return ItemNumberFilter(args[0])
-        elif op in {"PATTERN", "pattern"}:
-            if len(args) > 1:
-                raise FilterSyntaxError("too many arguments for 'PATTERN'")
-            return PatternFilter(args[0])
-        elif op in {"RANGE", "item"}:
-            if len(args) > 1:
-                raise FilterSyntaxError("too many arguments for 'RANGE'")
-            return ItemNumberRangeFilter(args[0])
-        elif op in {"UUID", "uuid"}:
-            if len(args) > 1:
-                raise FilterSyntaxError("too many arguments for 'UUID'")
-            return ItemUuidFilter(args[0])
-        # etc.
-        else:
-            raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
-    elif " " in op or "(" in op or ")" in op:
-        return compile_filter(op)
-    elif op.startswith("#"):
-        return ItemNumberFilter(op[1:])
-    elif op.startswith("{"):
-        return ItemUuidFilter(op)
-    elif op.isdecimal():
-        return ItemNumberFilter(op)
-    elif re.match(r"^[0-9,-]+$", op):
-        return ItemNumberRangeFilter(op)
-    else:
-        return PatternFilter(op)
-
 def compile_pattern(pattern):
     _debug("compiling pattern %r" % pattern)
 
@@ -529,6 +414,125 @@ def compile_pattern(pattern):
 class Filter(object):
     def __call__(self, entry):
         return bool(self.test(entry))
+
+    @staticmethod
+    def parse(text):
+        tokens = []
+        depth = 0
+        start = -1
+        for pos, char in enumerate(text):
+            if char == "(":
+                if depth == 0:
+                    if start >= 0:
+                        tokens.append(text[start:pos])
+                    start = pos+1
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0 and start >= 0:
+                    tokens.append(text[start:pos])
+                    start = -1
+            elif char in " \t\r\n":
+                if depth == 0 and start >= 0:
+                    tokens.append(text[start:pos])
+                    start = -1
+            else:
+                if start < 0:
+                    start = pos
+        if depth == 0:
+            if start >= 0:
+                tokens.append(text[start:])
+            return tokens
+        elif depth > 0:
+            raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
+        elif depth < 0:
+            raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
+
+    @staticmethod
+    def compile(pattern):
+        tokens = Filter.parse(pattern)
+        _debug("parsing filter %r -> %r" % (pattern, tokens))
+
+        op, *args = tokens
+        if len(args) > 0:
+            # boolean operators
+            if op in {"AND", "and"}:
+                filters = [Filter.compile(x) for x in args]
+                return ConjunctionFilter(*filters)
+            elif op in {"OR", "or"}:
+                filters = [Filter.compile(x) for x in args]
+                return DisjunctionFilter(*filters)
+            elif op in {"NOT", "not"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'NOT'")
+                filter = Filter.compile(args[0])
+                return NegationFilter(filter)
+            # search filters
+            elif op in {"ITEM", "item"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'ITEM'")
+                return ItemNumberFilter(args[0])
+            elif op in {"PATTERN", "pattern"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'PATTERN'")
+                return PatternFilter(args[0])
+            elif op in {"RANGE", "item"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'RANGE'")
+                return ItemNumberRangeFilter(args[0])
+            elif op in {"UUID", "uuid"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'UUID'")
+                return ItemUuidFilter(args[0])
+            # etc.
+            else:
+                raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
+        elif " " in op or "(" in op or ")" in op:
+            return Filter.compile(op)
+        elif op.startswith("#"):
+            return ItemNumberFilter(op[1:])
+        elif op.startswith("{"):
+            return ItemUuidFilter(op)
+        elif op.isdecimal():
+            return ItemNumberFilter(op)
+        elif re.match(r"^[0-9,-]+$", op):
+            return ItemNumberRangeFilter(op)
+        else:
+            return PatternFilter(op)
+
+    @staticmethod
+    def _compile_and_search(text):
+        try:
+            filter = Filter.compile(text)
+        except FilterSyntaxError as e:
+            trace("syntax error in filter:", *e.args)
+            sys.exit(1)
+        if debug:
+            trace("compiled filter:", filter)
+        return db.find(filter)
+
+    @staticmethod
+    def _cli_compile_and_search(arg):
+        args = shlex.split(arg)
+        try:
+            if len(args) > 1:
+                arg = "AND"
+                for x in args:
+                    arg += (" (%s)" if " " in x else " %s") % x
+                filters = [Filter.compile(x) for x in args]
+                filter = ConjunctionFilter(*filters)
+            elif len(args) > 0:
+                arg = args[0]
+                filter = Filter.compile(arg)
+            else:
+                arg = "*"
+                filter = Filter.compile(arg)
+        except FilterSyntaxError as e:
+            trace("syntax error in filter:", *e.args)
+            sys.exit(1)
+        if debug:
+            trace("compiled filter:", filter)
+        return db.find(filter)
 
 class PatternFilter(Filter):
     def __init__(self, pattern):
@@ -1156,7 +1160,7 @@ class Interactive(cmd.Cmd):
         if full and not tty:
             print(db._modeline)
 
-        results = _cli_compile_and_search(arg)
+        results = Filter._cli_compile_and_search(arg)
 
         num = 0
         for entry in results:
@@ -1212,22 +1216,22 @@ class Interactive(cmd.Cmd):
 
     def do_reveal(self, arg):
         """Display entry (including sensitive information)"""
-        for entry in _cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(arg):
             self._show_entry(entry, recurse=True, conceal=False)
 
     def do_show(self, arg):
         """Display entry (safe)"""
-        for entry in _cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(arg):
             self._show_entry(entry)
 
     def do_rshow(self, arg):
         """Display entry (safe, recursive)"""
-        for entry in _cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(arg):
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
-        for entry in _cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(arg):
             self._show_entry(entry)
             params = entry.oath_params
             if params is None:
@@ -1243,7 +1247,7 @@ class Interactive(cmd.Cmd):
 
     def do_totp(self, arg):
         """Generate an OATH TOTP response"""
-        for entry in _cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(arg):
             params = entry.oath_params
             if params:
                 otp = params.generate()
@@ -1254,7 +1258,7 @@ class Interactive(cmd.Cmd):
 
     def do_t(self, arg):
         """Copy OATH TOTP response to clipboard"""
-        items = list(_cli_compile_and_search(arg))
+        items = list(Filter._cli_compile_and_search(arg))
         if len(items) > 1:
             lib.die("too many arguments")
         entry = items[0]
@@ -1296,7 +1300,7 @@ class Interactive(cmd.Cmd):
             lib.die("no old tags specified")
 
         query = "OR " + " ".join(["+%s" % tag for tag in old_tags])
-        items = _compile_and_search(query)
+        items = Filter._compile_and_search(query)
         num   = 0
 
         for entry in items:
@@ -1322,7 +1326,7 @@ class Interactive(cmd.Cmd):
         if bad_args:
             lib.die("bad arguments: %r" % bad_args)
 
-        items = _compile_and_search(query)
+        items = Filter._compile_and_search(query)
         tags  = set(tags)
         num   = 0
 
@@ -1360,7 +1364,7 @@ class Interactive(cmd.Cmd):
 
     def do_rm(self, arg):
         """Delete an entry"""
-        for entry in _cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(arg):
             entry.deleted = True
             self._show_entry(entry)
 
