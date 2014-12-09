@@ -366,6 +366,28 @@ def _compile_and_search(text):
         trace("compiled filter:", filter)
     return db.find(filter)
 
+def _cli_compile_and_search(arg):
+    args = shlex.split(arg)
+    try:
+        if len(args) > 1:
+            arg = "AND"
+            for x in args:
+                arg += (" (%s)" if " " in x else " %s") % x
+            filters = [compile_filter(x) for x in args]
+            filter = ConjunctionFilter(*filters)
+        elif len(args) > 0:
+            arg = args[0]
+            filter = compile_filter(arg)
+        else:
+            arg = "*"
+            filter = compile_filter(arg)
+    except FilterSyntaxError as e:
+        trace("syntax error in filter:", *e.args)
+        sys.exit(1)
+    if debug:
+        trace("compiled filter:", filter)
+    return db.find(filter)
+
 def split_filter(text):
     tokens = []
     depth = 0
@@ -1130,28 +1152,7 @@ class Interactive(cmd.Cmd):
         if full and not tty:
             print(db._modeline)
 
-        args = shlex.split(arg)
-        try:
-            if len(args) > 1:
-                arg = "AND"
-                for x in args:
-                    arg += (" (%s)" if " " in x else " %s") % x
-                filters = [compile_filter(x) for x in args]
-                filter = ConjunctionFilter(*filters)
-            elif len(args) > 0:
-                arg = args[0]
-                filter = compile_filter(arg)
-            else:
-                arg = "*"
-                filter = compile_filter(arg)
-        except FilterSyntaxError as e:
-            trace("syntax error in filter:", *e.args)
-            sys.exit(1)
-
-        if debug:
-            trace("compiled filter:", filter)
-
-        results = db.find(filter)
+        results = _cli_compile_and_search(arg)
 
         num = 0
         for entry in results:
