@@ -96,16 +96,6 @@ def expand_range(string):
         items.extend(range(m, n))
     return items
 
-def split_kvlist(string):
-    items = {}
-    for token in string.split():
-        if "=" in token:
-            k, v = token.split("=", 1)
-            items[k] = v
-        else:
-            items[token] = None
-    return items
-
 class Changeset(list):
     def __init__(self, args):
         _ops = {
