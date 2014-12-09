@@ -883,7 +883,8 @@ class Entry(object):
 
     # Export
 
-    def dump(self, storage=False, conceal=True, color=False, itemno=None):
+    def dump(self, storage=False, conceal=True, show_contents=True,
+             color=False, itemno=None):
         """
         storage:
             output !private data
@@ -913,44 +914,45 @@ class Entry(object):
 
         data += "= %s\n" % f(self.name, "38;5;50")
 
-        for line in self.comment.splitlines():
-            data += "%s%s\n" % (f(";", "38;5;8"), f(line, "38;5;30"))
+        if show_contents:
+            for line in self.comment.splitlines():
+                data += "%s%s\n" % (f(";", "38;5;8"), f(line, "38;5;30"))
 
-        if self.uuid:
-            data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
+            if self.uuid:
+                data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
-        for key in sort_fields(self):
-            for value in self.attributes[key]:
-                if self.is_private_attr(key):
-                    if storage and conceal:
-                        _v = value
-                        #value = value.encode("utf-8")
-                        value = wrap_secret(value)
-                        #value = base64.b64encode(value)
-                        #value = value.decode("utf-8")
-                        #value = "<base64> %s" % value
-                        value = "<wrapped> %s" % value
-                        #print("maybe encoding %r as %r" % (_v, value))
-                        #value = _v
-                    elif not raw:
-                        value = "<private[%d]>" % len(value)
-                    data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
-                elif self.is_link_attr(key):
-                    sub_entry = None
-                    value_color = "32"
-                    if not raw:
-                        try:
-                            sub_entry = db.find_by_uuid(value)
-                        except KeyError:
-                            value_color = "33"
-                    if sub_entry:
-                        text = f(sub_entry.name, value_color)
-                        text += f(" (item %d)" % sub_entry.itemno, "38;5;8")
+            for key in sort_fields(self):
+                for value in self.attributes[key]:
+                    if self.is_private_attr(key):
+                        if storage and conceal:
+                            _v = value
+                            #value = value.encode("utf-8")
+                            value = wrap_secret(value)
+                            #value = base64.b64encode(value)
+                            #value = value.decode("utf-8")
+                            #value = "<base64> %s" % value
+                            value = "<wrapped> %s" % value
+                            #print("maybe encoding %r as %r" % (_v, value))
+                            #value = _v
+                        elif not raw:
+                            value = "<private[%d]>" % len(value)
+                        data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
+                    elif self.is_link_attr(key):
+                        sub_entry = None
+                        value_color = "32"
+                        if not raw:
+                            try:
+                                sub_entry = db.find_by_uuid(value)
+                            except KeyError:
+                                value_color = "33"
+                        if sub_entry:
+                            text = f(sub_entry.name, value_color)
+                            text += f(" (item %d)" % sub_entry.itemno, "38;5;8")
+                        else:
+                            text = value
+                        data += "\t%s: %s\n" % (f(key, "38;5;188"), text)
                     else:
-                        text = value
-                    data += "\t%s: %s\n" % (f(key, "38;5;188"), text)
-                else:
-                    data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
+                        data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
 
         if self.tags:
             tags = list(self.tags)
@@ -1293,7 +1295,7 @@ class Interactive(cmd.Cmd):
             entry.tags -= old_tags
             entry.tags |= new_tags
             num += 1
-            self._show_entry(entry)
+            self._show_entry(entry, show_contents=False)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
@@ -1320,7 +1322,7 @@ class Interactive(cmd.Cmd):
             entry.tags |= add_tags
             entry.tags -= rem_tags
             num += 1
-            self._show_entry(entry)
+            self._show_entry(entry, show_contents=False)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
