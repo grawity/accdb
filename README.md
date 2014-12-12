@@ -100,9 +100,16 @@ Copying a password to clipboard:
 
 Editing a few entries:
 
+    ad set 64 2fa="pass + (u2f | otp-oath)"
+    ad set +sso:google ref.sso+={ee4b5502-eeda-410e-8076-1f6d05a7f581}
+
+    ad tag 123 +shared-account
+
     ad rgrep +TODO | vipe | ad merge
 
 Editing the entire database:
+
+    ad retag -is:forum +forum
 
     vim $ACCDB
 
@@ -125,7 +132,11 @@ Dumping the entire database:
 
   - `@foo~bar` – attribute `foo` present (exact) and has value matching `bar` (regex)
 
-  - `#123` – item number
+  - `+foo` – tag present (glob)
+
+  - `123` or `#123` – item number
+
+  - `123,456,78-89` – range of item numbers
 
   - `{foo}` – item UUID
 
@@ -137,5 +148,27 @@ For example:
 
     ad ls '(OR #123 (PATTERN #234) {0a1588fd-84e7-427c-8c7b-f8534e7635e1} @nicname
            +is:license Weibo (AND (OR @id.pgp-key @pgp.key-id +is:payment))'
+
+## Edit syntax
+
+Synopsis: `ad set <filter> <operation...>`
+
+  - `key:=value` – set value
+  - `key+=value` – add value (unique)
+  - `key-=value` – remove value
+  - `key=value` – set (first occurence), then add (unique)
+  - `-key` – remove all values (delete key)
+  - `key<=key` – copy from another key
+  - `key^=key` – move from another key (i.e. rename key)
+
+Synopsis: `ad tag <filter> <operation...>`
+
+  - `+tag` – add tag
+  - `-tag` – remove tag
+
+Synopsis: `ad retag <remove...> <add...>`
+
+  - `-tag` – existing tags
+  - `+tag` – replacement tags
 
 <!-- vim: set ts=8 sw=8 et: -->
