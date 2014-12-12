@@ -1332,20 +1332,17 @@ class Interactive(cmd.Cmd):
 
     def do_set(self, arg):
         """Change attributes of an entry"""
-        arg    = shlex.split(arg)
-        items  = expand_range(arg[0])
-        args   = arg[1:]
+        query, *args = shlex.split(arg)
+        num = 0
 
         changes = Changeset(args)
-        for item in items:
-            _debug("item: %r" % item)
-            entry = db.find_by_itemno(item)
+        for entry in Filter._compile_and_search(query):
             changes.apply_to(entry.attributes)
+            num += 1
             self._show_entry(entry)
 
         if sys.stdout.isatty():
-            print("(%d %s updated)" % \
-                (len(items), ("entry" if len(items) == 1 else "entries")))
+            print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
         db.modified = True
 
