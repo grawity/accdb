@@ -35,13 +35,14 @@ field_names = {
 }
 
 field_groups = {
+    "metadata": ["(alias)"],
     "object":   ["entity", "host", "uri", "realm"],
     "username": ["login", "login.", "nic-hdl", "principal"],
     "password": ["pass", "!pass"],
     "email":    ["email"],
 }
 
-field_order = ["object", "username", "password", "email"]
+field_order = ["metadata", "object", "username", "password", "email"]
 
 field_prefix_re = re.compile(r"^\W+")
 
@@ -532,14 +533,20 @@ class PatternFilter(Filter):
                 regex = re.compile(pattern[1:], re.I | re.U)
             except re.error as e:
                 lib.die("invalid regex %r (%s)" % (pattern[1:], e))
-            func = lambda entry: regex.search(entry.name)
+            func = lambda entry:\
+                    regex.search(entry.name) \
+                    or any(regex.search(value)
+                       for value in entry.attributes.get("(alias)", []))
         elif pattern.startswith("{"):
             func = ItemUuidFilter(pattern)
         else:
             if "*" not in pattern:
                 pattern = "*" + pattern + "*"
             regex = re_compile_glob(pattern)
-            func = lambda entry: regex.match(entry.name)
+            func = lambda entry:\
+                    regex.search(entry.name) \
+                    or any(regex.search(value)
+                       for value in entry.attributes.get("(alias)", []))
 
         return func
 
