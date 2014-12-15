@@ -1233,7 +1233,7 @@ class Interactive(cmd.Cmd):
             else:
                 uri = params.make_uri()
                 _debug("Qr code for %r" % uri)
-                with subprocess.Popen(["qrencode", "-o-", "-tUTF8", uri],
+                with subprocess.Popen(["qrencode", "-tUTF8", uri],
                                       stdout=subprocess.PIPE) as proc:
                     for line in proc.stdout:
                         print("\t" + line.decode("utf-8"), end="")
