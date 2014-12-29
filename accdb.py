@@ -495,6 +495,8 @@ class PatternFilter(Filter):
             func = lambda entry: True
         elif pattern.startswith("#"):
             func = ItemNumberFilter(pattern[1:])
+        elif pattern == "+untagged":
+            func = lambda entry: len(entry.tags) == 0
         elif pattern.startswith("+"):
             regex = re_compile_glob(pattern[1:])
             func = lambda entry: any(regex.match(tag) for tag in entry.tags)
