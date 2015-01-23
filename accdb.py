@@ -1438,11 +1438,6 @@ def db_git_backup(db):
                          "commit", "-m", "snapshot", db.path],
                         stdout=null_fh)
 
-        if os.path.exists(db_mirror_path):
-            subprocess.call(["git", "-C", db_mirror_path,
-                             "pull", "-q", "--ff-only", db_dir, "master"],
-                            stdout=null_fh)
-
 def db_gpg_backup(db, backup_path):
     if backup_path == db.path:
         return
@@ -1456,12 +1451,9 @@ def db_gpg_backup(db, backup_path):
 
 # }}}
 
-db_path = os.environ.get("ACCDB",
-            os.path.expanduser("~/accounts.db.txt"))
+db_path = os.environ.get("ACCDB", os.path.expanduser("~/accounts.db.txt"))
 
 db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
-
-db_mirror_path = "/run/media/grawity/grawpqi/Private/accdb"
 
 ss = SecretStore(key=open("/mnt/keycard/grawity/accdb.key", "rb").read())
 
