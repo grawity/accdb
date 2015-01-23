@@ -1462,9 +1462,9 @@ db_mirror_path = "/run/media/grawity/grawpqi/Private/accdb"
 
 ss = SecretStore(key=open("/mnt/keycard/grawity/accdb.key", "rb").read())
 
-if os.path.exists(db_path):
+try:
     db = Database.from_file(db_path)
-else:
+except FileNotFoundError:
     db = Database()
     db.path = db_path
     if sys.stderr.isatty():
