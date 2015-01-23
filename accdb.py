@@ -1430,15 +1430,17 @@ def db_git_backup(db):
     db_dir = os.path.dirname(db.path)
     repo_dir = os.path.join(db_dir, ".git")
 
-    if os.path.exists(repo_dir):
-        with open("/dev/null", "r+b") as null_fh:
-            subprocess.call(["git", "-C", db_dir,
-                             "commit", "-m", "snapshot", db.path],
+    if not os.path.exists(repo_dir):
+        return
+
+    with open("/dev/null", "r+b") as null_fh:
+        subprocess.call(["git", "-C", db_dir,
+                         "commit", "-m", "snapshot", db.path],
+                        stdout=null_fh)
+        if os.path.exists(db_mirror_path):
+            subprocess.call(["git", "-C", db_mirror_path,
+                             "pull", "-q", "--ff-only", db_dir, "master"],
                             stdout=null_fh)
-            if os.path.exists(db_mirror_path):
-                subprocess.call(["git", "-C", db_mirror_path,
-                                 "pull", "-q", "--ff-only", db_dir, "master"],
-                                stdout=null_fh)
 
 def db_gpg_backup(db, backup_path):
     if backup_path == db.path:
@@ -1473,16 +1475,15 @@ except FileNotFoundError:
 interp = Interactive()
 
 if len(sys.argv) > 1:
-    line = subprocess.list2cmdline(sys.argv[1:])
-    interp.onecmd(line)
+    interp.onecmd(subprocess.list2cmdline(sys.argv[1:]))
 else:
     interp.cmdloop()
 
 if db.modified and not debug:
     db.flush()
 
-    db_git_backup(db)
     if "backup" in db.flags:
+        db_git_backup(db)
         db_gpg_backup(db, db_backup_path)
 
 # vim: fdm=marker
