@@ -52,11 +52,18 @@ def _debug(msg, *args):
     if debug:
         return trace(msg, *args)
 
-def ellipsize(string, max):
-    if len(string) <= max:
-        return string
+def pad(string, c):
+    n = len(string)
+    if n % c:
+        return string.ljust(n + c - (n % c), "=")
     else:
+        return string
+
+def ellipsize(string, max):
+    if len(string) > max:
         return string[:max-1] + "…"
+    else:
+        return string
 
 def strip_field_prefix(name):
     return field_prefix_re.sub("", name)
@@ -170,12 +177,6 @@ def re_compile_glob(glob, flags=None):
     if flags is None:
         flags = re.I | re.U
     return re.compile(fnmatch.translate(glob), flags)
-
-def pad(s, c):
-    n = len(s)
-    if n % c:
-        s = s.ljust(n + c - (n % c), "=")
-    return s
 
 def encode_psk(b):
     return base64.b32encode(b).decode("us-ascii").rstrip("=")
