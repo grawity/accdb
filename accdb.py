@@ -1442,23 +1442,10 @@ def db_git_backup(db):
                              "pull", "-q", "--ff-only", db_dir, "master"],
                             stdout=null_fh)
 
-def db_gpg_backup(db, backup_path):
-    if backup_path == db.path:
-        return
-    with open(backup_path, "wb") as backup_fh:
-        with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
-                              stdin=subprocess.PIPE,
-                              stdout=backup_fh) as proc:
-            with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
-                db.dump(backup_in)
-
 # }}}
 
 db_path = os.environ.get("ACCDB",
             os.path.expanduser("~/accounts.db.txt"))
-
-db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accdb/accounts.%s.gpg" \
-                                    % time.strftime("%Y-%m-%d"))
 
 db_mirror_path = "/run/media/grawity/grawpqi/Private/accdb"
 
@@ -1484,6 +1471,5 @@ if db.modified and not debug:
 
     if "backup" in db.flags:
         db_git_backup(db)
-        db_gpg_backup(db, db_backup_path)
 
 # vim: fdm=marker
