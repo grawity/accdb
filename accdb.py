@@ -1457,8 +1457,7 @@ def db_gpg_backup(db, backup_path):
 db_path = os.environ.get("ACCDB",
             os.path.expanduser("~/accounts.db.txt"))
 
-db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accdb/accounts.%s.gpg" \
-                                    % time.strftime("%Y-%m-%d"))
+db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
 db_mirror_path = "/run/media/grawity/grawpqi/Private/accdb"
 
