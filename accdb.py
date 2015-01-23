@@ -102,8 +102,8 @@ class Changeset(list):
             "+": "add",
             "-": "rem",
             ":": "set",
-            "<": "copy",
-            "^": "move",
+            "«": "copy",
+            "<": "move",
         }
         dwim = set()
         for a in args:

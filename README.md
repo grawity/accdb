@@ -163,8 +163,8 @@ Synopsis: `ad set <filter> <operation...>`
   - `key-=value` – remove value
   - `key=value` – set (first occurence), then add (unique)
   - `-key` – remove all values (delete key)
-  - `key<=key` – copy from another key
-  - `key^=key` – move from another key (i.e. rename key)
+  - `key<=key` – move from another key (i.e. rename key)
+  - `key«=key` – copy from another key
 
 Synopsis: `ad tag <filter> <operation...>`
 
