@@ -324,23 +324,6 @@ class OATHParameters(object):
         else:
             lib.err("OATH %r is not supported yet" % self.otype)
 
-def start_editor(path):
-    if "VISUAL" in os.environ:
-        editor = shlex.split(os.environ["VISUAL"])
-    elif "EDITOR" in os.environ:
-        editor = shlex.split(os.environ["EDITOR"])
-    elif sys.platform == "win32":
-        editor = ["notepad.exe"]
-    elif sys.platform == "linux2":
-        editor = ["vi"]
-
-    editor.append(path)
-
-    proc = subprocess.Popen(editor)
-
-    if sys.platform == "linux2":
-        proc.wait()
-
 class FilterSyntaxError(Exception):
     pass
 
@@ -627,7 +610,6 @@ class Database(object):
         self.readonly = False
         self._modeline = "; vim: ft=accdb:"
         self.flags = set()
-        self._adduuids = True
 
     # Import
 
@@ -1129,13 +1111,6 @@ class Interactive(cmd.Cmd):
         else:
             print("Unsupported export format: %r" % arg,
                 file=sys.stderr)
-
-    def do_edit(self, arg):
-        """Launch an editor"""
-        db.flush()
-        db.modified = False
-        start_editor(db_path)
-        return True
 
     def do_rgrep(self, arg):
         """Search for entries and export their full contents"""
