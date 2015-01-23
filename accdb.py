@@ -18,7 +18,87 @@ from io import TextIOWrapper
 import nullroute as lib
 import hotpie as oath
 
+# logging functions {{{
+
 debug = os.environ.get("DEBUG", "")
+
+def trace(msg, *args):
+    print("accdb: %s" % msg, *args, file=sys.stderr)
+
+def _debug(msg, *args):
+    if debug:
+        return trace(msg, *args)
+
+# }}}
+
+# string functions {{{
+
+def b64_pad(string, max=4):
+    n = len(string)
+    if n % max:
+        return string.ljust(n + max - (n % max), "=")
+    else:
+        return string
+
+def ellipsize(string, max):
+    if len(string) > max:
+        return string[:max-1] + "…"
+    else:
+        return string
+
+def split_tags(string):
+    string = string.strip(" ,\n")
+    items = re.split(Entry.RE_TAGS, string)
+    return set(items)
+
+def split_ranges(string):
+    for i in string.split():
+        for j in i.split(","):
+            if "-" in j:
+                x, y = j.split("-", 1)
+                yield int(x), int(y)+1
+            else:
+                yield int(j), int(j)+1
+
+def expand_range(string):
+    items = []
+    for m, n in split_ranges(string):
+        items.extend(range(m, n))
+    return items
+
+def re_compile_glob(glob, flags=None):
+    if flags is None:
+        flags = re.I
+    return re.compile(fnmatch.translate(glob), flags | re.U)
+
+def encode_psk(b):
+    return base64.b32encode(b).decode("us-ascii").rstrip("=")
+
+def decode_psk(s):
+    raw_tag = "{raw} "
+    hex_tag = "{hex} "
+    b64_tag = "{b64} "
+
+    if s.startswith(raw_tag):
+        s = s[len(raw_tag):]
+        return s.encode("utf-8")
+    elif s.startswith(hex_tag):
+        s = s[len(hex_tag):]
+        return bytes.fromhex(s)
+    elif s.startswith(b64_tag):
+        s = s[len(b64_tag):]
+        s = s.replace(" ", "")
+        s = b64_pad(s, 4)
+        return base64.b64decode(s)
+    else:
+        s = s.upper()
+        s = s.replace(" ", "")
+        s = b64_pad(s, 8)
+        return base64.b32decode(s)
+
+# }}}
+
+# field name functions {{{
 
 field_names = {
     "hostname": "host",
@@ -45,26 +125,6 @@ field_order = ["metadata", "object", "username", "password", "email"]
 
 field_prefix_re = re.compile(r"^\W+")
 
-def trace(msg, *args):
-    print("accdb: %s" % msg, *args, file=sys.stderr)
-
-def _debug(msg, *args):
-    if debug:
-        return trace(msg, *args)
-
-def pad(string, c):
-    n = len(string)
-    if n % c:
-        return string.ljust(n + c - (n % c), "=")
-    else:
-        return string
-
-def ellipsize(string, max):
-    if len(string) > max:
-        return string[:max-1] + "…"
-    else:
-        return string
-
 def strip_field_prefix(name):
     return field_prefix_re.sub("", name)
 
@@ -83,25 +143,44 @@ def sort_fields(entry):
 def translate_field(name):
     return field_names.get(name, name)
 
-def split_ranges(string):
-    for i in string.split():
-        for j in i.split(","):
-            if "-" in j:
-                x, y = j.split("-", 1)
-                yield int(x), int(y)+1
-            else:
-                yield int(j), int(j)+1
+# }}}
 
-def split_tags(string):
-    string = string.strip(" ,\n")
-    items = re.split(Entry.RE_TAGS, string)
-    return set(items)
+# 'Clipboard' {{{
 
-def expand_range(string):
-    items = []
-    for m, n in split_ranges(string):
-        items.extend(range(m, n))
-    return items
+class Clipboard():
+    @classmethod
+    def get(self):
+        if sys.platform == "win32":
+            import win32clipboard as clip
+            clip.OpenClipboard()
+            # TODO: what type does this return?
+            data = clip.GetClipboardData(clip.CF_UNICODETEXT)
+            print("clipboard.get =", repr(data))
+            clip.CloseClipboard()
+            return data
+        else:
+            raise RuntimeError("Unsupported platform")
+
+    @classmethod
+    def put(self, data):
+        if sys.platform == "win32":
+            import win32clipboard as clip
+            clip.OpenClipboard()
+            clip.EmptyClipboard()
+            clip.SetClipboardText(data, clip.CF_UNICODETEXT)
+            clip.CloseClipboard()
+        elif sys.platform.startswith("linux"):
+            proc = subprocess.Popen(("xsel", "-i", "-b", "-l", "/dev/null"),
+                        stdin=subprocess.PIPE)
+            proc.stdin.write(data.encode("utf-8"))
+            proc.stdin.close()
+            proc.wait()
+        else:
+            raise RuntimeError("Unsupported platform")
+
+# }}}
+
+# 'Changeset' {{{
 
 class Changeset(list):
     def __init__(self, args):
@@ -173,35 +252,9 @@ class Changeset(list):
                 lib.die("unknown changeset operation %r" % op)
         return target
 
-def re_compile_glob(glob, flags=None):
-    if flags is None:
-        flags = re.I | re.U
-    return re.compile(fnmatch.translate(glob), flags)
+# }}}
 
-def encode_psk(b):
-    return base64.b32encode(b).decode("us-ascii").rstrip("=")
-
-def decode_psk(s):
-    raw_tag = "{raw} "
-    hex_tag = "{hex} "
-    b64_tag = "{b64} "
-
-    if s.startswith(raw_tag):
-        s = s[len(raw_tag):]
-        return s.encode("utf-8")
-    elif s.startswith(hex_tag):
-        s = s[len(hex_tag):]
-        return bytes.fromhex(s)
-    elif s.startswith(b64_tag):
-        s = s[len(b64_tag):]
-        s = s.replace(" ", "")
-        s = pad(s, 4)
-        return base64.b64decode(s)
-    else:
-        s = s.upper()
-        s = s.replace(" ", "")
-        s = pad(s, 8)
-        return base64.b32decode(s)
+# 'SecretStore' {{{
 
 class UnknownAlgorithmError(Exception):
     pass
@@ -282,7 +335,14 @@ def unwrap_secret(wrapped):
     clear = clear.decode("utf-8")
     return clear
 
+# }}}
+
+# 'OATHParameters' {{{
+
 class OATHParameters(object):
+    """
+    A collection of OATH parameters for a single site.
+    """
     def __init__(self, raw_psk, digits=6, otype="totp", window=30,
                  login=None, issuer=None):
         if otype not in {"totp"}:
@@ -323,6 +383,10 @@ class OATHParameters(object):
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
         else:
             lib.err("OATH %r is not supported yet" % self.otype)
+
+# }}}
+
+# 'Filter' {{{
 
 class FilterSyntaxError(Exception):
     pass
@@ -533,6 +597,8 @@ class PatternFilter(Filter):
 
         return func
 
+# elementary filters {{{
+
 class ItemNumberFilter(Filter):
     def __init__(self, pattern):
         try:
@@ -599,6 +665,12 @@ class NegationFilter(Filter):
 
     def __str__(self):
         return "(NOT %s)" % self.filter
+
+# }}}
+
+# }}}
+
+# 'Database' {{{
 
 class Database(object):
     def __init__(self):
@@ -776,6 +848,10 @@ class Database(object):
             return
         self.to_file(self.path)
         self.modified = False
+
+# }}}
+
+# 'Entry' {{{
 
 class Entry(object):
     RE_TAGS = re.compile(r'\s*,\s*|\s+')
@@ -1038,6 +1114,10 @@ class Entry(object):
             p.window = int(tmp[0])
 
         return p
+
+# }}}
+
+# 'Interactive' {{{
 
 class Interactive(cmd.Cmd):
     def __init__(self, *args, **kwargs):
@@ -1342,36 +1422,35 @@ class Interactive(cmd.Cmd):
     do_s     = do_show
     do_w     = do_touch
 
-class Clipboard():
-    @classmethod
-    def get(self):
-        if sys.platform == "win32":
-            import win32clipboard as clip
-            clip.OpenClipboard()
-            # TODO: what type does this return?
-            data = clip.GetClipboardData(clip.CF_UNICODETEXT)
-            print("clipboard.get =", repr(data))
-            clip.CloseClipboard()
-            return data
-        else:
-            raise RuntimeError("Unsupported platform")
+# }}}
 
-    @classmethod
-    def put(self, data):
-        if sys.platform == "win32":
-            import win32clipboard as clip
-            clip.OpenClipboard()
-            clip.EmptyClipboard()
-            clip.SetClipboardText(data, clip.CF_UNICODETEXT)
-            clip.CloseClipboard()
-        elif sys.platform.startswith("linux"):
-            proc = subprocess.Popen(("xsel", "-i", "-b", "-l", "/dev/null"),
-                        stdin=subprocess.PIPE)
-            proc.stdin.write(data.encode("utf-8"))
-            proc.stdin.close()
-            proc.wait()
-        else:
-            raise RuntimeError("Unsupported platform")
+# site-specific backup functions {{{
+
+def db_git_backup(db):
+    db_dir = os.path.dirname(db.path)
+    repo_dir = os.path.join(db_dir, ".git")
+
+    if os.path.exists(repo_dir):
+        with open("/dev/null", "r+b") as null_fh:
+            subprocess.call(["git", "-C", db_dir,
+                             "commit", "-m", "snapshot", db.path],
+                            stdout=null_fh)
+            if os.path.exists(db_mirror_path):
+                subprocess.call(["git", "-C", db_mirror_path,
+                                 "pull", "-q", "--ff-only", db_dir, "master"],
+                                stdout=null_fh)
+
+def db_gpg_backup(db, backup_path):
+    if backup_path == db.path:
+        return
+    with open(backup_path, "wb") as backup_fh:
+        with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
+                              stdin=subprocess.PIPE,
+                              stdout=backup_fh) as proc:
+            with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
+                db.dump(backup_in)
+
+# }}}
 
 db_path = os.environ.get("ACCDB",
             os.path.expanduser("~/accounts.db.txt"))
@@ -1402,23 +1481,8 @@ else:
 if db.modified and not debug:
     db.flush()
 
-    db_dir = os.path.dirname(db_path)
-    repo_dir = os.path.join(db_dir, ".git")
+    db_git_backup(db)
+    if "backup" in db.flags:
+        db_gpg_backup(db, db_backup_path)
 
-    if os.path.exists(repo_dir):
-        with open("/dev/null", "r+b") as null_fh:
-            subprocess.call(["git", "-C", db_dir,
-                             "commit", "-m", "snapshot", db_path],
-                            stdout=null_fh)
-            if os.path.exists(db_mirror_path):
-                subprocess.call(["git", "-C", db_mirror_path,
-                                 "pull", "-q", "--ff-only", db_dir, "master"],
-                                stdout=null_fh)
-
-    if "backup" in db.flags and db.path != db_backup_path:
-        with open(db_backup_path, "wb") as db_backup_fh:
-            with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
-                                  stdin=subprocess.PIPE,
-                                  stdout=db_backup_fh) as proc:
-                with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
-                    db.dump(backup_in)
+# vim: fdm=marker
