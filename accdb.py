@@ -1431,12 +1431,13 @@ def db_git_backup(db):
     repo_dir = os.path.join(db_dir, ".git")
 
     if not os.path.exists(repo_dir):
-        return
+        subprocess.call(["git", "-C", db_dir, "init"])
 
     with open("/dev/null", "r+b") as null_fh:
         subprocess.call(["git", "-C", db_dir,
                          "commit", "-m", "snapshot", db.path],
                         stdout=null_fh)
+
         if os.path.exists(db_mirror_path):
             subprocess.call(["git", "-C", db_mirror_path,
                              "pull", "-q", "--ff-only", db_dir, "master"],
@@ -1445,6 +1446,7 @@ def db_git_backup(db):
 def db_gpg_backup(db, backup_path):
     if backup_path == db.path:
         return
+
     with open(backup_path, "wb") as backup_fh:
         with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
                               stdin=subprocess.PIPE,
