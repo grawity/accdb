@@ -111,6 +111,7 @@ field_names = {
     "password": "pass",
     "!pass":    "pass",
     "mail":     "email",
+    "tel":      "phone",
 }
 
 field_groups = {
@@ -118,7 +119,7 @@ field_groups = {
     "object":   ["entity", "host", "uri", "realm"],
     "username": ["login", "login.", "nic-hdl", "principal"],
     "password": ["pass", "!pass"],
-    "email":    ["email"],
+    "email":    ["email", "phone"],
 }
 
 field_order = ["metadata", "object", "username", "password", "email"]
