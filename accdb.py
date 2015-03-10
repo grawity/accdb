@@ -302,7 +302,8 @@ class TextChangeset(list):
                 else:
                     lib.die("not enough parameters: %r" % arg)
             else:
-                lib.die("syntax error in %r" % arg)
+                self.append(("empty",))
+                self.append(("append", arg))
 
     def apply(self, target):
         lines = target.split("\n")
