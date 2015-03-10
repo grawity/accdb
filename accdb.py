@@ -60,6 +60,29 @@ def split_ranges(string):
             else:
                 yield int(j), int(j)+1
 
+def str_split_escaped(string, sep, max=0):
+    state = 0
+    out = []
+    cur = ""
+    _debug("str_split: <- %r" % string)
+    for char in string:
+        _debug("str_split:  char %r state %r" % (char, state))
+        if state == 0:
+            if char == "\\":
+                state = 1
+            elif char == sep:
+                out.append(cur)
+                cur = ""
+            else:
+                cur += char
+        elif state == 1:
+            cur += char
+            state = 0
+    if cur:
+        out.append(cur)
+    _debug("str_split: -> %r" % out)
+    return out
+
 def expand_range(string):
     items = []
     for m, n in split_ranges(string):
@@ -252,6 +275,50 @@ class Changeset(list):
             else:
                 lib.die("unknown changeset operation %r" % op)
         return target
+
+# }}}
+
+# 'TextChangeset' {{{
+
+class TextChangeset(list):
+    def __init__(self, args):
+        for arg in args:
+            _debug("arg %r" % arg)
+            if arg == "-":
+                _debug("  empty");
+                self.append(("empty",))
+            elif arg.startswith("+"):
+                arg = arg[1:]
+                _debug("  add-line %r" % arg)
+                self.append(("append", arg))
+            elif arg.startswith("s/"):
+                arg = arg[2:]
+                if arg.endswith("/"):
+                    arg = arg[:-1]
+                arg = str_split_escaped(arg, "/", 1)
+                if len(arg) == 2:
+                    from_re, to_str = arg
+                    _debug("  regex %r to %r" % (from_re, to_str))
+                else:
+                    lib.die("not enough parameters: %r" % arg)
+            else:
+                lib.die("syntax error in %r" % arg)
+
+    def apply(self, target):
+        lines = target.split("\n")
+
+        for op, *rest in self:
+            _debug("text changeset: op %r rest %r" % (op, rest))
+            if op == "empty":
+                lines = []
+            elif op == "append":
+                lines.append(rest[0])
+            else:
+                lib.die("unknown operation %r" % op)
+
+        _debug("text changeset: lines %r" % lines)
+        return target
+        return "\n".join(lines)
 
 # }}}
 
@@ -1401,6 +1468,21 @@ class Interactive(cmd.Cmd):
         changes = Changeset(args)
         for entry in Filter._compile_and_search(query):
             changes.apply_to(entry.attributes)
+            num += 1
+            self._show_entry(entry)
+
+        if sys.stdout.isatty():
+            print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
+
+        db.modified = True
+
+    def do_comment(self, arg):
+        query, *args = shlex.split(arg)
+        num = 0
+
+        changes = TextChangeset(args)
+        for entry in Filter._compile_and_search(query):
+            entry.comment = changes.apply(entry.comment)
             num += 1
             self._show_entry(entry)
 
