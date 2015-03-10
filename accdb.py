@@ -299,6 +299,7 @@ class TextChangeset(list):
                 if len(arg) == 2:
                     from_re, to_str = arg
                     _debug("  regex %r to %r" % (from_re, to_str))
+                    self.append(("resub", from_re, to_str))
                 else:
                     lib.die("not enough parameters: %r" % arg)
             else:
@@ -306,7 +307,7 @@ class TextChangeset(list):
                 self.append(("append", arg))
 
     def apply(self, target):
-        lines = target.split("\n")
+        lines = target.rstrip("\n").split("\n")
 
         for op, *rest in self:
             _debug("text changeset: op %r rest %r" % (op, rest))
@@ -314,11 +315,13 @@ class TextChangeset(list):
                 lines = []
             elif op == "append":
                 lines.append(rest[0])
+            elif op == "resub":
+                rx = re.compile(rest[0])
+                lines = [rx.sub(rest[1], _) for _ in lines]
             else:
                 lib.die("unknown operation %r" % op)
 
         _debug("text changeset: lines %r" % lines)
-        return target
         return "\n".join(lines)
 
 # }}}
