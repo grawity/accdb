@@ -165,6 +165,7 @@ Synopsis: `ad set <filter> <operation...>`
   - `-key` – remove all values (delete key)
   - `key<=key` – move from another key (i.e. rename key)
   - `key«=key` – copy from another key
+  - `key|=key` – merge from another key
 
 Synopsis: `ad tag <filter> <operation...>`
 

@@ -214,6 +214,7 @@ class Changeset(list):
             ":": "set",
             "«": "copy",
             "<": "move",
+            "|": "merge",
         }
         dwim = set()
         for a in args:
@@ -269,6 +270,14 @@ class Changeset(list):
                 else:
                     if k in target:
                         del target[k]
+            elif op == "merge":
+                if v not in target:
+                    continue
+                if k in target:
+                    target[k] += [val for val in target[v]
+                                  if val not in target[k]]
+                else:
+                    target[k] = target[v][:]
             elif op == "del":
                 if k in target:
                     del target[k]
