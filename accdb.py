@@ -139,14 +139,13 @@ attr_names = {
 }
 
 attr_groups = {
-    "metadata": ["@aka"],
     "object":   ["entity", "host", "uri", "realm"],
     "username": ["login", "login.", "nic-hdl", "principal"],
     "password": ["pass", "!pass"],
     "email":    ["email", "phone"],
 }
 
-attr_order = ["metadata", "object", "username", "password", "email"]
+attr_order = ["object", "username", "password", "email"]
 
 attr_prefix_re = re.compile(r"^\W+")
 
@@ -159,6 +158,8 @@ def strip_attr_prefix(name):
 def sort_attrs(entry):
     canonicalize = lambda k: strip_attr_prefix(translate_attr(k))
     names = []
+    names += sorted([k for k in entry.attributes
+                       if k.startswith("@")])
     for group in attr_order:
         for attr in attr_groups[group]:
             names += sorted([k for k in entry.attributes \
