@@ -124,7 +124,7 @@ def decode_psk(s):
 # attribute name functions {{{
 
 attr_names = {
-    "@aka":     "@alias",
+    "@alias":   "@aka",
     "hostname": "host",
     "machine":  "host",
     "url":      "uri",
@@ -139,7 +139,7 @@ attr_names = {
 }
 
 attr_groups = {
-    "metadata": ["@alias"],
+    "metadata": ["@aka"],
     "object":   ["entity", "host", "uri", "realm"],
     "username": ["login", "login.", "nic-hdl", "principal"],
     "password": ["pass", "!pass"],
