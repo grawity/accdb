@@ -262,12 +262,16 @@ class Changeset(list):
                 if v in target[k]:
                     target[k].remove(v)
             elif op == "copy":
+                if self._key_alias:
+                    v = self._key_alias.get(v, v)
                 if v in target:
                     target[k] = target[v][:]
                 else:
                     if k in target:
                         del target[k]
             elif op == "move":
+                if self._key_alias:
+                    v = self._key_alias.get(v, v)
                 if v in target:
                     target[k] = target[v]
                     del target[v]
@@ -275,6 +279,8 @@ class Changeset(list):
                     if k in target:
                         del target[k]
             elif op == "merge":
+                if self._key_alias:
+                    v = self._key_alias.get(v, v)
                 if v not in target:
                     continue
                 if k in target:
