@@ -149,6 +149,15 @@ attr_order = ["object", "username", "password", "email"]
 
 attr_prefix_re = re.compile(r"^\W+")
 
+def attr_is_metadata(name):
+    return name.startswith("@")
+
+def attr_is_private(name):
+    return name.startswith("!") or name == "pass"
+
+def attr_is_reflink(self, name):
+    return name.startswith("ref.")
+
 def translate_attr(name):
     return attr_names.get(name, name)
 
@@ -159,12 +168,12 @@ def sort_attrs(entry):
     canonicalize = lambda k: strip_attr_prefix(translate_attr(k))
     names = []
     names += sorted([k for k in entry.attributes
-                       if k.startswith("@")])
+                       if attr_is_metadata(k)])
     for group in attr_order:
         for attr in attr_groups[group]:
             names += sorted([k for k in entry.attributes \
-                               if (k == attr or (attr.endswith(".")
-                                                 and k.startswith(attr)))],
+                               if (k == attr
+                                   or (attr.endswith(".") and k.startswith(attr)))],
                             key=canonicalize)
     names += sorted([k for k in entry.attributes if k not in names],
                     key=canonicalize)
@@ -1058,14 +1067,6 @@ class Entry(object):
 
         return self
 
-    @classmethod
-    def is_private_attr(self, key):
-        return key == "pass" or key.startswith("!")
-
-    @classmethod
-    def is_link_attr(self, key):
-        return key.startswith("ref.")
-
     # Export
 
     def dump(self, storage=False, conceal=True, show_contents=True,
@@ -1105,7 +1106,7 @@ class Entry(object):
 
             for key in sort_attrs(self):
                 for value in self.attributes[key]:
-                    if self.is_private_attr(key):
+                    if attr_is_private(key):
                         if storage and conceal:
                             _v = value
                             #value = value.encode("utf-8")
@@ -1119,7 +1120,7 @@ class Entry(object):
                         elif not raw:
                             value = "<private>"
                         data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
-                    elif self.is_link_attr(key):
+                    elif attr_is_reflink(key):
                         sub_entry = None
                         value_color = "32"
                         if not raw:
@@ -1232,9 +1233,9 @@ class Interactive(cmd.Cmd):
         else:
             print(text)
         if recurse:
-            for attr in entry.attributes:
-                if entry.is_link_attr(attr):
-                    for value in entry.attributes[attr]:
+            for key in entry.attributes:
+                if attr_is_reflink(key):
+                    for value in entry.attributes[key]:
                         try:
                             sub_entry = db.find_by_uuid(value)
                             self._show_entry(sub_entry,
