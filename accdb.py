@@ -124,6 +124,7 @@ def decode_psk(s):
 # field name functions {{{
 
 field_names = {
+    "@aka":     "@alias",
     "hostname": "host",
     "machine":  "host",
     "url":      "uri",
@@ -138,7 +139,7 @@ field_names = {
 }
 
 field_groups = {
-    "metadata": ["(alias)"],
+    "metadata": ["@alias"],
     "object":   ["entity", "host", "uri", "realm"],
     "username": ["login", "login.", "nic-hdl", "principal"],
     "password": ["pass", "!pass"],
@@ -664,7 +665,7 @@ class PatternFilter(Filter):
             func = lambda entry:\
                     regex.search(entry.name) \
                     or any(regex.search(value)
-                       for value in entry.attributes.get("(alias)", []))
+                       for value in entry.attributes.get("@alias", []))
         elif pattern.startswith("{"):
             func = ItemUuidFilter(pattern)
         else:
@@ -674,7 +675,7 @@ class PatternFilter(Filter):
             func = lambda entry:\
                     regex.search(entry.name) \
                     or any(regex.search(value)
-                       for value in entry.attributes.get("(alias)", []))
+                       for value in entry.attributes.get("@alias", []))
 
         return func
 
