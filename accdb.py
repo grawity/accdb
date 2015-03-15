@@ -155,7 +155,7 @@ def attr_is_metadata(name):
 def attr_is_private(name):
     return name.startswith("!") or name == "pass"
 
-def attr_is_reflink(self, name):
+def attr_is_reflink(name):
     return name.startswith("ref.")
 
 def translate_attr(name):
