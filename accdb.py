@@ -208,7 +208,8 @@ class Clipboard():
 # 'Changeset' {{{
 
 class Changeset(list):
-    def __init__(self, args):
+    def __init__(self, args, key_alias=None):
+        self._key_alias = key_alias
         _ops = {
             "+": "add",
             "-": "rem",
@@ -245,6 +246,8 @@ class Changeset(list):
 
     def apply_to(self, target):
         for op, k, v in self:
+            if self._key_alias:
+                k = self._key_alias.get(k, k)
             _debug("changeset: key %r op %r val %r" % (k, op, v))
             if op == "set":
                 target[k] = [v]
@@ -1479,7 +1482,7 @@ class Interactive(cmd.Cmd):
         query, *args = shlex.split(arg)
         num = 0
 
-        changes = Changeset(args)
+        changes = Changeset(args, key_alias=field_names)
         for entry in Filter._compile_and_search(query):
             changes.apply_to(entry.attributes)
             num += 1
