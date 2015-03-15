@@ -161,11 +161,8 @@ def attr_is_reflink(self, name):
 def translate_attr(name):
     return attr_names.get(name, name)
 
-def strip_attr_prefix(name):
-    return attr_prefix_re.sub("", name)
-
 def sort_attrs(entry):
-    canonicalize = lambda k: strip_attr_prefix(translate_attr(k))
+    canonicalize = lambda k: attr_prefix_re.sub("", translate_attr(k))
     names = []
     names += sorted([k for k in entry.attributes
                        if attr_is_metadata(k)])
