@@ -121,9 +121,9 @@ def decode_psk(s):
 
 # }}}
 
-# field name functions {{{
+# attribute name functions {{{
 
-field_names = {
+attr_names = {
     "@aka":     "@alias",
     "hostname": "host",
     "machine":  "host",
@@ -138,7 +138,7 @@ field_names = {
     "tel":      "phone",
 }
 
-field_groups = {
+attr_groups = {
     "metadata": ["@alias"],
     "object":   ["entity", "host", "uri", "realm"],
     "username": ["login", "login.", "nic-hdl", "principal"],
@@ -146,24 +146,24 @@ field_groups = {
     "email":    ["email", "phone"],
 }
 
-field_order = ["metadata", "object", "username", "password", "email"]
+attr_order = ["metadata", "object", "username", "password", "email"]
 
-field_prefix_re = re.compile(r"^\W+")
+attr_prefix_re = re.compile(r"^\W+")
 
-def translate_field(name):
-    return field_names.get(name, name)
+def translate_attr(name):
+    return attr_names.get(name, name)
 
-def strip_field_prefix(name):
-    return field_prefix_re.sub("", name)
+def strip_attr_prefix(name):
+    return attr_prefix_re.sub("", name)
 
-def sort_fields(entry):
-    canonicalize = lambda k: strip_field_prefix(translate_field(k))
+def sort_attrs(entry):
+    canonicalize = lambda k: strip_attr_prefix(translate_attr(k))
     names = []
-    for group in field_order:
-        for field in field_groups[group]:
+    for group in attr_order:
+        for attr in attr_groups[group]:
             names += sorted([k for k in entry.attributes \
-                               if (k == field or (field.endswith(".")
-                                                  and k.startswith(field)))],
+                               if (k == attr or (attr.endswith(".")
+                                                 and k.startswith(attr)))],
                             key=canonicalize)
     names += sorted([k for k in entry.attributes if k not in names],
                     key=canonicalize)
@@ -643,7 +643,7 @@ class PatternFilter(Filter):
         elif pattern.startswith("@"):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
-                attr = translate_field(attr)
+                attr = translate_attr(attr)
                 regex = re_compile_glob(glob)
                 func = lambda entry:\
                     attr in entry.attributes \
@@ -651,7 +651,7 @@ class PatternFilter(Filter):
                         for value in entry.attributes[attr])
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
-                attr = translate_field(attr)
+                attr = translate_attr(attr)
                 try:
                     regex = re.compile(regex, re.I | re.U)
                 except re.error as e:
@@ -665,7 +665,7 @@ class PatternFilter(Filter):
                 func = lambda entry:\
                     any(regex.match(attr) for attr in entry.attributes)
             else:
-                attr = translate_field(pattern[1:])
+                attr = translate_attr(pattern[1:])
                 func = lambda entry: attr in entry.attributes
         elif pattern.startswith("~"):
             try:
@@ -1043,7 +1043,7 @@ class Entry(object):
                 elif key.startswith("date.") and val in {"now", "today"}:
                     val = time.strftime("%Y-%m-%d")
 
-                key = translate_field(key)
+                key = translate_attr(key)
 
                 if key in self.attributes:
                     self.attributes[key].append(val)
@@ -1102,7 +1102,7 @@ class Entry(object):
             if self.uuid:
                 data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
-            for key in sort_fields(self):
+            for key in sort_attrs(self):
                 for value in self.attributes[key]:
                     if self.is_private_attr(key):
                         if storage and conceal:
@@ -1154,7 +1154,7 @@ class Entry(object):
         dis["_name"] = self.name
         dis["comment"] = self.comment
         dis["data"] = {key: list(val for val in self.attributes[key])
-                for key in sort_fields(self)}
+                for key in sort_attrs(self)}
         dis["lineno"] = self.lineno
         dis["tags"] = list(self.tags)
         dis["uuid"] = str(self.uuid)
@@ -1489,7 +1489,7 @@ class Interactive(cmd.Cmd):
         query, *args = shlex.split(arg)
         num = 0
 
-        changes = Changeset(args, key_alias=field_names)
+        changes = Changeset(args, key_alias=attr_names)
         for entry in Filter._compile_and_search(query):
             changes.apply_to(entry.attributes)
             num += 1
