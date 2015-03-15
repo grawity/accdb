@@ -1092,6 +1092,7 @@ class Entry(object):
 
             for key in sort_attrs(self):
                 for value in self.attributes[key]:
+                    key = translate_attr(key)
                     if attr_is_private(key):
                         if storage and conceal:
                             _v = value
