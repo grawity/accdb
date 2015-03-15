@@ -1041,8 +1041,6 @@ class Entry(object):
                 elif key.startswith("date.") and val in {"now", "today"}:
                     val = time.strftime("%Y-%m-%d")
 
-                key = translate_attr(key)
-
                 if key in self.attributes:
                     self.attributes[key].append(val)
                 else:
