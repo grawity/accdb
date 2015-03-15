@@ -121,9 +121,10 @@ def decode_psk(s):
 
 # }}}
 
-# field name functions {{{
+# attribute name functions {{{
 
-field_names = {
+attr_names = {
+    "@alias":   "@aka",
     "hostname": "host",
     "machine":  "host",
     "url":      "uri",
@@ -137,35 +138,43 @@ field_names = {
     "tel":      "phone",
 }
 
-field_groups = {
-    "metadata": ["(alias)"],
+attr_groups = {
     "object":   ["entity", "host", "uri", "realm"],
     "username": ["login", "login.", "nic-hdl", "principal"],
     "password": ["pass", "!pass"],
     "email":    ["email", "phone"],
 }
 
-field_order = ["metadata", "object", "username", "password", "email"]
+attr_order = ["object", "username", "password", "email"]
 
-field_prefix_re = re.compile(r"^\W+")
+attr_prefix_re = re.compile(r"^\W+")
 
-def strip_field_prefix(name):
-    return field_prefix_re.sub("", name)
+def attr_is_metadata(name):
+    return name.startswith("@")
 
-def sort_fields(entry):
+def attr_is_private(name):
+    return name.startswith("!") or name == "pass"
+
+def attr_is_reflink(name):
+    return name.startswith("ref.")
+
+def translate_attr(name):
+    return attr_names.get(name, name)
+
+def sort_attrs(entry):
+    canonicalize = lambda k: attr_prefix_re.sub("", translate_attr(k))
     names = []
-    for group in field_order:
-        for field in field_groups[group]:
+    names += sorted([k for k in entry.attributes
+                       if attr_is_metadata(k)])
+    for group in attr_order:
+        for attr in attr_groups[group]:
             names += sorted([k for k in entry.attributes \
-                               if (k == field or (field.endswith(".")
-                                                  and k.startswith(field)))],
-                            key=strip_field_prefix)
+                               if (k == attr
+                                   or (attr.endswith(".") and k.startswith(attr)))],
+                            key=canonicalize)
     names += sorted([k for k in entry.attributes if k not in names],
-            key=strip_field_prefix)
+                    key=canonicalize)
     return names
-
-def translate_field(name):
-    return field_names.get(name, name)
 
 # }}}
 
@@ -632,7 +641,7 @@ class PatternFilter(Filter):
         elif pattern.startswith("@"):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
-                attr = translate_field(attr)
+                attr = translate_attr(attr)
                 regex = re_compile_glob(glob)
                 func = lambda entry:\
                     attr in entry.attributes \
@@ -640,7 +649,7 @@ class PatternFilter(Filter):
                         for value in entry.attributes[attr])
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
-                attr = translate_field(attr)
+                attr = translate_attr(attr)
                 try:
                     regex = re.compile(regex, re.I | re.U)
                 except re.error as e:
@@ -654,7 +663,7 @@ class PatternFilter(Filter):
                 func = lambda entry:\
                     any(regex.match(attr) for attr in entry.attributes)
             else:
-                attr = translate_field(pattern[1:])
+                attr = translate_attr(pattern[1:])
                 func = lambda entry: attr in entry.attributes
         elif pattern.startswith("~"):
             try:
@@ -664,7 +673,7 @@ class PatternFilter(Filter):
             func = lambda entry:\
                     regex.search(entry.name) \
                     or any(regex.search(value)
-                       for value in entry.attributes.get("(alias)", []))
+                       for value in entry.attributes.get("@alias", []))
         elif pattern.startswith("{"):
             func = ItemUuidFilter(pattern)
         else:
@@ -674,7 +683,7 @@ class PatternFilter(Filter):
             func = lambda entry:\
                     regex.search(entry.name) \
                     or any(regex.search(value)
-                       for value in entry.attributes.get("(alias)", []))
+                       for value in entry.attributes.get("@alias", []))
 
         return func
 
@@ -1032,8 +1041,6 @@ class Entry(object):
                 elif key.startswith("date.") and val in {"now", "today"}:
                     val = time.strftime("%Y-%m-%d")
 
-                key = translate_field(key)
-
                 if key in self.attributes:
                     self.attributes[key].append(val)
                 else:
@@ -1045,14 +1052,6 @@ class Entry(object):
             self.name = "(Unnamed)"
 
         return self
-
-    @classmethod
-    def is_private_attr(self, key):
-        return key == "pass" or key.startswith("!")
-
-    @classmethod
-    def is_link_attr(self, key):
-        return key.startswith("ref.")
 
     # Export
 
@@ -1091,9 +1090,10 @@ class Entry(object):
             if self.uuid:
                 data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
-            for key in sort_fields(self):
+            for key in sort_attrs(self):
                 for value in self.attributes[key]:
-                    if self.is_private_attr(key):
+                    key = translate_attr(key)
+                    if attr_is_private(key):
                         if storage and conceal:
                             _v = value
                             #value = value.encode("utf-8")
@@ -1107,7 +1107,7 @@ class Entry(object):
                         elif not raw:
                             value = "<private>"
                         data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
-                    elif self.is_link_attr(key):
+                    elif attr_is_reflink(key):
                         sub_entry = None
                         value_color = "32"
                         if not raw:
@@ -1143,7 +1143,7 @@ class Entry(object):
         dis["_name"] = self.name
         dis["comment"] = self.comment
         dis["data"] = {key: list(val for val in self.attributes[key])
-                for key in sort_fields(self)}
+                for key in sort_attrs(self)}
         dis["lineno"] = self.lineno
         dis["tags"] = list(self.tags)
         dis["uuid"] = str(self.uuid)
@@ -1220,9 +1220,9 @@ class Interactive(cmd.Cmd):
         else:
             print(text)
         if recurse:
-            for attr in entry.attributes:
-                if entry.is_link_attr(attr):
-                    for value in entry.attributes[attr]:
+            for key in entry.attributes:
+                if attr_is_reflink(key):
+                    for value in entry.attributes[key]:
                         try:
                             sub_entry = db.find_by_uuid(value)
                             self._show_entry(sub_entry,
