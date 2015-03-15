@@ -150,23 +150,24 @@ field_order = ["metadata", "object", "username", "password", "email"]
 
 field_prefix_re = re.compile(r"^\W+")
 
+def translate_field(name):
+    return field_names.get(name, name)
+
 def strip_field_prefix(name):
     return field_prefix_re.sub("", name)
 
 def sort_fields(entry):
+    canonicalize = lambda k: strip_field_prefix(translate_field(k))
     names = []
     for group in field_order:
         for field in field_groups[group]:
             names += sorted([k for k in entry.attributes \
                                if (k == field or (field.endswith(".")
                                                   and k.startswith(field)))],
-                            key=strip_field_prefix)
+                            key=canonicalize)
     names += sorted([k for k in entry.attributes if k not in names],
-                    key=strip_field_prefix)
+                    key=canonicalize)
     return names
-
-def translate_field(name):
-    return field_names.get(name, name)
 
 # }}}
 
