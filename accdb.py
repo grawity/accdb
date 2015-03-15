@@ -162,7 +162,7 @@ def sort_fields(entry):
                                                   and k.startswith(field)))],
                             key=strip_field_prefix)
     names += sorted([k for k in entry.attributes if k not in names],
-            key=strip_field_prefix)
+                    key=strip_field_prefix)
     return names
 
 def translate_field(name):
