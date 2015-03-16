@@ -682,7 +682,7 @@ class PatternFilter(Filter):
             func = lambda entry:\
                     regex.search(entry.name) \
                     or any(regex.search(value)
-                       for value in entry.attributes.get("@alias", []))
+                       for value in entry.attributes.get("@aka", []))
         elif pattern.startswith("{"):
             func = ItemUuidFilter(pattern)
         else:
@@ -692,7 +692,7 @@ class PatternFilter(Filter):
             func = lambda entry:\
                     regex.search(entry.name) \
                     or any(regex.search(value)
-                       for value in entry.attributes.get("@alias", []))
+                       for value in entry.attributes.get("@aka", []))
 
         return func
 
