@@ -186,17 +186,11 @@ def grep_flagged(pattern, exact=True):
 		if test(item, pattern):
 			yield item
 
-def find_database():
-	if "ACCDB" in os.environ:
-		return os.environ["ACCDB"]
-	else:
-		return os.path.expanduser("~/accounts.db.txt")
-
 def run_editor(file):
 	from subprocess import Popen
 	Popen((os.environ.get("EDITOR", "notepad.exe"), file))
 
-dbfile = find_database()
+dbfile = os.environ.get("ACCDB", os.path.expanduser("~/accounts.db.txt"))
 db = parse(dbfile)
 modified = False
 try:
