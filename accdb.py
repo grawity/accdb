@@ -584,7 +584,7 @@ class Filter(object):
         try:
             filter = Filter.compile(text)
         except FilterSyntaxError as e:
-            trace("syntax error in filter:", *e.args)
+            lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
         if debug:
             trace("compiled filter:", filter)
@@ -607,7 +607,7 @@ class Filter(object):
                 arg = "*"
                 filter = Filter.compile(arg)
         except FilterSyntaxError as e:
-            trace("syntax error in filter:", *e.args)
+            lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
         if debug:
             trace("compiled filter:", filter)
