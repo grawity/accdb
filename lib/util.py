@@ -1,17 +1,20 @@
+import logging
 import os
 import sys
 
 # logging functions {{{
 
-# TODO: replace these with the 'logger' module
-
 debug = os.environ.get("DEBUG", "")
 
+logger = logging.getLogger("accdb")
+
+logging.basicConfig(format="accdb/%(module)s %(levelname)s: %(message)s",
+                    level=(logging.DEBUG if debug else logging.INFO))
+
 def trace(msg):
-    print("accdb: %s" % msg, file=sys.stderr)
+    return logging.info("%s", msg)
 
 def _debug(msg):
-    if debug:
-        return trace(msg)
+    return logging.debug("%s", msg)
 
 # }}}

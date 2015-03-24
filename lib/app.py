@@ -404,7 +404,7 @@ class Filter(object):
             lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
         if debug:
-            trace("compiled filter: %s" % filter)
+            _debug("compiled filter: %s" % filter)
         return db.find(filter)
 
     @staticmethod
@@ -427,7 +427,7 @@ class Filter(object):
             lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
         if debug:
-            trace("compiled filter: %s" % filter)
+            _debug("compiled filter: %s" % filter)
         return filter
 
     @staticmethod
