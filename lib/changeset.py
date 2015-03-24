@@ -1,3 +1,5 @@
+from .util import _debug
+
 # 'Changeset' {{{
 
 class Changeset(list):

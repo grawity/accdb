@@ -19,19 +19,8 @@ from . import hotpie as oath
 
 from .changeset import Changeset, TextChangeset
 from .clipboard import Clipboard
-
-# logging functions {{{
-
-debug = os.environ.get("DEBUG", "")
-
-def trace(msg, *args):
-    print("accdb: %s" % msg, *args, file=sys.stderr)
-
-def _debug(msg, *args):
-    if debug:
-        return trace(msg, *args)
-
-# }}}
+from .util import *
+from .util import _debug
 
 # string functions {{{
 
