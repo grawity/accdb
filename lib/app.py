@@ -920,6 +920,8 @@ class Entry(object):
                 for value in self.attributes[key]:
                     key = translate_attr(key)
                     if attr_is_private(key):
+                        key_fmt = "38;5;216"
+                        value_fmt = "34"
                         if storage and conceal:
                             _v = value
                             #value = value.encode("utf-8")
@@ -932,8 +934,9 @@ class Entry(object):
                             #value = _v
                         elif not raw:
                             value = "<private>"
-                        data += "\t%s: %s\n" % (f(key, "38;5;216"), f(value, "34"))
                     elif attr_is_reflink(key):
+                        key_fmt = "38;5;188"
+                        value_fmt = "32"
                         sub_entry = None
                         value_color = "32"
                         if not raw:
@@ -946,11 +949,14 @@ class Entry(object):
                             text += f(" (item %d)" % sub_entry.itemno, "38;5;8")
                         else:
                             text = value
-                        data += "\t%s: %s\n" % (f(key, "38;5;188"), text)
                     elif attr_is_metadata(key):
-                        data += "\t%s: %s\n" % (f(key, "38;5;188"), value)
+                        key_fmt = "38;5;244"
+                        value_fmt = key_fmt
                     else:
-                        data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
+                        key_fmt = "38;5;228"
+                        value_fmt = ""
+
+                    data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
 
         if self.tags:
             tags = list(self.tags)
