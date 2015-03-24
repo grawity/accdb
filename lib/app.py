@@ -724,7 +724,7 @@ class Database(object):
 
     def dump(self, fh=sys.stdout, storage=True):
         eargs = {"storage": storage,
-            "conceal": ("conceal" in self.flags)}
+                 "conceal": ("conceal" in self.flags)}
         if storage:
             if self._modeline:
                 print(self._modeline, file=fh)
@@ -903,8 +903,6 @@ class Entry(object):
         if itemno is None:
             itemno = not storage
 
-        raw = (storage == True) or (conceal == False)
-
         if color:
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
@@ -931,7 +929,9 @@ class Entry(object):
                     if attr_is_private(key):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
-                        if storage and conceal:
+                        if not storage:
+                            value = "<private>"
+                        elif conceal:
                             _v = value
                             #value = value.encode("utf-8")
                             value = wrap_secret(value)
@@ -941,12 +941,10 @@ class Entry(object):
                             value = "<wrapped> %s" % value
                             #print("maybe encoding %r as %r" % (_v, value))
                             #value = _v
-                        elif not raw:
-                            value = "<private>"
                     elif attr_is_reflink(key):
                         key_fmt = "38;5;250"
                         value_fmt = key_fmt
-                        if not raw:
+                        if not storage:
                             try:
                                 sub_entry = db.find_by_uuid(value)
                             except KeyError:
@@ -962,7 +960,7 @@ class Entry(object):
                         value_fmt = ""
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
-                    if desc and not raw:
+                    if desc and not storage:
                         data += "\t%s\n" % f(desc, "38;5;244")
 
         if self.tags:
