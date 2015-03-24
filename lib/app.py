@@ -1191,7 +1191,7 @@ class Interactive(cmd.Cmd):
     def do_reveal(self, arg):
         """Display entry (including sensitive information)"""
         for entry in Filter._cli_compile_and_search(arg):
-            self._show_entry(entry, recurse=True, conceal=False)
+            self._show_entry(entry, conceal=False)
 
     def do_show(self, arg):
         """Display entry (safe)"""
