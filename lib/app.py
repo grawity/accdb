@@ -830,6 +830,14 @@ class Entry(object):
                         % (lineno, line),
                         file=sys.stderr)
                     self.comment += line + "\n"
+            elif line.startswith("-- "):
+                # per-attribute comments
+                pass
+                #line = line[3:]
+                #if line.startswith("{") and line.endswith("}"):
+                #    pass
+                #else:
+                #    todo
             else:
                 try:
                     key, val = re.split(self.RE_KEYVAL, line, 1)
