@@ -14,8 +14,9 @@ class Changeset(list):
             "|": "merge",
         }
         dwim = set()
+        _debug("parsing %r", args)
         for a in args:
-            _debug("arg %r", a)
+            _debug(" arg %r", a)
             if a.startswith("-"):
                 k = a[1:]
                 self.append(("del", k, None))
@@ -37,13 +38,14 @@ class Changeset(list):
                 dwim.add(k)
             else:
                 lib.err("syntax error in %r" % a)
-        _debug("changes: %r", self)
+        _debug("parsed changes: %r", self)
 
     def apply_to(self, target):
+        _debug("applying to %r", target)
         for op, k, v in self:
             if self._key_alias:
                 k = self._key_alias.get(k, k)
-            _debug("changeset: key %r op %r val %r", k, op, v)
+            _debug(" key %r op %r val %r", k, op, v)
             if op == "set":
                 target[k] = [v]
             elif op == "add":
@@ -96,8 +98,9 @@ class Changeset(list):
 
 class TextChangeset(list):
     def __init__(self, args):
+        _debug("parsing %r", args)
         for arg in args:
-            _debug("arg %r", arg)
+            _debug(" arg %r", arg)
             if arg == "-":
                 _debug("  empty");
                 self.append(("empty",))
