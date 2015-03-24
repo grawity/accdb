@@ -919,6 +919,7 @@ class Entry(object):
             for key in sort_attrs(self):
                 for value in self.attributes[key]:
                     key = translate_attr(key)
+                    desc = None
                     if attr_is_private(key):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
@@ -935,20 +936,16 @@ class Entry(object):
                         elif not raw:
                             value = "<private>"
                     elif attr_is_reflink(key):
-                        key_fmt = "38;5;188"
-                        value_fmt = "32"
-                        sub_entry = None
-                        value_color = "32"
+                        key_fmt = "38;5;250"
+                        value_fmt = key_fmt
                         if not raw:
                             try:
                                 sub_entry = db.find_by_uuid(value)
                             except KeyError:
-                                value_color = "33"
-                        if sub_entry:
-                            text = f(sub_entry.name, value_color)
-                            text += f(" (item %d)" % sub_entry.itemno, "38;5;8")
-                        else:
-                            text = value
+                                value_fmt = "33"
+                            else:
+                                desc = "-- %s" % value
+                                value = "%d (%s)" % (sub_entry.itemno, sub_entry.name)
                     elif attr_is_metadata(key):
                         key_fmt = "38;5;244"
                         value_fmt = key_fmt
@@ -957,6 +954,8 @@ class Entry(object):
                         value_fmt = ""
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
+                    if desc and not raw:
+                        data += "\t%s\n" % f(desc, "38;5;244")
 
         if self.tags:
             tags = list(self.tags)
