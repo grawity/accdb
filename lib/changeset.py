@@ -1,4 +1,4 @@
-from .util import _debug
+from logging import debug as _debug
 
 # 'Changeset' {{{
 

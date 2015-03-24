@@ -20,7 +20,8 @@ from . import hotpie as oath
 from .changeset import Changeset, TextChangeset
 from .clipboard import Clipboard
 from .util import *
-from .util import _debug
+
+from logging import debug as _debug
 
 # string functions {{{
 
