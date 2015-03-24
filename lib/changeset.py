@@ -15,35 +15,35 @@ class Changeset(list):
         }
         dwim = set()
         for a in args:
-            _debug("arg %r" % a)
+            _debug("arg %r", a)
             if a.startswith("-"):
                 k = a[1:]
                 self.append(("del", k, None))
-                _debug("  del-key %r" % k)
+                _debug("  del-key %r", k)
             elif "=" in a:
                 k, v = a.split("=", 1)
                 if k[-1] in _ops:
                     op = _ops[k[-1]]
                     k = k[:-1]
-                    _debug("  %s: %r = %r" % (op, k, v))
+                    _debug("  %s: %r = %r", op, k, v)
                 else:
                     if k in dwim:
                         op = "add"
-                        _debug("  set-value %r = %r, DWIM to add-value" % (k, v))
+                        _debug("  set-value %r = %r, DWIM to add-value", k, v)
                     else:
                         op = "set"
-                        _debug("  set-value %r = %r" % (k, v))
+                        _debug("  set-value %r = %r", k, v)
                 self.append((op, k, v))
                 dwim.add(k)
             else:
                 lib.err("syntax error in %r" % a)
-        _debug("changes: %r" % self)
+        _debug("changes: %r", self)
 
     def apply_to(self, target):
         for op, k, v in self:
             if self._key_alias:
                 k = self._key_alias.get(k, k)
-            _debug("changeset: key %r op %r val %r" % (k, op, v))
+            _debug("changeset: key %r op %r val %r", k, op, v)
             if op == "set":
                 target[k] = [v]
             elif op == "add":
@@ -97,13 +97,13 @@ class Changeset(list):
 class TextChangeset(list):
     def __init__(self, args):
         for arg in args:
-            _debug("arg %r" % arg)
+            _debug("arg %r", arg)
             if arg == "-":
                 _debug("  empty");
                 self.append(("empty",))
             elif arg.startswith("+"):
                 arg = arg[1:]
-                _debug("  add-line %r" % arg)
+                _debug("  add-line %r", arg)
                 self.append(("append", arg))
             elif arg.startswith("s/"):
                 arg = arg[2:]
@@ -112,7 +112,7 @@ class TextChangeset(list):
                 arg = str_split_escaped(arg, "/", 1)
                 if len(arg) == 2:
                     from_re, to_str = arg
-                    _debug("  regex %r to %r" % (from_re, to_str))
+                    _debug("  regex %r to %r", from_re, to_str)
                     self.append(("resub", from_re, to_str))
                 else:
                     lib.die("not enough parameters: %r" % arg)
@@ -124,7 +124,7 @@ class TextChangeset(list):
         lines = target.rstrip("\n").split("\n")
 
         for op, *rest in self:
-            _debug("text changeset: op %r rest %r" % (op, rest))
+            _debug("text changeset: op %r rest %r", op, rest)
             if op == "empty":
                 lines = []
             elif op == "append":
@@ -135,7 +135,7 @@ class TextChangeset(list):
             else:
                 lib.die("unknown operation %r" % op)
 
-        _debug("text changeset: lines %r" % lines)
+        _debug("text changeset: lines %r", lines)
         return "\n".join(lines)
 
 # }}}

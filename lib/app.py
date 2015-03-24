@@ -55,9 +55,9 @@ def str_split_escaped(string, sep, max=0):
     state = 0
     out = []
     cur = ""
-    _debug("str_split: <- %r" % string)
+    _debug("str_split: <- %r", string)
     for char in string:
-        _debug("str_split:  char %r state %r" % (char, state))
+        _debug("str_split:  char %r state %r", char, state)
         if state == 0:
             if char == "\\":
                 state = 1
@@ -71,7 +71,7 @@ def str_split_escaped(string, sep, max=0):
             state = 0
     if cur:
         out.append(cur)
-    _debug("str_split: -> %r" % out)
+    _debug("str_split: -> %r", out)
     return out
 
 def expand_range(string):
@@ -292,7 +292,7 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
-        _debug("generating OTP from: %r" % \
+        _debug("generating OTP from: %r",
                base64.b32encode(self.raw_psk).decode("us-ascii"))
 
         if self.otype == "totp":
@@ -347,7 +347,7 @@ class Filter(object):
     @staticmethod
     def compile(pattern):
         tokens = Filter.parse(pattern)
-        _debug("parsing filter %r -> %r" % (pattern, tokens))
+        _debug("parsing filter %r -> %r", pattern, tokens)
 
         op, *args = tokens
         if len(args) > 0:
@@ -403,8 +403,7 @@ class Filter(object):
         except FilterSyntaxError as e:
             lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
-        if debug:
-            _debug("compiled filter: %s" % filter)
+        _debug("compiled filter: %s", filter)
         return db.find(filter)
 
     @staticmethod
@@ -426,8 +425,7 @@ class Filter(object):
         except FilterSyntaxError as e:
             lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
-        if debug:
-            _debug("compiled filter: %s" % filter)
+        _debug("compiled filter: %s", filter)
         return filter
 
     @staticmethod
@@ -451,7 +449,7 @@ class PatternFilter(Filter):
 
     @staticmethod
     def compile(pattern):
-        _debug("compiling pattern %r" % pattern)
+        _debug("compiling pattern %r", pattern)
 
         func = None
 
@@ -1198,7 +1196,7 @@ class Interactive(cmd.Cmd):
                 print("\t(No OATH preshared key for this entry.)")
             else:
                 uri = params.make_uri()
-                _debug("Qr code for %r" % uri)
+                _debug("Qr code for %r", uri)
                 with subprocess.Popen(["qrencode", "-tUTF8", uri],
                                       stdout=subprocess.PIPE) as proc:
                     for line in proc.stdout:
