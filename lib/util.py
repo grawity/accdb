@@ -7,11 +7,11 @@ import sys
 
 debug = os.environ.get("DEBUG", "")
 
-def trace(msg, *args):
-    print("accdb: %s" % msg, *args, file=sys.stderr)
+def trace(msg):
+    print("accdb: %s" % msg, file=sys.stderr)
 
-def _debug(msg, *args):
+def _debug(msg):
     if debug:
-        return trace(msg, *args)
+        return trace(msg)
 
 # }}}

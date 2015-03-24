@@ -292,7 +292,8 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
-        _debug("generating OTP from:", base64.b32encode(self.raw_psk).decode("us-ascii"))
+        _debug("generating OTP from: %r" % \
+               base64.b32encode(self.raw_psk).decode("us-ascii"))
 
         if self.otype == "totp":
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
@@ -403,7 +404,7 @@ class Filter(object):
             lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
         if debug:
-            trace("compiled filter:", filter)
+            trace("compiled filter: %s" % filter)
         return db.find(filter)
 
     @staticmethod
@@ -426,7 +427,7 @@ class Filter(object):
             lib.err("syntax error in filter: %s" % e.args)
             sys.exit(1)
         if debug:
-            trace("compiled filter:", filter)
+            trace("compiled filter: %s" % filter)
         return filter
 
     @staticmethod
@@ -734,9 +735,8 @@ class Database(object):
             print(entry.dump(**eargs), file=fh)
         if storage:
             if self.flags:
-                print("; dbflags: %s" % \
-                    ", ".join(sorted(self.flags)),
-                    file=fh)
+                print("; dbflags: %s" % ", ".join(sorted(self.flags)),
+                      file=fh)
 
     def to_structure(self):
         return [entry.to_structure() for entry in self]
@@ -1141,7 +1141,7 @@ class Interactive(cmd.Cmd):
 
         if sys.stdout.isatty():
             print("(%d %s matching '%s')" % \
-                (num, ("entry" if num == 1 else "entries"), filter))
+                  (num, ("entry" if num == 1 else "entries"), filter))
 
     def do_convert(self, arg):
         """Read entries from stdin and dump to stdout"""
