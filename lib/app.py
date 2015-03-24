@@ -926,11 +926,7 @@ class Entry(object):
                 for value in self.attributes[key]:
                     key = translate_attr(key)
                     desc = None
-                    key_fmt = ""
-                    value_fmt = ""
-                    if storage:
-                        pass
-                    elif attr_is_private(key):
+                    if attr_is_private(key):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
                         if not storage:
