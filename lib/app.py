@@ -947,6 +947,8 @@ class Entry(object):
                         else:
                             text = value
                         data += "\t%s: %s\n" % (f(key, "38;5;188"), text)
+                    elif attr_is_metadata(key):
+                        data += "\t%s: %s\n" % (f(key, "38;5;188"), value)
                     else:
                         data += "\t%s: %s\n" % (f(key, "38;5;228"), value)
 
