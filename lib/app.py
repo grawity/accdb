@@ -929,18 +929,19 @@ class Entry(object):
                     if attr_is_private(key):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
-                        if not storage:
-                            value = "<private>"
-                        elif conceal:
-                            _v = value
-                            #value = value.encode("utf-8")
-                            value = wrap_secret(value)
-                            #value = base64.b64encode(value)
-                            #value = value.decode("utf-8")
-                            #value = "<base64> %s" % value
-                            value = "<wrapped> %s" % value
-                            #print("maybe encoding %r as %r" % (_v, value))
-                            #value = _v
+                        if conceal:
+                            if storage:
+                                _v = value
+                                #value = value.encode("utf-8")
+                                value = wrap_secret(value)
+                                #value = base64.b64encode(value)
+                                #value = value.decode("utf-8")
+                                #value = "<base64> %s" % value
+                                value = "<wrapped> %s" % value
+                                #print("maybe encoding %r as %r" % (_v, value))
+                                #value = _v
+                            else:
+                                value = "<private>"
                     elif attr_is_reflink(key):
                         key_fmt = "38;5;250"
                         value_fmt = key_fmt
