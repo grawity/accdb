@@ -1362,7 +1362,7 @@ class Interactive(cmd.Cmd):
 
 # site-specific backup functions {{{
 
-def db_git_backup(db):
+def db_git_backup(db, summary="snapshot", body=""):
     db_dir = os.path.dirname(db.path)
     repo_dir = os.path.join(db_dir, ".git")
 
@@ -1371,7 +1371,7 @@ def db_git_backup(db):
 
     with open("/dev/null", "r+b") as null_fh:
         subprocess.call(["git", "-C", db_dir,
-                         "commit", "-m", "snapshot", db.path],
+                         "commit", "-m", summary, "-m", body, db.path],
                         stdout=null_fh)
 
 def db_gpg_backup(db, backup_path):
@@ -1408,15 +1408,17 @@ def main():
     interp = Interactive()
 
     if len(sys.argv) > 1:
-        interp.onecmd(subprocess.list2cmdline(sys.argv[1:]))
+        cmd = subprocess.list2cmdline(sys.argv[1:])
+        interp.onecmd(cmd)
     else:
+        cmd = "[interactive]"
         interp.cmdloop()
 
     if db.modified and not debug:
         db.flush()
 
         if "backup" in db.flags:
-            db_git_backup(db)
+            db_git_backup(db, body="accdb %s" % cmd)
             db_gpg_backup(db, db_backup_path)
 
 if __name__ == "__main__":
