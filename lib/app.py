@@ -194,16 +194,16 @@ class SecretStore(object):
          and algo[1] in {"128", "192", "256"} \
          and algo[2] == "cfb":
             from Crypto.Cipher import AES
-            bits = int(algo[1])
-            key = self.get_key(bits)
+
+            nbits = int(algo[1])
+            key = self.get_key(nbits)
+
             iv = os.urandom(AES.block_size)
+
             cipher = AES.new(key, AES.MODE_CFB, iv)
-            wrapped = cipher.encrypt(clear)
-            wrapped = iv + wrapped
+            return iv + cipher.encrypt(clear)
         else:
             raise UnknownAlgorithmError()
-
-        return wrapped
 
     def unwrap(self, wrapped: "bytes", algo: "str") -> "bytes":
         algo = algo.split("-")
@@ -214,15 +214,17 @@ class SecretStore(object):
          and algo[1] in {"128", "192", "256"} \
          and algo[2] == "cfb":
             from Crypto.Cipher import AES
-            key = self.get_key(bits)
+
+            nbits = int(algo[1])
+            key = self.get_key(nbits)
+
             iv = wrapped[:AES.block_size]
             wrapped = wrapped[AES.block_size:]
+
             cipher = AES.new(key, AES.MODE_CFB, iv)
-            clear = cipher.decrypt(wrapped)
+            return cipher.decrypt(wrapped)
         else:
             raise UnknownAlgorithmError()
-
-        return clear
 
 # @clear: (string) plain data
 # -> (base64-encoded string) encrypted data
