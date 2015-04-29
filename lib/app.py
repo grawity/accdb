@@ -1395,7 +1395,10 @@ def main():
 
     db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
-    ss = SecretStore(key=open("/mnt/keycard/grawity/accdb.key", "rb").read())
+    try:
+        ss = SecretStore(key=open("/mnt/keycard/grawity/accdb.key", "rb").read())
+    except FileNotFoundError:
+        ss = None
 
     try:
         db = Database.from_file(db_path)
