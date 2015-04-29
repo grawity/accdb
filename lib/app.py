@@ -232,13 +232,16 @@ class SecretStore(object):
 def wrap_secret(clear: "str") -> "base64: str":
     global ss
 
-    algo = ss.default_algo
-    clear = clear.encode("utf-8")
-    wrapped = ss.wrap(clear, algo)
-    wrapped = base64.b64encode(wrapped)
-    wrapped = wrapped.decode("utf-8")
-    wrapped = "%s;%s" % (algo, wrapped)
-    return wrapped
+    if ss:
+        algo = ss.default_algo
+        clear = clear.encode("utf-8")
+        wrapped = ss.wrap(clear, algo)
+        wrapped = base64.b64encode(wrapped)
+        wrapped = wrapped.decode("utf-8")
+        wrapped = "%s;%s" % (algo, wrapped)
+        return wrapped
+    else:
+        lib.die("encryption not available")
 
 # @wrapped: (base64-encoded string) encrypted data
 # -> (string) plain data
@@ -246,12 +249,15 @@ def wrap_secret(clear: "str") -> "base64: str":
 def unwrap_secret(wrapped):
     global ss
 
-    algo, wrapped = wrapped.split(";", 1)
-    wrapped = wrapped.encode("utf-8")
-    wrapped = base64.b64decode(wrapped)
-    clear = ss.unwrap(wrapped, algo)
-    clear = clear.decode("utf-8")
-    return clear
+    if ss:
+        algo, wrapped = wrapped.split(";", 1)
+        wrapped = wrapped.encode("utf-8")
+        wrapped = base64.b64decode(wrapped)
+        clear = ss.unwrap(wrapped, algo)
+        clear = clear.decode("utf-8")
+        return clear
+    else:
+        return wrapped
 
 # }}}
 
