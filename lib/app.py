@@ -181,50 +181,50 @@ class SecretStore(object):
     def __init__(self, key):
         self.key = key
 
-    def get_key(self, bits) -> "bytes":
-        bytes = int(bits >> 3)
-        return self.key[:bytes]
+    def get_key(self, nbits) -> "bytes":
+        nbytes = int(nbits >> 3)
+        return self.key[:nbytes]
 
     def wrap(self, clear: "bytes", algo: "str") -> "bytes":
         algo = algo.split("-")
 
         if algo == "none":
-            pass
-        elif algo[0] == "aes" \
-         and algo[1] in {"128", "192", "256"} \
-         and algo[2] == "cfb":
+            return clear
+
+        elif algo[0] == "aes":
             from Crypto.Cipher import AES
 
-            nbits = int(algo[1])
-            key = self.get_key(nbits)
+            if algo[1] in {"128", "192", "256"}:
+                nbits = int(algo[1])
+                key = self.get_key(nbits)
 
-            iv = os.urandom(AES.block_size)
+                if algo[2] == "cfb":
+                    iv = os.urandom(AES.block_size)
+                    cipher = AES.new(key, AES.MODE_CFB, iv)
+                    return iv + cipher.encrypt(clear)
 
-            cipher = AES.new(key, AES.MODE_CFB, iv)
-            return iv + cipher.encrypt(clear)
-        else:
-            raise UnknownAlgorithmError()
+        raise UnknownAlgorithmError()
 
     def unwrap(self, wrapped: "bytes", algo: "str") -> "bytes":
         algo = algo.split("-")
 
         if algo == "none":
-            pass
-        elif algo[0] == "aes" \
-         and algo[1] in {"128", "192", "256"} \
-         and algo[2] == "cfb":
+            return wrapped
+
+        elif algo[0] == "aes":
             from Crypto.Cipher import AES
 
-            nbits = int(algo[1])
-            key = self.get_key(nbits)
+            if algo[1] in {"128", "192", "256"}:
+                nbits = int(algo[1])
+                key = self.get_key(nbits)
 
-            iv = wrapped[:AES.block_size]
-            wrapped = wrapped[AES.block_size:]
+                if algo[2] == "cfb":
+                    iv = wrapped[:AES.block_size]
+                    buf = wrapped[AES.block_size:]
+                    cipher = AES.new(key, AES.MODE_CFB, iv)
+                    return cipher.decrypt(buf)
 
-            cipher = AES.new(key, AES.MODE_CFB, iv)
-            return cipher.decrypt(wrapped)
-        else:
-            raise UnknownAlgorithmError()
+        raise UnknownAlgorithmError()
 
 # @clear: (string) plain data
 # -> (base64-encoded string) encrypted data
