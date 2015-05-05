@@ -1018,7 +1018,8 @@ class Entry(object):
         p = OATHParameters(psk)
 
         tmp = self.attributes.get("2fa.subject",
-              self.attributes.get("login"))
+              self.attributes.get("login",
+              self.attributes.get("email")))
         if tmp:
             p.login = tmp[0]
         else:
