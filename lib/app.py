@@ -1340,6 +1340,29 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
+    def do_new(self, arg):
+        args = shlex.split(arg)
+
+        entry = Entry()
+        attrs = ["date.signup=now"]
+
+        entry.name = args.pop(0)
+        for arg in args:
+            if arg.startswith("+"):
+                entry.tags.add(arg[1:])
+            else:
+                attrs.append(arg)
+
+        changes = Changeset(attrs, key_alias=attr_names)
+        changes.apply_to(entry.attributes)
+
+        db.add(entry)
+        self._show_entry(entry, conceal=False)
+        if sys.stdout.isatty():
+            print("(entry added)")
+
+        db.modified = True
+
     def do_comment(self, arg):
         query, *args = shlex.split(arg)
         num = 0
