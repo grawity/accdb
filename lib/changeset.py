@@ -1,4 +1,7 @@
-from logging import debug as _debug
+from logging import (
+    error as _err,
+    debug as _debug
+)
 
 # 'Changeset' {{{
 
@@ -37,7 +40,7 @@ class Changeset(list):
                 self.append((op, k, v))
                 dwim.add(k)
             else:
-                lib.err("syntax error in %r" % a)
+                _err("syntax error in %r" % a)
         _debug("parsed changes: %r", self)
 
     def apply_to(self, target):
