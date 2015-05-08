@@ -967,6 +967,8 @@ class Entry(object):
                     else:
                         key_fmt = "38;5;228"
                         value_fmt = ""
+                        if key.startswith("date.") and value in {"now", "today"}:
+                            value = time.strftime("%Y-%m-%d")
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
                     if desc and not storage:
