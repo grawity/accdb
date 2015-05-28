@@ -1455,7 +1455,7 @@ def main():
         db.flush()
 
         if "backup" in db.flags:
-            db_git_backup(db, body="accdb %s" % cmd)
+            db_git_backup(db, summary="accdb %s" % cmd)
             db_gpg_backup(db, db_backup_path)
 
 if __name__ == "__main__":
