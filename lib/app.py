@@ -75,6 +75,10 @@ def str_split_escaped(string, sep, max=0):
     _debug("str_split: -> %r", out)
     return out
 
+def str_split_qwords(string):
+    string = string.replace("'", "\\'")
+    return shlex.split(string)
+
 def expand_range(string):
     items = []
     for m, n in split_ranges(string):
@@ -417,7 +421,7 @@ class Filter(object):
 
     @staticmethod
     def _cli_compile(arg):
-        args = shlex.split(arg)
+        args = str_split_qwords(arg)
         try:
             if len(args) > 1:
                 arg = "AND"
@@ -1281,7 +1285,7 @@ class Interactive(cmd.Cmd):
 
     def do_retag(self, arg):
         """Rename tags on all entries"""
-        tags = shlex.split(arg)
+        tags = str_split_qwords(arg)
 
         new_tags = {t[1:] for t in tags if t.startswith("+")}
         old_tags = {t[1:] for t in tags if t.startswith("-")}
@@ -1309,7 +1313,7 @@ class Interactive(cmd.Cmd):
 
     def do_tag(self, arg):
         """Add or remove tags to an entry"""
-        query, *tags = shlex.split(arg)
+        query, *tags = str_split_qwords(arg)
 
         add_tags = {t[1:] for t in tags if t.startswith("+")}
         rem_tags = {t[1:] for t in tags if t.startswith("-")}
@@ -1335,7 +1339,7 @@ class Interactive(cmd.Cmd):
 
     def do_set(self, arg):
         """Change attributes of an entry"""
-        query, *args = shlex.split(arg)
+        query, *args = str_split_qwords(arg)
         num = 0
 
         changes = Changeset(args, key_alias=attr_names)
@@ -1375,15 +1379,17 @@ class Interactive(cmd.Cmd):
         db.modified = True
 
     def do_new(self, arg):
-        args = shlex.split(arg)
+        print("<- args", arg)
+        args = str_split_qwords(arg)
+        print("-> args", args)
         return self._do_create(None, args[:])
 
     def do_copy(self, arg):
-        args = shlex.split(arg)
+        args = str_split_qwords(arg)
         return self._do_create(args[0], args[1:])
 
     def do_comment(self, arg):
-        query, *args = shlex.split(arg)
+        query, *args = str_split_qwords(arg)
         num = 0
 
         changes = TextChangeset(args)
