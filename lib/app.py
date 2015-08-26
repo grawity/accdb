@@ -792,6 +792,15 @@ class Entry(object):
         self.uuid = None
         self._broken = False
 
+    def clone(self):
+        new = Entry()
+        new.attributes = {k: v[:] for k, v in self.attributes.items()}
+        new.comment = self.comment
+        new.deleted = self.deleted
+        new.name = self.name
+        new.tags = set(self.tags)
+        return new
+
     # Import
 
     @classmethod
@@ -1340,13 +1349,15 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
-    def do_new(self, arg):
-        args = shlex.split(arg)
+    def _do_create(self, basearg, args):
+        if basearg:
+            entry = db.find_by_itemno(int(basearg)).clone()
+            attrs = []
+        else:
+            entry = Entry()
+            entry.name = args.pop(0)
+            attrs = ["date.signup=now"]
 
-        entry = Entry()
-        attrs = ["date.signup=now"]
-
-        entry.name = args.pop(0)
         for arg in args:
             if arg.startswith("+"):
                 entry.tags.add(arg[1:])
@@ -1362,6 +1373,14 @@ class Interactive(cmd.Cmd):
             print("(entry added)")
 
         db.modified = True
+
+    def do_new(self, arg):
+        args = shlex.split(arg)
+        return self._do_create(None, args[:])
+
+    def do_copy(self, arg):
+        args = shlex.split(arg)
+        return self._do_create(args[0], args[1:])
 
     def do_comment(self, arg):
         query, *args = shlex.split(arg)
