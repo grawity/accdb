@@ -1384,7 +1384,7 @@ class Interactive(cmd.Cmd):
         print("-> args", args)
         return self._do_create(None, args[:])
 
-    def do_copy(self, arg):
+    def do_clone(self, arg):
         args = str_split_qwords(arg)
         return self._do_create(args[0], args[1:])
 
