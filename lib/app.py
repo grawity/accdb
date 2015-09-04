@@ -473,8 +473,11 @@ class PatternFilter(Filter):
         elif pattern == "+":
             func = lambda entry: len(entry.tags) == 0
         elif pattern.startswith("+"):
-            regex = re_compile_glob(pattern[1:])
-            func = lambda entry: any(regex.match(tag) for tag in entry.tags)
+            if pattern[1:] == "*":
+                func = lambda entry: len(entry.tags) > 0
+            else:
+                regex = re_compile_glob(pattern[2:])
+                func = lambda entry: any(regex.match(tag) for tag in entry.tags)
         elif pattern.startswith("@"):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
