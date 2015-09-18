@@ -194,10 +194,16 @@ class PatternFilter(Filter):
                 regex = re.compile(pattern[1:], re.I | re.U)
             except re.error as e:
                 lib.die("invalid regex %r (%s)" % (pattern[1:], e))
-            func = lambda entry:\
+            func = lambda entry: \
                     regex.search(entry.name) \
                     or any(regex.search(value)
-                       for value in entry.attributes.get("@aka", []))
+                           for value in entry.attributes.get("@aka", []))
+        elif pattern.startswith("="):
+            match = pattern[1:].casefold()
+            func = lambda entry: \
+                    entry.name.casefold() == match \
+                    or any(value.casefold() == match
+                           for value in entry.attributes.get("@aka", []))
         elif pattern.startswith("{"):
             func = ItemUuidFilter(pattern)
         else:

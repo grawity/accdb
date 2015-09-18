@@ -131,6 +131,8 @@ Dumping the entire database:
 
   - `~foo` – matching title (regex)
 
+  - `=foo` – matching title (exact CI match)
+
   - `@foo` – attribute `foo` present (glob)
 
   - `@foo=bar` – attribute `foo` present (exact) and has value matching `bar` (glob)
