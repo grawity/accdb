@@ -76,7 +76,7 @@ def str_split_escaped(string, sep, max=0):
     return out
 
 def str_split_qwords(string):
-    string = string.replace("'", "\\'")
+    #string = string.replace("'", "\\'")
     return shlex.split(string)
 
 def expand_range(string):
