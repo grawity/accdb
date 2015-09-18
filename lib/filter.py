@@ -1,5 +1,5 @@
-
-# 'Filter' {{{
+from .string import *
+from .util import _debug
 
 class FilterSyntaxError(Exception):
     pass
@@ -94,7 +94,7 @@ class Filter(object):
             return PatternFilter(op)
 
     @staticmethod
-    def _compile_and_search(text):
+    def _compile_and_search(db, text):
         try:
             filter = Filter.compile(text)
         except FilterSyntaxError as e:
@@ -126,7 +126,7 @@ class Filter(object):
         return filter
 
     @staticmethod
-    def _cli_compile_and_search(arg):
+    def _cli_compile_and_search(db, arg):
         return db.find(Filter._cli_compile(arg))
 
 class PatternFilter(Filter):
@@ -279,7 +279,5 @@ class NegationFilter(Filter):
 
     def __str__(self):
         return "(NOT %s)" % self.filter
-
-# }}}
 
 # }}}

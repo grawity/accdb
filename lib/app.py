@@ -20,9 +20,8 @@ from .clipboard import Clipboard
 from .filter import Filter
 from .oath_util import OATHParameters
 from .string import *
+from .util import _debug
 from .util import *
-
-from logging import debug as _debug
 
 # string functions {{{
 
@@ -797,22 +796,22 @@ class Interactive(cmd.Cmd):
 
     def do_reveal(self, arg):
         """Display entry (including sensitive information)"""
-        for entry in Filter._cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry, conceal=False)
 
     def do_show(self, arg):
         """Display entry (safe)"""
-        for entry in Filter._cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry)
 
     def do_rshow(self, arg):
         """Display entry (safe, recursive)"""
-        for entry in Filter._cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
-        for entry in Filter._cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry)
             params = entry.oath_params
             if params is None:
@@ -828,7 +827,7 @@ class Interactive(cmd.Cmd):
 
     def do_totp(self, arg):
         """Generate an OATH TOTP response"""
-        for entry in Filter._cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(db, arg):
             params = entry.oath_params
             if params:
                 otp = params.generate()
@@ -839,7 +838,7 @@ class Interactive(cmd.Cmd):
 
     def do_t(self, arg):
         """Copy OATH TOTP response to clipboard"""
-        items = list(Filter._cli_compile_and_search(arg))
+        items = list(Filter._cli_compile_and_search(db, arg))
         if len(items) > 1:
             lib.die("too many arguments")
         entry = items[0]
@@ -881,7 +880,7 @@ class Interactive(cmd.Cmd):
             lib.die("no old tags specified")
 
         query = "OR " + " ".join(["+%s" % tag for tag in old_tags])
-        items = Filter._compile_and_search(query)
+        items = Filter._compile_and_search(db, query)
         num   = 0
 
         for entry in items:
@@ -906,7 +905,7 @@ class Interactive(cmd.Cmd):
         if bad_args:
             lib.die("bad arguments: %r" % bad_args)
 
-        items = Filter._compile_and_search(query)
+        items = Filter._compile_and_search(db, query)
         tags  = set(tags)
         num   = 0
 
@@ -927,7 +926,7 @@ class Interactive(cmd.Cmd):
         num = 0
 
         changes = Changeset(args, key_alias=attr_names)
-        for entry in Filter._compile_and_search(query):
+        for entry in Filter._compile_and_search(db, query):
             changes.apply_to(entry.attributes)
             num += 1
             self._show_entry(entry)
@@ -977,7 +976,7 @@ class Interactive(cmd.Cmd):
         num = 0
 
         changes = TextChangeset(args)
-        for entry in Filter._compile_and_search(query):
+        for entry in Filter._compile_and_search(db, query):
             entry.comment = changes.apply(entry.comment)
             num += 1
             self._show_entry(entry)
@@ -989,7 +988,7 @@ class Interactive(cmd.Cmd):
 
     def do_rm(self, arg):
         """Delete an entry"""
-        for entry in Filter._cli_compile_and_search(arg):
+        for entry in Filter._cli_compile_and_search(db, arg):
             entry.deleted = True
             self._show_entry(entry)
 
