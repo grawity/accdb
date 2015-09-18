@@ -16,7 +16,7 @@ class Entry(object):
 
     RE_COLL = re.compile(r'\w.*$')
 
-    def __init__(self):
+    def __init__(self, database=None):
         self.attributes = dict()
         self.comment = ""
         self.deleted = False
@@ -26,6 +26,7 @@ class Entry(object):
         self.tags = set()
         self.uuid = None
         self._broken = False
+        self._db = database
 
     def clone(self):
         new = Entry()
@@ -34,6 +35,7 @@ class Entry(object):
         new.deleted = self.deleted
         new.name = self.name
         new.tags = set(self.tags)
+        new._db = self._db
         return new
 
     # Import
@@ -42,9 +44,10 @@ class Entry(object):
     def parse(self, *args, **kwargs):
         return self().parseinto(*args, **kwargs)
 
-    def parseinto(self, data, lineno=1):
+    def parseinto(self, data, lineno=1, database=None):
         # lineno is passed here for use in syntax error messages
         self.lineno = lineno
+        self._db = database
 
         for line in data.splitlines():
             line = line.lstrip()
@@ -199,7 +202,7 @@ class Entry(object):
                         value_fmt = key_fmt
                         if not storage:
                             try:
-                                sub_entry = db.find_by_uuid(value)
+                                sub_entry = self._db.find_by_uuid(value)
                             except KeyError:
                                 value_fmt = "33"
                             else:

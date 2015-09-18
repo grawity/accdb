@@ -155,7 +155,7 @@ class Database(object):
             elif line.startswith("; dbflags:"):
                 self.flags = split_tags(line[10:])
             elif line.startswith("="):
-                entry = Entry.parse(data, lineno=lastno)
+                entry = Entry.parse(data, lineno=lastno, database=self)
                 if entry and not entry.deleted:
                     self.add(entry)
                 data = line
@@ -164,7 +164,7 @@ class Database(object):
                 data += line
 
         if data:
-            entry = Entry.parse(data, lineno=lastno)
+            entry = Entry.parse(data, lineno=lastno, database=self)
             if entry and not entry.deleted:
                 self.add(entry)
 
@@ -592,7 +592,7 @@ class Interactive(cmd.Cmd):
             entry = db.find_by_itemno(int(basearg)).clone()
             attrs = []
         else:
-            entry = Entry()
+            entry = Entry(database=db)
             entry.name = args.pop(0)
             attrs = ["date.signup=now"]
 
