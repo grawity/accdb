@@ -603,6 +603,14 @@ class Entry(object):
                 or self.attributes or self.tags or self.comment)
 
     @property
+    def names(self):
+        n = [self.name]
+        a = self.attributes.get("@aka")
+        if a:
+            n.append(a)
+        return n
+
+    @property
     def normalized_name(self):
         return re.search(self.RE_COLL, self.name).group(0).lower()
 
