@@ -1,3 +1,4 @@
+from nullroute.core import Core
 from logging import (
     error as _err,
     debug as _debug
@@ -40,7 +41,7 @@ class Changeset(list):
                 self.append((op, k, v))
                 dwim.add(k)
             else:
-                _err("syntax error in %r" % a)
+                Core.err("syntax error in %r" % a)
         _debug("parsed changes: %r", self)
 
     def apply_to(self, target):
@@ -92,7 +93,7 @@ class Changeset(list):
                 if k in target:
                     del target[k]
             else:
-                lib.die("unknown changeset operation %r" % op)
+                Core.die("unknown changeset operation %r" % op)
         return target
 
 # }}}
@@ -121,7 +122,7 @@ class TextChangeset(list):
                     _debug("  regex %r to %r", from_re, to_str)
                     self.append(("resub", from_re, to_str))
                 else:
-                    lib.die("not enough parameters: %r" % arg)
+                    Core.die("not enough parameters: %r" % arg)
             else:
                 self.append(("empty",))
                 self.append(("append", arg))
@@ -139,7 +140,7 @@ class TextChangeset(list):
                 rx = re.compile(rest[0])
                 lines = [rx.sub(rest[1], _) for _ in lines]
             else:
-                lib.die("unknown operation %r" % op)
+                Core.die("unknown operation %r" % op)
 
         _debug("text changeset: lines %r", lines)
         return "\n".join(lines)

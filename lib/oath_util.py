@@ -1,4 +1,5 @@
 import base64
+from nullroute.core import Core
 
 from .string import encode_psk
 
@@ -9,7 +10,7 @@ class OATHParameters(object):
     def __init__(self, raw_psk, digits=6, otype="totp", window=30,
                  login=None, issuer=None):
         if otype not in {"totp"}:
-            lib.err("OATH %r is not supported yet" % otype)
+            Core.err("OATH %r is not supported yet" % otype)
         self.raw_psk = raw_psk
         self.digits = digits
         self.otype = otype
@@ -46,4 +47,4 @@ class OATHParameters(object):
         if self.otype == "totp":
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
         else:
-            lib.err("OATH %r is not supported yet" % self.otype)
+            Core.err("OATH %r is not supported yet" % self.otype)

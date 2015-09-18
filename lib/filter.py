@@ -1,4 +1,4 @@
-from nullroute import ui as lib
+from nullroute.core import Core
 
 from .string import *
 from .util import _debug
@@ -100,8 +100,7 @@ class Filter(object):
         try:
             filter = Filter.compile(text)
         except FilterSyntaxError as e:
-            lib.err("syntax error in filter: %s" % e.args)
-            sys.exit(1)
+            Core.die("syntax error in filter: %s" % e.args)
         _debug("compiled filter: %s", filter)
         return db.find(filter)
 
@@ -122,8 +121,7 @@ class Filter(object):
                 arg = "*"
                 filter = Filter.compile(arg)
         except FilterSyntaxError as e:
-            lib.err("syntax error in filter: %s" % e.args)
-            sys.exit(1)
+            Core.die("syntax error in filter: %s" % e.args)
         _debug("compiled filter: %s", filter)
         return filter
 
@@ -179,7 +177,7 @@ class PatternFilter(Filter):
                 try:
                     regex = re.compile(regex, re.I | re.U)
                 except re.error as e:
-                    lib.die("invalid regex %r (%s)" % (regex, e))
+                    Core.die("invalid regex %r (%s)" % (regex, e))
                 func = lambda entry:\
                     attr in entry.attributes \
                     and any(regex.search(value)
@@ -195,7 +193,7 @@ class PatternFilter(Filter):
             try:
                 regex = re.compile(pattern[1:], re.I | re.U)
             except re.error as e:
-                lib.die("invalid regex %r (%s)" % (pattern[1:], e))
+                Core.die("invalid regex %r (%s)" % (pattern[1:], e))
             func = lambda entry: any(regex.search(value) for value in entry.names)
         elif pattern.startswith("="):
             match = pattern[1:].casefold()

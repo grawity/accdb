@@ -12,7 +12,7 @@ import time
 import uuid
 from collections import OrderedDict
 from io import TextIOWrapper
-from nullroute import ui as lib
+from nullroute.core import Core
 from . import hotpie as oath
 
 from .changeset import Changeset, TextChangeset
@@ -160,7 +160,7 @@ def wrap_secret(clear: "str") -> "base64: str":
         wrapped = "%s;%s" % (algo, wrapped)
         return wrapped
     else:
-        lib.die("encryption not available")
+        Core.die("encryption not available")
 
 # @wrapped: (base64-encoded string) encrypted data
 # -> (string) plain data
@@ -665,7 +665,7 @@ class Interactive(cmd.Cmd):
         pass
 
     def default(self, line):
-        lib.die("unknown command %r" % line.split()[0])
+        Core.die("unknown command %r" % line.split()[0])
 
     def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
         text = entry.dump(color=sys.stdout.isatty(), **kwargs)
@@ -848,7 +848,7 @@ class Interactive(cmd.Cmd):
         """Copy OATH TOTP response to clipboard"""
         items = list(Filter._cli_compile_and_search(db, arg))
         if len(items) > 1:
-            lib.die("too many arguments")
+            Core.die("too many arguments")
         entry = items[0]
         self._show_entry(entry)
         params = entry.oath_params
@@ -883,9 +883,9 @@ class Interactive(cmd.Cmd):
         bad_args = [t for t in tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
-            lib.die("bad arguments: %r" % bad_args)
+            Core.die("bad arguments: %r" % bad_args)
         elif not old_tags:
-            lib.die("no old tags specified")
+            Core.die("no old tags specified")
 
         query = "OR " + " ".join(["+%s" % tag for tag in old_tags])
         items = Filter._compile_and_search(db, query)
@@ -911,7 +911,7 @@ class Interactive(cmd.Cmd):
         bad_args = [t for t in tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
-            lib.die("bad arguments: %r" % bad_args)
+            Core.die("bad arguments: %r" % bad_args)
 
         items = Filter._compile_and_search(db, query)
         tags  = set(tags)
