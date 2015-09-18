@@ -1,5 +1,7 @@
 from nullroute.core import Core
+import uuid
 
+from .entry_util import *
 from .string import *
 from .util import _debug
 

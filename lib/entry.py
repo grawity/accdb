@@ -1,6 +1,13 @@
 import re
 import uuid
 
+from .entry_util import *
+
+def split_tags(string):
+    string = string.strip(" ,\n")
+    items = re.split(Entry.RE_TAGS, string)
+    return set(items)
+
 # 'Entry' {{{
 
 class Entry(object):
