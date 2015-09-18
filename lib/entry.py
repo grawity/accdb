@@ -255,7 +255,7 @@ class Entry(object):
         n = [self.name]
         a = self.attributes.get("@aka")
         if a:
-            n.append(a)
+            n += a
         return n
 
     @property
