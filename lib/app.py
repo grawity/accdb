@@ -13,14 +13,12 @@ import uuid
 from collections import OrderedDict
 from io import TextIOWrapper
 from nullroute.core import Core
-from . import hotpie as oath
 
 from .changeset import Changeset, TextChangeset
 from .clipboard import Clipboard
 from .entry import *
 from .entry_util import *
 from .filter import Filter
-from .oath_util import OATHParameters
 from .string import *
 from .util import _debug
 from .util import *

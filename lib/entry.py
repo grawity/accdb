@@ -2,6 +2,8 @@ import re
 import uuid
 
 from .entry_util import *
+from .oath_util import OATHParameters
+from .string import *
 
 def split_tags(string):
     string = string.strip(" ,\n")

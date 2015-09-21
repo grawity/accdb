@@ -1,7 +1,10 @@
 import base64
 from nullroute.core import Core
 
+from . import hotpie as oath
+
 from .string import encode_psk
+from .util import _debug
 
 class OATHParameters(object):
     """
