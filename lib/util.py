@@ -9,7 +9,6 @@ debug = os.environ.get("DEBUG", "")
 logging.basicConfig(format="accdb: %(levelname)s: (%(module)s) %(message)s",
                     level=(logging.DEBUG if debug else logging.INFO))
 
-def _debug(*args):
-    return logging.debug(*args)
+_debug = logging.debug
 
 # }}}
