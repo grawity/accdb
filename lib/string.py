@@ -60,6 +60,17 @@ def str_split_qwords(string):
         _debug("output arg: <%s>" % _arg)
     return args
 
+def str_join_qwords(args):
+    out = []
+    quote_rx = re.compile("['\"\\\\ ]")
+    escape_rx = re.compile("['\"\\\\]")
+    func = lambda ch: "\\%s" % ch.group(0)
+    for arg in args:
+        if quote_rx.search(arg):
+            arg = "\"%s\"" % escape_rx.sub(func, arg)
+        out.append(arg)
+    return " ".join(out)
+
 def expand_range(string):
     items = []
     for m, n in split_ranges(string):

@@ -700,7 +700,7 @@ def main():
     interp = Interactive()
 
     if len(sys.argv) > 1:
-        cmd = subprocess.list2cmdline(sys.argv[1:])
+        cmd = str_join_qwords(sys.argv[1:])
         interp.onecmd(cmd)
     else:
         cmd = "[interactive]"
