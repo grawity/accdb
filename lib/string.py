@@ -3,6 +3,8 @@ import fnmatch
 import re
 import shlex
 
+from .util import _debug
+
 def b64_pad(string, max=4):
     n = len(string)
     if n % max:
@@ -49,8 +51,14 @@ def str_split_escaped(string, sep, max=0):
     return out
 
 def str_split_qwords(string):
-    #string = string.replace("'", "\\'")
-    return shlex.split(string)
+    _debug("parsing: <%s>" % string)
+    lex = shlex.shlex(string, posix=True)
+    lex.commenters = ""
+    lex.whitespace_split = True
+    args = list(lex)
+    for _arg in args:
+        _debug("output arg: <%s>" % _arg)
+    return args
 
 def expand_range(string):
     items = []

@@ -611,9 +611,7 @@ class Interactive(cmd.Cmd):
         db.modified = True
 
     def do_new(self, arg):
-        _debug("in arg: %r" % arg)
         args = str_split_qwords(arg)
-        _debug("out args: %r" % args)
         return self._do_create(None, args[:])
 
     def do_clone(self, arg):
