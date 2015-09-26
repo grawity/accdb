@@ -505,6 +505,10 @@ class Interactive(cmd.Cmd):
         """Rewrite the accounts.db file"""
         db.modified = True
 
+    def do_undo(self, arg):
+        """Revert the last commit to accounts.db"""
+        call_git(db, "revert", "HEAD")
+
     def do_sort(self, arg):
         """Sort and rewrite the database"""
         db.sort()
@@ -651,17 +655,21 @@ class Interactive(cmd.Cmd):
 
 # site-specific backup functions {{{
 
+def call_git(db, *args, **kwargs):
+    db_dir = os.path.dirname(db.path)
+
+    subprocess.call(["git", "-C", db_dir] + list(args), **kwargs)
+
 def db_git_backup(db, summary="snapshot", body=""):
     db_dir = os.path.dirname(db.path)
     repo_dir = os.path.join(db_dir, ".git")
 
     if not os.path.exists(repo_dir):
-        subprocess.call(["git", "-C", db_dir, "init"])
+        call_git(db, "init")
 
     with open("/dev/null", "r+b") as null_fh:
-        subprocess.call(["git", "-C", db_dir,
-                         "commit", "-m", summary, "-m", body, db.path],
-                        stdout=null_fh)
+        call_git(db, "commit", "-m", summary, "-m", body, db.path,
+                 stdout=null_fh)
 
 def db_gpg_backup(db, backup_path):
     if backup_path == db.path:
