@@ -305,4 +305,12 @@ class Entry(object):
 
         return p
 
+    def sync_names(self, export=False):
+        if export:
+            self.attributes["@name"] = [self.name]
+        else:
+            if "@name" in self.attributes:
+                self.name = self.attributes["@name"][0]
+                del self.attributes["@name"]
+
 # }}}
