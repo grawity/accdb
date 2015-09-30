@@ -9,9 +9,9 @@ class FancyFormatter(logging.Formatter):
         logging.DEBUG: "\033[36m",
     }
 
-    arg0 = "accdb"
-
     def format(self, record):
+        arg0 = "accdb"
+
         color = self._colors.get(record.levelno)
         reset = "\033[m" if color else ""
 
