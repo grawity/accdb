@@ -303,6 +303,10 @@ class Entry(object):
         if tmp:
             p.window = int(tmp[0])
 
+        tmp = self.attributes.get("@icon")
+        if tmp:
+            p.image = tmp[0]
+
         return p
 
     def sync_names(self, export=False):

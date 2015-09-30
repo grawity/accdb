@@ -11,7 +11,7 @@ class OATHParameters(object):
     A collection of OATH parameters for a single site.
     """
     def __init__(self, raw_psk, digits=6, otype="totp", window=30,
-                 login=None, issuer=None):
+                 login=None, issuer=None, image=None):
         if otype not in {"totp"}:
             Core.err("OATH %r is not supported yet" % otype)
         self.raw_psk = raw_psk
@@ -20,6 +20,7 @@ class OATHParameters(object):
         self.window = window
         self.login = login
         self.issuer = issuer
+        self.image = image
 
     @property
     def text_psk(self):
@@ -40,6 +41,8 @@ class OATHParameters(object):
             uri += "&issuer=%s" % issuer
         if self.digits != 6:
             uri += "&digits=%d" % self.digits
+        if self.image:
+            uri += "&image=%s" % self.image
 
         return uri
 
