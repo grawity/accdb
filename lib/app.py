@@ -507,7 +507,7 @@ class Interactive(cmd.Cmd):
 
     def do_undo(self, arg):
         """Revert the last commit to accounts.db"""
-        call_git(db, "revert", "HEAD")
+        call_git(db, "revert", "--no-edit", "HEAD")
 
     def do_sort(self, arg):
         """Sort and rewrite the database"""
