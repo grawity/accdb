@@ -509,6 +509,10 @@ class Interactive(cmd.Cmd):
         """Revert the last commit to accounts.db"""
         call_git(db, "revert", "--no-edit", "HEAD")
 
+    def do_git(self, arg):
+        args = str_split_qwords(arg)
+        call_git(db, *args)
+
     def do_sort(self, arg):
         """Sort and rewrite the database"""
         db.sort()
