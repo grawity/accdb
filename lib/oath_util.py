@@ -1,5 +1,7 @@
 import base64
+from collections import OrderedDict
 from nullroute.core import Core
+import urllib.parse
 
 from . import hotpie as oath
 
@@ -28,7 +30,6 @@ class OATHParameters(object):
 
     def make_uri(self):
         # https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
-        # TODO: url-encode label & issuer
         if self.issuer and (self.issuer != self.login):
             issuer = self.issuer
             label = "%s:%s" % (issuer, self.login)
@@ -36,13 +37,18 @@ class OATHParameters(object):
             issuer = None
             label = self.login
 
-        uri = "otpauth://totp/%s?secret=%s" % (label, self.text_psk)
+        data = OrderedDict()
+
+        data["secret"] = self.text_psk
         if issuer:
-            uri += "&issuer=%s" % issuer
+            data["issuer"] = issuer
         if self.digits != 6:
-            uri += "&digits=%d" % self.digits
+            data["digits"] = self.digits
         if self.image:
-            uri += "&image=%s" % self.image
+            data["image"] = self.image
+
+        uri = "otpauth://totp/%s?%s" % (urllib.parse.quote_plus(label),
+                                        urllib.parse.urlencode(data))
 
         return uri
 
