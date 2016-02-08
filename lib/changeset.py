@@ -10,9 +10,10 @@ class Changeset(list):
     def __init__(self, args, key_alias=None):
         self._key_alias = key_alias
         _ops = {
+            ":": "set",
+            "?": "tryset",
             "+": "add",
             "-": "rem",
-            ":": "set",
             "«": "copy",
             "<": "move",
             "|": "merge",
@@ -52,15 +53,18 @@ class Changeset(list):
             _debug(" key %r op %r val %r", k, op, v)
             if op == "set":
                 target[k] = [v]
+            elif op == "tryset":
+                if k not in target:
+                    target[k] == [v]
             elif op == "add":
                 if k not in target:
                     target[k] = [v]
-                if v not in target[k]:
+                elif v not in target[k]:
                     target[k].append(v)
             elif op == "rem":
                 if k not in target:
                     continue
-                if v in target[k]:
+                elif v in target[k]:
                     target[k].remove(v)
             elif op == "copy":
                 if self._key_alias:
