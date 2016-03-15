@@ -723,12 +723,18 @@ def main():
         cmd = "[interactive]"
         interp.cmdloop()
 
-    if db.modified and not debug:
-        db.flush()
+    if db.modified:
+        if not debug:
+            db.flush()
+        else:
+            _debug("skipping db.flush()")
 
         if "backup" in db.flags:
-            db_git_backup(db, summary="accdb %s" % cmd)
-            db_gpg_backup(db, db_backup_path)
+            if not debug:
+                db_git_backup(db, summary="accdb %s" % cmd)
+                db_gpg_backup(db, db_backup_path)
+            else:
+                _debug("skipping Git & GPG backups")
 
 if __name__ == "__main__":
     main()
