@@ -677,6 +677,9 @@ def db_git_backup(db, summary="snapshot", body=""):
         call_git(db, "commit", "-m", summary, "-m", body, db.path,
                  stdout=null_fh)
 
+        if "autopush" in db.flags:
+            call_git(db, "push", "-q")
+
 def db_gpg_backup(db, backup_path):
     if backup_path == db.path:
         return
