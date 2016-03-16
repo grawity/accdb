@@ -320,16 +320,18 @@ class Entry(object):
                 self.name = self.attributes["@name"][0]
                 del self.attributes["@name"]
 
+    def expand_attr_cb(self, attr, value):
+        if attr_is_reflink(attr):
+            if value.startswith("#"):
+                idx = int(value.split()[0][1:])
+                entry = self._db.find_by_itemno(idx)
+                value = "{%s}" % entry.uuid
+        return value
+
     def expand_refs(self):
         for attr in self.attributes:
             if attr_is_reflink(attr):
-                res = []
-                for value in self.attributes[attr]:
-                    if value.startswith("#"):
-                        idx = int(value.split()[0][1:])
-                        entry = self._db.find_by_itemno(idx)
-                        value = "{%s}" % entry.uuid
-                    res.append(value)
-                self.attributes[attr] = res
+                self.attributes[attr] = [self.expand_attr_cb(attr, val)
+                                         for val in self.attributes[attr]]
 
 # }}}

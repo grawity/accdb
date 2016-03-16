@@ -582,11 +582,15 @@ class Interactive(cmd.Cmd):
         query, *args = str_split_qwords(arg)
         num = 0
 
-        changes = Changeset(args, key_alias=attr_names)
+        # XXX: avoid this dummy parse
+        _ = Changeset(args, key_alias=attr_names)
+
         for entry in Filter._compile_and_search(db, query):
+            # XXX: ...and this duplicate parse
+            changes = Changeset(args, key_alias=attr_names,
+                                      transform_cb=entry.expand_attr_cb)
             changes.apply_to(entry.attributes)
             entry.sync_names()
-            entry.expand_refs()
             num += 1
             self._show_entry(entry)
 
@@ -610,10 +614,10 @@ class Interactive(cmd.Cmd):
             else:
                 attrs.append(arg)
 
-        changes = Changeset(attrs, key_alias=attr_names)
+        changes = Changeset(attrs, key_alias=attr_names,
+                                   transform_cb=Entry.expand_attr_cb)
         changes.apply_to(entry.attributes)
         entry.sync_names()
-        entry.expand_refs()
 
         db.add(entry)
         self._show_entry(entry, conceal=False)
