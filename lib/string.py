@@ -1,4 +1,5 @@
 import base64
+import datetime
 import fnmatch
 import re
 import shlex
@@ -106,3 +107,22 @@ def decode_psk(s):
         s = s.replace(" ", "")
         s = b64_pad(s, 8)
         return base64.b32decode(s)
+
+def date_parse(s):
+    if s == "now" or not s:
+        return datetime.datetime.now()
+    elif "T" in s:
+        s = s.split("T")[0]
+    elif " " in s:
+        s = s.split(" ")[0]
+    return datetime.datetime.strptime(s, "%Y-%m-%d")
+
+def date_cmp(a, b):
+    ax = date_parse(a)
+    bx = date_parse(b)
+    if ax < bx:
+        return -1
+    elif ax > bx:
+        return 1
+    else:
+        return 0

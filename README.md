@@ -139,6 +139,8 @@ Dumping the entire database:
 
   - `@foo~bar` – attribute `foo` present (exact) and has value matching `bar` (regex)
 
+  - `@foo<bar`, `@foo>bar` – attribute `foo` present and is greater or less than `bar`
+
   - `+foo` – tag present (glob)
 
   - `123` or `#123` – item number
@@ -150,6 +152,10 @@ Dumping the entire database:
   - `AND x y ...`, `OR x y ...`, `NOT x` – boolean operators
 
   - `(` and `)` for grouping patterns (Lisp/Logo style)
+
+For `date.*` attributes, `@foo<bar` and `@foo>bar` will use date comparisons
+(currently time is discarded, only ISO 8601 Y-m-d is parsed). The shortcut
+`@foo<now` and `@foo>now` is also supported.
 
 For example:
 

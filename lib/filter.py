@@ -188,6 +188,24 @@ class PatternFilter(Filter):
                 regex = re_compile_glob(pattern[1:])
                 func = lambda entry:\
                     any(regex.match(attr) for attr in entry.attributes)
+            elif "<" in pattern:
+                attr, match = pattern[1:].split("<", 1)
+                if attr.startswith("date."):
+                    func = lambda entry: \
+                                attr in entry.attributes \
+                                and any(date_cmp(value, match) < 0
+                                        for value in entry.attributes[attr])
+                else:
+                    Core.die("unsupported operator '%s<'" % attr)
+            elif ">" in pattern:
+                attr, match = pattern[1:].split(">", 1)
+                if attr.startswith("date."):
+                    func = lambda entry: \
+                                attr in entry.attributes \
+                                and any(date_cmp(value, match) > 0
+                                        for value in entry.attributes[attr])
+                else:
+                    Core.die("unsupported operator '%s<'" % attr)
             else:
                 attr = translate_attr(pattern[1:])
                 func = lambda entry: attr in entry.attributes
