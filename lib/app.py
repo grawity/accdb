@@ -341,9 +341,10 @@ class Interactive(cmd.Cmd):
 
     def do_copy(self, arg):
         """Copy password to clipboard"""
-        arg = int(arg)
-
-        entry = db.find_by_itemno(arg)
+        items = list(Filter._cli_compile_and_search(db, arg))
+        if len(items) > 1:
+            Core.die("too many arguments")
+        entry = items[0]
         self._show_entry(entry)
         if "pass" in entry.attributes:
             print("(Password copied to clipboard.)")
