@@ -169,10 +169,8 @@ class PatternFilter(Filter):
                 attr, glob = pattern[1:].split("=", 1)
                 attr = translate_attr(attr)
                 regex = re_compile_glob(glob)
-                func = lambda entry:\
-                    attr in entry.attributes \
-                    and any(regex.match(value)
-                        for value in entry.attributes[attr])
+                func = lambda entry: any(regex.match(value)
+                                         for value in entry.attributes.get(attr, []))
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
                 attr = translate_attr(attr)
@@ -180,30 +178,23 @@ class PatternFilter(Filter):
                     regex = re.compile(regex, re.I | re.U)
                 except re.error as e:
                     Core.die("invalid regex %r (%s)" % (regex, e))
-                func = lambda entry:\
-                    attr in entry.attributes \
-                    and any(regex.search(value)
-                        for value in entry.attributes[attr])
+                func = lambda entry: any(regex.search(value)
+                                         for value in entry.attributes.get(attr, []))
             elif "*" in pattern:
                 regex = re_compile_glob(pattern[1:])
-                func = lambda entry:\
-                    any(regex.match(attr) for attr in entry.attributes)
+                func = lambda entry: any(regex.match(attr) for attr in entry.attributes)
             elif "<" in pattern:
                 attr, match = pattern[1:].split("<", 1)
                 if attr.startswith("date."):
-                    func = lambda entry: \
-                                attr in entry.attributes \
-                                and any(date_cmp(value, match) < 0
-                                        for value in entry.attributes[attr])
+                    func = lambda entry: any(date_cmp(value, match) < 0
+                                             for value in entry.attributes.get(attr, []))
                 else:
                     Core.die("unsupported operator '%s<'" % attr)
             elif ">" in pattern:
                 attr, match = pattern[1:].split(">", 1)
                 if attr.startswith("date."):
-                    func = lambda entry: \
-                                attr in entry.attributes \
-                                and any(date_cmp(value, match) > 0
-                                        for value in entry.attributes[attr])
+                    func = lambda entry: any(date_cmp(value, match) > 0
+                                             for value in entry.attributes.get(attr, []))
                 else:
                     Core.die("unsupported operator '%s<'" % attr)
             else:
