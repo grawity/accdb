@@ -586,6 +586,7 @@ class Interactive(cmd.Cmd):
         for entry in Filter._compile_and_search(db, query):
             changes.apply_to(entry.attributes)
             entry.sync_names()
+            entry.expand_refs()
             num += 1
             self._show_entry(entry)
 
@@ -612,6 +613,7 @@ class Interactive(cmd.Cmd):
         changes = Changeset(attrs, key_alias=attr_names)
         changes.apply_to(entry.attributes)
         entry.sync_names()
+        entry.expand_refs()
 
         db.add(entry)
         self._show_entry(entry, conceal=False)
