@@ -323,9 +323,15 @@ class Entry(object):
     def expand_attr_cb(self, attr, value):
         if attr_is_reflink(attr):
             if value.startswith("#"):
-                idx = int(value.split()[0][1:])
-                entry = self._db.find_by_itemno(idx)
-                value = "{%s}" % entry.uuid
+                try:
+                    idx = int(value.split()[0][1:])
+                    entry = self._db.find_by_itemno(idx)
+                except KeyError:
+                    pass
+                except ValueError:
+                    pass
+                else:
+                    value = "{%s}" % entry.uuid
         return value
 
     def expand_refs(self):
