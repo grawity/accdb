@@ -7,9 +7,8 @@ from logging import (
 # 'Changeset' {{{
 
 class Changeset(list):
-    def __init__(self, args, key_alias=None, transform_cb=None):
+    def __init__(self, args, key_alias=None):
         self._key_alias = key_alias
-        self._transform_cb = transform_cb
         _ops = {
             ":": "set",
             "?": "tryset",
@@ -46,13 +45,13 @@ class Changeset(list):
                 Core.err("syntax error in %r" % a)
         _debug("parsed changes: %r", self)
 
-    def apply_to(self, target):
+    def apply_to(self, target, transform_cb=None):
         _debug("applying to %r", target)
         for op, k, v in self:
             if self._key_alias:
                 k = self._key_alias.get(k, k)
-            if self._transform_cb:
-                v = self._transform_cb(k, v)
+            if transform_cb:
+                v = transform_cb(k, v)
             _debug(" key %r op %r val %r", k, op, v)
             if op == "set":
                 target[k] = [v]
