@@ -180,9 +180,6 @@ class PatternFilter(Filter):
                     Core.die("invalid regex %r (%s)" % (regex, e))
                 func = lambda entry: any(regex.search(value)
                                          for value in entry.attributes.get(attr, []))
-            elif "*" in pattern:
-                regex = re_compile_glob(pattern[1:])
-                func = lambda entry: any(regex.match(attr) for attr in entry.attributes)
             elif "<" in pattern:
                 attr, match = pattern[1:].split("<", 1)
                 if attr.startswith("date."):
@@ -197,6 +194,9 @@ class PatternFilter(Filter):
                                              for value in entry.attributes.get(attr, []))
                 else:
                     Core.die("unsupported operator '%s<'" % attr)
+            elif "*" in pattern:
+                regex = re_compile_glob(pattern[1:])
+                func = lambda entry: any(regex.match(attr) for attr in entry.attributes)
             else:
                 attr = translate_attr(pattern[1:])
                 func = lambda entry: attr in entry.attributes
