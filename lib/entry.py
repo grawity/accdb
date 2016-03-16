@@ -326,7 +326,7 @@ class Entry(object):
                 try:
                     idx = int(value.split()[0][1:])
                     entry = self._db.find_by_itemno(idx)
-                except KeyError:
+                except IndexError:
                     pass
                 except ValueError:
                     pass
