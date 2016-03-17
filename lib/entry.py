@@ -30,7 +30,7 @@ class Entry(object):
         self.tags = set()
         self.uuid = None
         self._broken = False
-        self._db = database
+        self.db = database
 
     def clone(self):
         new = Entry()
@@ -39,7 +39,7 @@ class Entry(object):
         new.deleted = self.deleted
         new.name = self.name
         new.tags = set(self.tags)
-        new._db = self._db
+        new.db = self.db
         return new
 
     # Import
@@ -51,7 +51,7 @@ class Entry(object):
     def parseinto(self, data, lineno=1, database=None):
         # lineno is passed here for use in syntax error messages
         self.lineno = lineno
-        self._db = database
+        self.db = database
 
         for line in data.splitlines():
             line = line.lstrip()
@@ -206,7 +206,7 @@ class Entry(object):
                         value_fmt = key_fmt
                         if not storage:
                             try:
-                                sub_entry = self._db.find_by_uuid(value)
+                                sub_entry = self.db.find_by_uuid(value)
                             except KeyError:
                                 value_fmt = "33"
                             except ValueError:
@@ -325,7 +325,7 @@ class Entry(object):
             if value.startswith("#"):
                 try:
                     idx = int(value.split()[0][1:])
-                    entry = self._db.find_by_itemno(idx)
+                    entry = self.db.find_by_itemno(idx)
                 except IndexError:
                     pass
                 except ValueError:
