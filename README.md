@@ -153,6 +153,9 @@ Dumping the entire database:
 
   - `(` and `)` for grouping patterns (Lisp/Logo style)
 
+For `ref.*` attributes, `@foo=#123` can be used to match by referenced item
+number instead of UUID.
+
 For `date.*` attributes, `@foo<bar` and `@foo>bar` will use date comparisons
 (currently time is discarded, only ISO 8601 Y-m-d is parsed). The shortcut
 `@foo<now` and `@foo>now` is also supported.

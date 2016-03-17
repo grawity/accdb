@@ -72,7 +72,7 @@ class Filter(object):
             elif op in {"PATTERN", "pattern"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'PATTERN'")
-                return PatternFilter(args[0])
+                return PatternFilter(db, args[0])
             elif op in {"RANGE", "item"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'RANGE'")
@@ -95,7 +95,7 @@ class Filter(object):
         elif re.match(r"^[0-9,-]+$", op):
             return ItemNumberRangeFilter(op)
         else:
-            return PatternFilter(op)
+            return PatternFilter(db, op)
 
     @staticmethod
     def _compile_and_search(db, text):
@@ -132,9 +132,9 @@ class Filter(object):
         return db.find(Filter._cli_compile(db, arg))
 
 class PatternFilter(Filter):
-    def __init__(self, pattern):
+    def __init__(self, db, pattern):
         self.pattern = pattern
-        self.func = PatternFilter.compile(self.pattern)
+        self.func = PatternFilter.compile(db, self.pattern)
 
     def test(self, entry):
         if self.func:
@@ -147,7 +147,7 @@ class PatternFilter(Filter):
             return "(PATTERN %s)" % self.pattern
 
     @staticmethod
-    def compile(pattern):
+    def compile(db, pattern):
         _debug("compiling pattern %r", pattern)
 
         func = None
@@ -168,9 +168,17 @@ class PatternFilter(Filter):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
                 attr = translate_attr(attr)
-                regex = re_compile_glob(glob)
-                func = lambda entry: any(regex.match(value)
-                                         for value in entry.attributes.get(attr, []))
+                if attr_is_reflink(attr) and glob.startswith("#"):
+                    try:
+                        value = db.expand_attr_cb(attr, glob)
+                        _debug("expanded match value %r to %r" % (glob, value))
+                        func = lambda entry: value in entry.attributes.get(attr, [])
+                    except IndexError:
+                        func = lambda entry: False
+                else:
+                    regex = re_compile_glob(glob)
+                    func = lambda entry: any(regex.match(value)
+                                             for value in entry.attributes.get(attr, []))
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
                 attr = translate_attr(attr)
