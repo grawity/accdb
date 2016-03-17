@@ -46,7 +46,7 @@ class Filter(object):
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
 
     @staticmethod
-    def compile(pattern):
+    def compile(db, pattern):
         tokens = Filter.parse(pattern)
         _debug("parsing filter %r -> %r", pattern, tokens)
 
@@ -100,28 +100,28 @@ class Filter(object):
     @staticmethod
     def _compile_and_search(db, text):
         try:
-            filter = Filter.compile(text)
+            filter = Filter.compile(db, text)
         except FilterSyntaxError as e:
             Core.die("syntax error in filter: %s" % e.args)
         _debug("compiled filter: %s", filter)
         return db.find(filter)
 
     @staticmethod
-    def _cli_compile(arg):
+    def _cli_compile(db, arg):
         args = str_split_qwords(arg)
         try:
             if len(args) > 1:
                 arg = "AND"
                 for x in args:
                     arg += (" (%s)" if " " in x else " %s") % x
-                filters = [Filter.compile(x) for x in args]
+                filters = [Filter.compile(db, x) for x in args]
                 filter = ConjunctionFilter(*filters)
             elif len(args) > 0:
                 arg = args[0]
-                filter = Filter.compile(arg)
+                filter = Filter.compile(db, arg)
             else:
                 arg = "*"
-                filter = Filter.compile(arg)
+                filter = Filter.compile(db, arg)
         except FilterSyntaxError as e:
             Core.die("syntax error in filter: %s" % e.args)
         _debug("compiled filter: %s", filter)
@@ -129,7 +129,7 @@ class Filter(object):
 
     @staticmethod
     def _cli_compile_and_search(db, arg):
-        return db.find(Filter._cli_compile(arg))
+        return db.find(Filter._cli_compile(db, arg))
 
 class PatternFilter(Filter):
     def __init__(self, pattern):

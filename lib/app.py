@@ -212,7 +212,7 @@ class Interactive(cmd.Cmd):
         if full and not tty:
             print(db._modeline)
 
-        filter = Filter._cli_compile(arg)
+        filter = Filter._cli_compile(db, arg)
         results = db.find(filter)
 
         num = 0
