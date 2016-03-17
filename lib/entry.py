@@ -323,10 +323,4 @@ class Entry(object):
     def expand_attr_cb(self, attr, value):
         return self.db.expand_attr_cb(attr, value)
 
-    def expand_refs(self):
-        for attr in self.attributes:
-            if attr_is_reflink(attr):
-                self.attributes[attr] = [self.expand_attr_cb(attr, val)
-                                         for val in self.attributes[attr]]
-
 # }}}
