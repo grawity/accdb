@@ -120,6 +120,20 @@ class Database(object):
             if filter(entry):
                 yield entry
 
+    def expand_attr_cb(self, attr, value):
+        if attr_is_reflink(attr):
+            if value.startswith("#"):
+                try:
+                    idx = int(value.split()[0][1:])
+                    entry = self.find_by_itemno(idx)
+                except IndexError:
+                    pass
+                except ValueError:
+                    pass
+                else:
+                    value = "{%s}" % entry.uuid
+        return value
+
     # Aggregate lookup
 
     def tags(self):
