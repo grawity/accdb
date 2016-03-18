@@ -54,10 +54,10 @@ class Filter(object):
         if len(args) > 0:
             # boolean operators
             if op in {"AND", "and"}:
-                filters = [Filter.compile(x) for x in args]
+                filters = [Filter.compile(db, x) for x in args]
                 return ConjunctionFilter(*filters)
             elif op in {"OR", "or"}:
-                filters = [Filter.compile(x) for x in args]
+                filters = [Filter.compile(db, x) for x in args]
                 return DisjunctionFilter(*filters)
             elif op in {"NOT", "not"}:
                 if len(args) > 1:
