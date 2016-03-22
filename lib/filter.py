@@ -62,7 +62,7 @@ class Filter(object):
             elif op in {"NOT", "not"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'NOT'")
-                filter = Filter.compile(args[0])
+                filter = Filter.compile(db, args[0])
                 return NegationFilter(filter)
             # search filters
             elif op in {"ITEM", "item"}:
@@ -85,7 +85,7 @@ class Filter(object):
             else:
                 raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
         elif " " in op or "(" in op or ")" in op:
-            return Filter.compile(op)
+            return Filter.compile(db, op)
         elif op.startswith("#"):
             return ItemNumberFilter(op[1:])
         elif op.startswith("{"):
