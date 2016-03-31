@@ -111,6 +111,12 @@ def decode_psk(s):
 def date_parse(s):
     if s == "now" or not s:
         return datetime.datetime.now()
+    elif s.startswith("now-"):
+        days = int(s[len("now-"):])
+        return datetime.datetime.now() - datetime.timedelta(days)
+    elif s.startswith("now+"):
+        days = int(s[len("now+"):])
+        return datetime.datetime.now() + datetime.timedelta(days)
     elif "T" in s:
         s = s.split("T")[0]
     elif " " in s:

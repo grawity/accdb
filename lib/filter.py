@@ -222,7 +222,7 @@ class PatternFilter(Filter):
                 func = lambda entry: (
                             "date.expiry" in entry.attributes
                             and "expired" not in entry.tags
-                            and any(date_cmp(value, "now") < 0
+                            and any(date_cmp(value, "now+30") < 0
                                     for value in entry.attributes["date.expiry"])
                         )
             else:
