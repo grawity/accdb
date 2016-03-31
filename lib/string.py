@@ -124,8 +124,8 @@ def date_parse(s):
     return datetime.datetime.strptime(s, "%Y-%m-%d")
 
 def date_cmp(a, b):
-    ax = date_parse(a)
-    bx = date_parse(b)
+    ax = date_parse(a).date()
+    bx = date_parse(b).date()
     if ax < bx:
         return -1
     elif ax > bx:
