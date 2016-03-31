@@ -217,6 +217,16 @@ class PatternFilter(Filter):
         elif pattern.startswith("="):
             match = pattern[1:].casefold()
             func = lambda entry: any(value.casefold() == match for value in entry.names)
+        elif pattern.startswith(":"):
+            if pattern == ":expired":
+                func = lambda entry: (
+                            "date.expiry" in entry.attributes
+                            and "expired" not in entry.tags
+                            and any(date_cmp(value, "now") < 0
+                                    for value in entry.attributes["date.expiry"])
+                        )
+            else:
+                Core.die("unrecognized pattern %r" % pattern)
         elif pattern.startswith("{"):
             func = ItemUuidFilter(pattern)
         else:
