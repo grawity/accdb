@@ -548,15 +548,16 @@ def main():
     if db.modified:
         if not debug:
             db.flush()
+            if "git" in db.flags:
+                db_git_backup(db, summary="accdb %s" % cmd)
+            if "backup" in db.flags:
+                db_gpg_backup(db, db_backup_path)
         else:
             _debug("skipping db.flush()")
-
-        if "backup" in db.flags:
-            if not debug:
-                db_git_backup(db, summary="accdb %s" % cmd)
-                db_gpg_backup(db, db_backup_path)
-            else:
-                _debug("skipping Git & GPG backups")
+            if "git" in db.flags:
+                _debug("skipping Git commit")
+            if "backup" in db.flags:
+                _debug("skipping GPG backup")
 
 if __name__ == "__main__":
     main()
