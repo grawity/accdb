@@ -121,7 +121,13 @@ def date_parse(s):
         s = s.split("T")[0]
     elif " " in s:
         s = s.split(" ")[0]
-    return datetime.datetime.strptime(s, "%Y-%m-%d")
+    try:
+        return datetime.datetime.strptime(s, "%Y-%m-%d")
+    except ValueError:
+        try:
+            return datetime.datetime.strptime(s, "%Y-%m")
+        except ValueError:
+            return datetime.datetime.fromordinal(1)
 
 def date_cmp(a, b):
     ax = date_parse(a).date()
