@@ -60,9 +60,8 @@ class Entry(object):
             elif line.startswith("="):
                 if self.name:
                     # Ensure that Database only passes us single entries
-                    print("Line %d: ignoring multiple name headers" \
-                        % lineno,
-                        file=sys.stderr)
+                    print("Line %d: ignoring multiple name headers" % lineno,
+                          file=sys.stderr)
                 self.name = line[1:].strip()
             elif line.startswith("+"):
                 self.tags |= split_tags(line[1:])
@@ -78,40 +77,32 @@ class Entry(object):
                 pass
             elif line.startswith("{") and line.endswith("}"):
                 if self.uuid:
-                    print("Line %d: ignoring multiple UUID headers" \
-                        % lineno,
-                        file=sys.stderr)
+                    print("Line %d: ignoring multiple UUID headers" % lineno,
+                          file=sys.stderr)
+                    continue
 
                 try:
                     self.uuid = uuid.UUID(line)
                 except ValueError:
-                    print("Line %d: ignoring badly formed UUID %r" \
-                        % (lineno, line),
-                        file=sys.stderr)
+                    print("Line %d: ignoring badly formed UUID %r" % (lineno, line),
+                          file=sys.stderr)
                     self.comment += line + "\n"
             elif line.startswith("-- "):
                 # per-attribute comments
                 pass
-                #line = line[3:]
-                #if line.startswith("{") and line.endswith("}"):
-                #    pass
-                #else:
-                #    todo
             else:
                 try:
                     key, val = re.split(self.RE_KEYVAL, line, 1)
                 except ValueError:
-                    print("Line %d: could not parse line %r" \
-                        % (lineno, line),
-                        file=sys.stderr)
+                    print("Line %d: could not parse line %r" % (lineno, line),
+                          file=sys.stderr)
                     self.comment += line + "\n"
                     continue
 
                 if val == "<private>":
                     # trying to load a safe dump
-                    print("Line %d: lost private data, you're fucked" \
-                        % lineno,
-                        file=sys.stderr)
+                    print("Line %d: lost private data, you're fucked" % lineno,
+                          file=sys.stderr)
                     val = "<private[data lost]>"
                     self._broken = True
                 elif val.startswith("<base64> "):
