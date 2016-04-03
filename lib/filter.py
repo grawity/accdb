@@ -77,9 +77,9 @@ class Filter(object):
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'PATTERN'")
                 return PatternFilter(db, args[0])
-            elif op in {"RANGE", "item"}:
+            elif op in {"ITEMRANGE", "itemrange"}:
                 if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'RANGE'")
+                    raise FilterSyntaxError("too many arguments for 'ITEMRANGE'")
                 return ItemNumberRangeFilter(args[0])
             elif op in {"UUID", "uuid"}:
                 if len(args) > 1:
@@ -257,7 +257,7 @@ class ItemNumberRangeFilter(Filter):
         return entry.itemno in self.items
 
     def __str__(self):
-        return "(RANGE %s)" % self.pattern
+        return "(ITEMRANGE %s)" % self.pattern
 
 class ItemUuidFilter(Filter):
     def __init__(self, pattern):
