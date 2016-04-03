@@ -33,24 +33,41 @@ class Database(object):
         data = ""
         lineno = 0
         lastno = 1
+        entry = None
 
         for line in fh:
             lineno += 1
-            if line.startswith("; "):
+            if line.startswith("; vim:"):
+                self._modeline = line.strip()
+            elif line.startswith("; dbflags:"):
                 key, val = line[2:].split(": ", 1)
-                if key == "vim":
-                    self._modeline = line.strip()
-                elif key == "dbflags":
-                    self.flags = split_tags(val)
+                self.flags = split_tags(val)
+            elif line.strip() == ";; end":
+                pass
+            elif line.startswith(";; "):
+                if entry is None:
+                    try:
+                        key, val = line[3:].split(": ", 1)
+                    except ValueError:
+                        print("line %d: malformed header %r" % (lineno, line),
+                              file=sys.stderr)
+                        continue
+                    if key == "vim":
+                        self._modeline = line.strip()
+                    elif key == "dbflags":
+                        self.flags = split_tags(val)
+                else:
+                    print("line %d: header after data: %r" % (lineno, line),
+                          file=sys.stderr)
             elif line.startswith("="):
-                entry = Entry.parse(data, lineno=lastno, database=self)
-                if entry and not entry.deleted:
-                    self.add(entry)
+                if data:
+                    entry = Entry.parse(data, lineno=lastno, database=self)
+                    if entry and not entry.deleted:
+                        self.add(entry)
                 data = line
                 lastno = lineno
             else:
                 data += line
-
         if data:
             entry = Entry.parse(data, lineno=lastno, database=self)
             if entry and not entry.deleted:
@@ -162,11 +179,13 @@ class Database(object):
             if self._modeline:
                 print(self._modeline, file=fh)
             if self.flags:
-                print("; dbflags: %s" % ", ".join(sorted(self.flags)), file=fh)
+                print(";; dbflags: %s" % ", ".join(sorted(self.flags)), file=fh)
         for entry in self:
             if entry.deleted:
                 continue
             print(entry.dump(**eargs), file=fh)
+        if storage:
+            print(";; end", file=fh)
 
     def to_structure(self):
         return [entry.to_structure() for entry in self]
