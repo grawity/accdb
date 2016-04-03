@@ -282,8 +282,18 @@ class Interactive(cmd.Cmd):
             name = entry.name
             user = entry.attributes.get("login",
                    entry.attributes.get("email", []))
+            line_max = 70
+            user_max = 20
+            user_fmt = " (%s)"
             if user:
-                name += f(" (%s)" % ellipsize(user[0], 18), "38;5;244")
+                user = user[0]
+                line_max -= len(user_fmt % "")
+                if len(name) + len(user) > line_max:
+                    user = ellipsize(user, max(user_max, line_max - len(name)))
+                    name = ellipsize(name, line_max - len(user))
+                name += f(user_fmt % user, "38;5;244")
+            else:
+                name = ellipsize(name, line_max)
             print("%5d │ %s" % (entry.itemno, name))
 
     def do_qr(self, arg):
