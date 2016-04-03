@@ -107,9 +107,7 @@ class Filter(object):
                     raise FilterSyntaxError("too many arguments for 'ITEMRANGE'")
                 return ItemNumberRangeFilter(args[0])
             elif op in {"PATTERN", "pattern"}:
-                if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'PATTERN'")
-                return PatternFilter(db, args[0])
+                return PatternFilter(db, " ".join(args))
             elif op in {"TAG", "tag"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'TAG'")
