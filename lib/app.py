@@ -283,7 +283,7 @@ class Interactive(cmd.Cmd):
             user = entry.attributes.get("login",
                    entry.attributes.get("email", []))
             line_max = 70
-            user_max = 20
+            user_max = line_max // 3
             user_fmt = " (%s)"
             if user:
                 user = user[0]
