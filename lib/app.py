@@ -203,19 +203,10 @@ class Interactive(cmd.Cmd):
         """Search for entries and export their full contents"""
         return self.do_grep(arg, full=True)
 
-    def do_ls(self, arg):
-        """Search for entries and list their names"""
-        return self.do_grep(arg, ls=True)
-
-    def do_grep(self, arg, full=False, ls=False):
+    def do_grep(self, arg, full=False):
         """Search for entries"""
 
         tty = sys.stdout.isatty()
-
-        if tty:
-            f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
-        else:
-            f = lambda arg, fmt: arg
 
         if full and not tty:
             print(db._modeline)
@@ -225,14 +216,7 @@ class Interactive(cmd.Cmd):
 
         num = 0
         for entry in results:
-            if ls:
-                name = entry.name
-                user = entry.attributes.get("login",
-                       entry.attributes.get("email", []))
-                if user:
-                    name += f(" (%s)" % ellipsize(user[0], 18), "38;5;244")
-                print("%5d │ %s" % (entry.itemno, name))
-            elif full:
+            if full:
                 print(entry.dump(color=tty, storage=True, conceal=False, itemno=tty))
             else:
                 print(entry.dump(color=tty))
@@ -287,6 +271,20 @@ class Interactive(cmd.Cmd):
         """Display entry (safe, recursive)"""
         for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry, recurse=True, indent=True)
+
+    def do_ls(self, arg):
+        """Display matching entries (names only)"""
+        if sys.stdout.isatty():
+            f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
+        else:
+            f = lambda arg, fmt: arg
+        for entry in Filter._cli_compile_and_search(db, arg):
+            name = entry.name
+            user = entry.attributes.get("login",
+                   entry.attributes.get("email", []))
+            if user:
+                name += f(" (%s)" % ellipsize(user[0], 18), "38;5;244")
+            print("%5d │ %s" % (entry.itemno, name))
 
     def do_qr(self, arg):
         """Display the entry's OATH PSK as a Qr code"""
