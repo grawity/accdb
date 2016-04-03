@@ -20,6 +20,8 @@ from .database import Database
 from .entry import Entry
 from .entry_util import *
 from .filter import Filter
+from .keyring import *
+from .protect import *
 from .string import *
 from .util import _debug
 from .util import *
@@ -418,6 +420,9 @@ def main():
     global db_path
     global db
 
+    keyring = default_keyring()
+    enc = default_enc(keyring)
+
     db_path = os.environ.get("ACCDB",
                 os.path.join(
                     os.environ.get("XDG_DATA_HOME",
@@ -429,10 +434,11 @@ def main():
 
     _debug("loading database from %r" % db_path)
     try:
-        db = Database.from_file(db_path)
+        db = Database.from_file(db_path, enc=enc)
     except FileNotFoundError:
         db = Database()
         db.path = db_path
+        db.enc = enc
         if sys.stderr.isatty():
             print("(Database is empty.)", file=sys.stderr)
 

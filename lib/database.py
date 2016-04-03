@@ -9,6 +9,7 @@ class Database(object):
     def __init__(self):
         self.count = 0
         self.path = None
+        self.enc = None
         self.header = OrderedDict()
         self.modeline = "; vim: ft=accdb:"
         self.entries = dict()
@@ -20,9 +21,10 @@ class Database(object):
     # Import
 
     @classmethod
-    def from_file(self, path):
+    def from_file(self, path, enc):
         db = self()
         db.path = path
+        db.enc = enc
         with open(path, "r", encoding="utf-8") as fh:
             db.parseinto(fh)
         return db
@@ -56,6 +58,8 @@ class Database(object):
                         continue
                     if key in {"options", "dbflags"}:
                         self.flags = split_tags(val)
+                    elif key == "dek":
+                        self.enc.set_wrapped_dek(val)
                     else:
                         self.header[key] = val
                 else:
@@ -174,6 +178,12 @@ class Database(object):
         for uuid in self.order:
             yield self.entries[uuid]
 
+    def _get_header(self):
+        header = self.header.copy()
+        if self.enc.dek_cipher:
+            header["dek"] = self.enc.get_wrapped_dek()
+        return header
+
     def dump_header(self, fh):
         tty = getattr(fh, "isatty", lambda: True)()
         if tty:
@@ -182,7 +192,7 @@ class Database(object):
             print(self.modeline, file=fh)
         if self.flags:
             print(";; options: %s" % ", ".join(sorted(self.flags)), file=fh)
-        for key, val in self.header.items():
+        for key, val in self._get_header().items():
             print(";; %s: %s" % (key, val), file=fh)
         if tty:
             fh.write("\033[m")
@@ -202,7 +212,7 @@ class Database(object):
 
     def to_structure(self):
         return {
-            "header": dict(self.header),
+            "header": dict(self._get_header()),
             "entries": [entry.to_structure() for entry in self],
         }
 

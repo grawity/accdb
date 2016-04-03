@@ -111,13 +111,14 @@ class Entry(object):
                     except UnicodeDecodeError:
                         pass
                 elif val.startswith("<wrapped> "):
-                    nval = val[len("<wrapped> "):]
-                    try:
-                        nval = unwrap_secret(nval)
-                        val = nval
-                        #val = nval.decode("utf-8")
-                    except UnicodeDecodeError:
-                        pass
+                    if self.db:
+                        nval = val[len("<wrapped> "):]
+                        try:
+                            nval = self.db.enc.unwrap_data(nval)
+                        except UnicodeDecodeError:
+                            pass
+                        else:
+                            val = nval
                 elif key.startswith("date.") and val in {"now", "today"}:
                     val = time.strftime("%Y-%m-%d")
 
@@ -178,11 +179,7 @@ class Entry(object):
                         value_fmt = "34"
                         if storage:
                             if "encrypt" in self.db.flags:
-                                #value = value.encode("utf-8")
-                                value = wrap_secret(value)
-                                #value = base64.b64encode(value)
-                                #value = value.decode("utf-8")
-                                #value = "<base64> %s" % value
+                                value = self.db.enc.wrap_data(value)
                                 value = "<wrapped> %s" % value
                         elif conceal:
                             value = "<private>"
