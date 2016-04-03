@@ -17,10 +17,23 @@ class Filter(object):
         tokens = []
         depth = 0
         start = -1
+        quoted = False
+        qstart = -1
         _debug("parse input: %r" % text)
         for pos, char in enumerate(text):
             #_debug("char %r [%d]" % (char, pos))
-            if char == "(":
+            if char == "\"":
+                if quoted:
+                    quoted = False
+                    start = -1
+                    _debug("tokens += quoted %r" % text[qstart:pos])
+                    tokens.append(text[qstart:pos])
+                else:
+                    quoted = True
+                    qstart = pos+1
+            elif quoted:
+                pass
+            elif char == "(":
                 if depth == 0:
                     if start >= 0:
                         # handle "AND(foo)" when there's no whitespace
