@@ -65,6 +65,10 @@ class Filter(object):
                 filter = Filter.compile(db, args[0])
                 return NegationFilter(filter)
             # search filters
+            elif op in {"TAG", "tag"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'TAG'")
+                return TagFilter(args[0])
             elif op in {"ITEM", "item"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'ITEM'")
@@ -86,6 +90,8 @@ class Filter(object):
                 raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
         elif " " in op or "(" in op or ")" in op:
             return Filter.compile(db, op)
+        elif op.startswith("+"):
+            return TagFilter(op[1:])
         elif op.startswith("#"):
             return ItemNumberFilter(op[1:])
         elif op.startswith("{"):
@@ -154,14 +160,6 @@ class PatternFilter(Filter):
 
         if pattern == "*":
             func = lambda entry: True
-        elif pattern == "+":
-            func = lambda entry: len(entry.tags) == 0
-        elif pattern.startswith("+"):
-            if pattern[1:] == "*":
-                func = lambda entry: len(entry.tags) > 0
-            else:
-                regex = re_compile_glob(pattern[1:])
-                func = lambda entry: any(regex.match(tag) for tag in entry.tags)
         elif pattern.startswith("@"):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
@@ -273,6 +271,24 @@ class ItemUuidFilter(Filter):
 
     def __str__(self):
         return "(UUID %s)" % self.value
+
+class TagFilter(Filter):
+    def __init__(self, pattern):
+        self.value = pattern
+
+        if self.value == "":
+            self.test = lambda entry: len(entry.tags) == 0
+        elif self.value == "*":
+            self.test = lambda entry: len(entry.tags) > 0
+        else:
+            self.regex = re_compile_glob(self.value)
+            self.test = lambda entry: any(self.regex.match(tag) for tag in entry.tags)
+
+    def __str__(self):
+        if self.value == "":
+            return "(NOT (TAG *))"
+        else:
+            return "(TAG %s)" % self.value
 
 class ConjunctionFilter(Filter):
     def __init__(self, *filters):
