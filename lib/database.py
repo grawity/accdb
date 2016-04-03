@@ -116,7 +116,10 @@ class Database(object):
         return self[uuid_parsed]
 
     def find(self, filter):
-        for entry in self:
+        entries = filter.lookup(self)
+        if entries is None:
+            entries = set(self)
+        for entry in entries:
             if filter(entry):
                 yield entry
 

@@ -249,6 +249,9 @@ class ItemNumberFilter(Filter):
     def test(self, entry):
         return entry.itemno == self.value
 
+    def lookup(self, db):
+        return {db.find_by_itemno(self.value)}
+
     def __str__(self):
         return "(ITEM %d)" % self.value
 
@@ -259,6 +262,12 @@ class ItemNumberRangeFilter(Filter):
 
     def test(self, entry):
         return entry.itemno in self.items
+
+    def lookup(self, db):
+        res = set()
+        for i in self.items:
+            res.add(db.find_by_itemno(i))
+        return res
 
     def __str__(self):
         return "(RANGE %s)" % self.pattern
@@ -273,6 +282,9 @@ class ItemUuidFilter(Filter):
     def test(self, entry):
         return entry.uuid == self.value
 
+    def lookup(self, db):
+        return {db.find_by_uuid(self.value)}
+
     def __str__(self):
         return "(UUID %s)" % self.value
 
@@ -283,6 +295,19 @@ class ConjunctionFilter(Filter):
     def test(self, entry):
         return all(filter.test(entry) for filter in self.filters)
 
+    def lookup(self, db):
+        res = None
+        for filter in self.filters:
+            _debug("calling %r.lookup" % filter)
+            sub = filter.lookup(db)
+            _debug("sub result %r & %r" % (sub, res))
+            if (res is None) and (sub is not None):
+                res = sub
+            elif (res is not None) and (sub is not None):
+                res &= sub
+        _debug("final result %r" % res)
+        return res or set()
+
     def __str__(self):
         return "(AND %s)" % " ".join(str(f) for f in self.filters)
 
@@ -292,6 +317,17 @@ class DisjunctionFilter(Filter):
 
     def test(self, entry):
         return any(filter.test(entry) for filter in self.filters)
+
+    def lookup(self, db):
+        res = set()
+        for filter in self.filters:
+            _debug("calling %r.lookup" % filter)
+            sub = filter.lookup(db)
+            _debug("sub result %r & %r" % (sub, res))
+            if sub is not None:
+                res |= sub
+        _debug("final result %r" % res)
+        return res
 
     def __str__(self):
         return "(OR %s)" % " ".join(str(f) for f in self.filters)
