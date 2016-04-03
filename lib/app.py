@@ -232,11 +232,10 @@ class Interactive(cmd.Cmd):
 
     def do_rgrep(self, arg):
         """Display entries for exporting"""
-        if not sys.stdout.isatty():
-            print(db._modeline)
+        db.dump_header(sys.stdout)
         for entry in Filter._cli_compile_and_search(db, arg):
             # TODO: remove conceal=False when wrap_secret is defined
-            self._show_entry(entry, conceal=False, storage=True)
+            self._show_entry(entry, storage=True)
 
     def do_show(self, arg):
         """Display entries (safe)"""

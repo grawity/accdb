@@ -54,7 +54,7 @@ class Database(object):
                         print("line %d: malformed header %r" % (lineno, line),
                               file=sys.stderr)
                         continue
-                    if key == "dbflags":
+                    if key in {"options", "dbflags"}:
                         self.flags = split_tags(val)
                     else:
                         self.header[key] = val
@@ -174,17 +174,25 @@ class Database(object):
         for uuid in self.order:
             yield self.entries[uuid]
 
+    def dump_header(self, fh):
+        tty = getattr(fh, "isatty", lambda: True)()
+        if tty:
+            fh.write("\033[38;5;244m")
+        if self.modeline:
+            print(self.modeline, file=fh)
+        if self.flags:
+            print(";; options: %s" % ", ".join(sorted(self.flags)), file=fh)
+        for key, val in self.header.items():
+            print(";; %s: %s" % (key, val), file=fh)
+        if tty:
+            fh.write("\033[m")
+        print(file=fh)
+
     def dump(self, fh=sys.stdout, storage=True):
         eargs = {"storage": storage,
                  "conceal": ("conceal" in self.flags)}
         if storage:
-            if self.modeline:
-                print(self.modeline, file=fh)
-            if self.flags:
-                print(";; dbflags: %s" % ", ".join(sorted(self.flags)), file=fh)
-            for key, val in self.header.items():
-                print(";; %s: %s" % (key, val), file=fh)
-            print()
+            self.dump_header(fh)
         for entry in self:
             if entry.deleted:
                 continue

@@ -100,10 +100,8 @@ class Entry(object):
                     continue
 
                 if val == "<private>":
-                    # trying to load a safe dump
                     print("Line %d: lost private data, you're fucked" % lineno,
                           file=sys.stderr)
-                    val = "<private[data lost]>"
                     self._broken = True
                 elif val.startswith("<base64> "):
                     nval = val[len("<base64> "):]
@@ -124,7 +122,6 @@ class Entry(object):
                     val = time.strftime("%Y-%m-%d")
 
                 key = translate_attr(key)
-
                 if key in self.attributes:
                     self.attributes[key].append(val)
                 else:
@@ -179,19 +176,16 @@ class Entry(object):
                     if attr_is_private(key):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
-                        if conceal:
-                            if storage:
-                                _v = value
+                        if storage:
+                            if "encrypt" in self.db.flags:
                                 #value = value.encode("utf-8")
                                 value = wrap_secret(value)
                                 #value = base64.b64encode(value)
                                 #value = value.decode("utf-8")
                                 #value = "<base64> %s" % value
                                 value = "<wrapped> %s" % value
-                                #print("maybe encoding %r as %r" % (_v, value))
-                                #value = _v
-                            else:
-                                value = "<private>"
+                        elif conceal:
+                            value = "<private>"
                     elif attr_is_reflink(key):
                         key_fmt = "38;5;250"
                         value_fmt = key_fmt
