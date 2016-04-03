@@ -30,8 +30,9 @@ class Filter(object):
                 else:
                     pass
             elif char == "\"":
-                quoted = char
-                qstart = pos+1
+                if depth == 0:
+                    quoted = char
+                    qstart = pos+1
             elif char == "(":
                 if depth == 0:
                     if start >= 0:
