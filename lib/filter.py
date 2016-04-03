@@ -25,7 +25,6 @@ class Filter(object):
             if quoted:
                 if char == quoted:
                     quoted = None
-                    start = -1
                     _debug("tokens += quoted %r" % text[qstart:pos])
                     tokens.append(text[qstart:pos])
                 else:
@@ -57,7 +56,7 @@ class Filter(object):
                     start = pos
         _debug("after parsing, depth=%r start=%r" % (depth, start))
         if depth == 0:
-            if start >= 0:
+            if start >= 0 and start < pos:
                 _debug("tokens += final %r" % text[start:])
                 tokens.append(text[start:])
             _debug("parse output: %r" % tokens)
