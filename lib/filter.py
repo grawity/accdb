@@ -86,13 +86,13 @@ class Filter(object):
         op, *args = tokens
         if len(args) > 0:
             # boolean operators
-            if op in {"AND", "and"}:
+            if op in {"AND", "and", "&"}:
                 filters = [Filter.compile(db, x) for x in args]
                 return ConjunctionFilter(*filters)
-            elif op in {"OR", "or"}:
+            elif op in {"OR", "or", "|"}:
                 filters = [Filter.compile(db, x) for x in args]
                 return DisjunctionFilter(*filters)
-            elif op in {"NOT", "not"}:
+            elif op in {"NOT", "not", "!"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'NOT'")
                 filter = Filter.compile(db, args[0])
