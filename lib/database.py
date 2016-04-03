@@ -1,4 +1,5 @@
 import sys
+from collections import OrderedDict
 
 from .entry import *
 
@@ -8,11 +9,12 @@ class Database(object):
     def __init__(self):
         self.count = 0
         self.path = None
+        self.header = OrderedDict()
+        self.modeline = "; vim: ft=accdb:"
         self.entries = dict()
         self.order = list()
         self.modified = False
         self.readonly = False
-        self._modeline = "; vim: ft=accdb:"
         self.flags = set()
 
     # Import
@@ -38,24 +40,24 @@ class Database(object):
         for line in fh:
             lineno += 1
             if line.startswith("; vim:"):
-                self._modeline = line.strip()
+                self.modeline = line.strip()
             elif line.startswith("; dbflags:"):
-                key, val = line[2:].split(": ", 1)
+                key, val = line[2:].strip().split(": ", 1)
                 self.flags = split_tags(val)
             elif line.strip() == ";; end":
                 pass
             elif line.startswith(";; "):
                 if entry is None:
                     try:
-                        key, val = line[3:].split(": ", 1)
+                        key, val = line[3:].strip().split(": ", 1)
                     except ValueError:
                         print("line %d: malformed header %r" % (lineno, line),
                               file=sys.stderr)
                         continue
-                    if key == "vim":
-                        self._modeline = line.strip()
-                    elif key == "dbflags":
+                    if key == "dbflags":
                         self.flags = split_tags(val)
+                    else:
+                        self.header[key] = val
                 else:
                     print("line %d: header after data: %r" % (lineno, line),
                           file=sys.stderr)
@@ -176,10 +178,13 @@ class Database(object):
         eargs = {"storage": storage,
                  "conceal": ("conceal" in self.flags)}
         if storage:
-            if self._modeline:
-                print(self._modeline, file=fh)
+            if self.modeline:
+                print(self.modeline, file=fh)
             if self.flags:
                 print(";; dbflags: %s" % ", ".join(sorted(self.flags)), file=fh)
+            for key, val in self.header.items():
+                print(";; %s: %s" % (key, val), file=fh)
+            print()
         for entry in self:
             if entry.deleted:
                 continue
@@ -188,7 +193,10 @@ class Database(object):
             print(";; end", file=fh)
 
     def to_structure(self):
-        return [entry.to_structure() for entry in self]
+        return {
+            "header": dict(self.header),
+            "entries": [entry.to_structure() for entry in self],
+        }
 
     def dump_yaml(self, fh=sys.stdout):
         import yaml
