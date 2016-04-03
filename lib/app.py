@@ -519,7 +519,12 @@ def main():
     global db_path
     global db
 
-    db_path = os.environ.get("ACCDB", os.path.expanduser("~/accounts.db.txt"))
+    db_path = os.environ.get("ACCDB",
+                os.path.join(
+                    os.environ.get("XDG_DATA_HOME",
+                        os.path.expanduser("~/.local/share")),
+                    "nullroute.eu.org",
+                    "accounts.db.txt"))
 
     db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
@@ -528,6 +533,7 @@ def main():
     except FileNotFoundError:
         ss = None
 
+    _debug("loading database from %r" % db_path)
     try:
         db = Database.from_file(db_path)
     except FileNotFoundError:
