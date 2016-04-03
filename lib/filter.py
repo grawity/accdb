@@ -55,16 +55,18 @@ class Filter(object):
                 if start < 0:
                     start = pos
         _debug("after parsing, depth=%r start=%r" % (depth, start))
-        if depth == 0:
+        if quoted:
+            raise FilterSyntaxError("unclosed %r quote" % quoted)
+        elif depth > 0:
+            raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
+        elif depth < 0:
+            raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
+        else:
             if start >= 0 and start < pos:
                 _debug("tokens += final %r" % text[start:])
                 tokens.append(text[start:])
             _debug("parse output: %r" % tokens)
             return tokens
-        elif depth > 0:
-            raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
-        elif depth < 0:
-            raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
 
     @staticmethod
     def compile(db, pattern):
