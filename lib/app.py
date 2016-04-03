@@ -199,23 +199,6 @@ class Interactive(cmd.Cmd):
             print("Unsupported export format: %r" % arg,
                 file=sys.stderr)
 
-    def do_grep(self, arg):
-        """Search for entries"""
-
-        tty = sys.stdout.isatty()
-
-        filter = Filter._cli_compile(db, arg)
-        results = db.find(filter)
-
-        num = 0
-        for entry in results:
-            print(entry.dump(color=tty))
-            num += 1
-
-        if sys.stdout.isatty():
-            print("(%d %s matching '%s')" % \
-                  (num, ("entry" if num == 1 else "entries"), filter))
-
     def do_convert(self, arg):
         """Read entries from stdin and dump to stdout"""
 
@@ -256,9 +239,11 @@ class Interactive(cmd.Cmd):
             self._show_entry(entry, conceal=False, storage=True)
 
     def do_show(self, arg):
-        """Display entry (safe)"""
+        """Display entries (safe)"""
         for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry)
+
+    do_grep = do_show
 
     def do_reveal(self, arg):
         """Display entries (including sensitive information)"""
@@ -266,12 +251,12 @@ class Interactive(cmd.Cmd):
             self._show_entry(entry, conceal=False)
 
     def do_rshow(self, arg):
-        """Display entry (safe, recursive)"""
+        """Display entries (safe, recursive)"""
         for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_ls(self, arg):
-        """Display matching entries (names only)"""
+        """Display entries (names only)"""
         if sys.stdout.isatty():
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
