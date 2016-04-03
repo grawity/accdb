@@ -199,27 +199,17 @@ class Interactive(cmd.Cmd):
             print("Unsupported export format: %r" % arg,
                 file=sys.stderr)
 
-    def do_rgrep(self, arg):
-        """Search for entries and export their full contents"""
-        return self.do_grep(arg, full=True)
-
-    def do_grep(self, arg, full=False):
+    def do_grep(self, arg):
         """Search for entries"""
 
         tty = sys.stdout.isatty()
-
-        if full and not tty:
-            print(db._modeline)
 
         filter = Filter._cli_compile(db, arg)
         results = db.find(filter)
 
         num = 0
         for entry in results:
-            if full:
-                print(entry.dump(color=tty, storage=True, conceal=False, itemno=tty))
-            else:
-                print(entry.dump(color=tty))
+            print(entry.dump(color=tty))
             num += 1
 
         if sys.stdout.isatty():
@@ -257,15 +247,23 @@ class Interactive(cmd.Cmd):
 
         self.do_dump("", outdb)
 
-    def do_reveal(self, arg):
-        """Display entry (including sensitive information)"""
+    def do_rgrep(self, arg):
+        """Display entries for exporting"""
+        if not sys.stdout.isatty():
+            print(db._modeline)
         for entry in Filter._cli_compile_and_search(db, arg):
-            self._show_entry(entry, conceal=False)
+            # TODO: remove conceal=False when wrap_secret is defined
+            self._show_entry(entry, conceal=False, storage=True)
 
     def do_show(self, arg):
         """Display entry (safe)"""
         for entry in Filter._cli_compile_and_search(db, arg):
             self._show_entry(entry)
+
+    def do_reveal(self, arg):
+        """Display entries (including sensitive information)"""
+        for entry in Filter._cli_compile_and_search(db, arg):
+            self._show_entry(entry, conceal=False)
 
     def do_rshow(self, arg):
         """Display entry (safe, recursive)"""
