@@ -63,7 +63,7 @@ class Filter(object):
         elif depth < 0:
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
         else:
-            if start >= 0 and start < pos:
+            if start >= 0 and start <= pos:
                 _debug("tokens += final %r" % text[start:])
                 tokens.append(text[start:])
             _debug("parse output: %r" % tokens)
