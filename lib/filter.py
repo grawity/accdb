@@ -69,6 +69,15 @@ class Filter(object):
             return tokens
 
     @staticmethod
+    def quote(token):
+        if "(" in token or ")" in token:
+            return "\"%s\"" % token
+        elif " " in token:
+            return "(%s)" % token
+        else:
+            return token
+
+    @staticmethod
     def compile(db, pattern):
         tokens = Filter.parse(pattern)
         _debug("parsing filter %r -> %r", pattern, tokens)
@@ -173,7 +182,7 @@ class PatternFilter(Filter):
         if isinstance(self.func, Filter):
             return str(self.func)
         else:
-            return "(PATTERN %s)" % self.pattern
+            return "(PATTERN %s)" % Filter.quote(self.pattern)
 
     @staticmethod
     def compile(db, pattern):
