@@ -17,22 +17,22 @@ class Filter(object):
         tokens = []
         depth = 0
         start = -1
-        quoted = False
+        quoted = None
         qstart = -1
         _debug("parse input: %r" % text)
         for pos, char in enumerate(text):
             #_debug("char %r [%d]" % (char, pos))
-            if char == "\"":
-                if quoted:
-                    quoted = False
+            if quoted:
+                if char == quoted:
+                    quoted = None
                     start = -1
                     _debug("tokens += quoted %r" % text[qstart:pos])
                     tokens.append(text[qstart:pos])
                 else:
-                    quoted = True
-                    qstart = pos+1
-            elif quoted:
-                pass
+                    pass
+            elif char == "\"":
+                quoted = char
+                qstart = pos+1
             elif char == "(":
                 if depth == 0:
                     if start >= 0:
