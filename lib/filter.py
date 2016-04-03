@@ -65,22 +65,22 @@ class Filter(object):
                 filter = Filter.compile(db, args[0])
                 return NegationFilter(filter)
             # search filters
-            elif op in {"TAG", "tag"}:
-                if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'TAG'")
-                return TagFilter(args[0])
             elif op in {"ITEM", "item"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'ITEM'")
                 return ItemNumberFilter(args[0])
-            elif op in {"PATTERN", "pattern"}:
-                if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'PATTERN'")
-                return PatternFilter(db, args[0])
             elif op in {"ITEMRANGE", "itemrange"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'ITEMRANGE'")
                 return ItemNumberRangeFilter(args[0])
+            elif op in {"PATTERN", "pattern"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'PATTERN'")
+                return PatternFilter(db, args[0])
+            elif op in {"TAG", "tag"}:
+                if len(args) > 1:
+                    raise FilterSyntaxError("too many arguments for 'TAG'")
+                return TagFilter(args[0])
             elif op in {"UUID", "uuid"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'UUID'")
@@ -90,12 +90,12 @@ class Filter(object):
                 raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
         elif " " in op or "(" in op or ")" in op:
             return Filter.compile(db, op)
-        elif op.startswith("+"):
-            return TagFilter(op[1:])
         elif op.startswith("#"):
             return ItemNumberFilter(op[1:])
         elif op.startswith("{"):
             return ItemUuidFilter(op)
+        elif op.startswith("+"):
+            return TagFilter(op[1:])
         elif op.isdecimal():
             return ItemNumberFilter(op)
         elif re.match(r"^[0-9,-]+$", op):
@@ -280,9 +280,11 @@ class TagFilter(Filter):
             self.test = lambda entry: len(entry.tags) == 0
         elif self.value == "*":
             self.test = lambda entry: len(entry.tags) > 0
-        else:
+        elif "*" in self.value:
             self.regex = re_compile_glob(self.value)
             self.test = lambda entry: any(self.regex.match(tag) for tag in entry.tags)
+        else:
+            self.test = lambda entry: self.value in entry.tags
 
     def __str__(self):
         if self.value == "":

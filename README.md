@@ -162,7 +162,7 @@ For `date.*` attributes, `@foo<bar` and `@foo>bar` will use date comparisons
 
 For example:
 
-    ad ls '(OR #123 (PATTERN #234) {0a1588fd-84e7-427c-8c7b-f8534e7635e1} @nicname
+    ad ls '(OR #123 (TAG is:hosting) {0a1588fd-84e7-427c-8c7b-f8534e7635e1} @nicname
            +is:license Weibo (AND (OR @id.pgp-key @pgp.key-id +is:payment))'
 
 ## Edit syntax
