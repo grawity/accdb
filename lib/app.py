@@ -26,6 +26,14 @@ from .util import *
 
 # 'SecretStore' {{{
 
+# todo:
+#
+#   class SecureKeyring - retrieve arbitrary keys from GNOME Keyring or files
+#
+#   class SecureStorage -
+#       obtain key from SecureKeyring or prompt for PBKDF2
+#       wrap/unwrap
+
 class UnknownAlgorithmError(Exception):
     pass
 
