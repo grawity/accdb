@@ -154,8 +154,6 @@ class PatternFilter(Filter):
 
         if pattern == "*":
             func = lambda entry: True
-        elif pattern.startswith("#"):
-            func = ItemNumberFilter(pattern[1:])
         elif pattern == "+":
             func = lambda entry: len(entry.tags) == 0
         elif pattern.startswith("+"):
