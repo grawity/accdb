@@ -17,28 +17,37 @@ class Filter(object):
         tokens = []
         depth = 0
         start = -1
+        _debug("parse input: %r" % text)
         for pos, char in enumerate(text):
+            #_debug("char %r [%d]" % (char, pos))
             if char == "(":
                 if depth == 0:
                     if start >= 0:
+                        # handle "AND(foo)" when there's no whitespace
+                        _debug("tokens += prefix-word %r" % text[start:pos])
                         tokens.append(text[start:pos])
                     start = pos+1
                 depth += 1
             elif char == ")":
                 depth -= 1
                 if depth == 0 and start >= 0:
+                    _debug("tokens += grouped %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
             elif char in " \t\r\n":
                 if depth == 0 and start >= 0:
+                    _debug("tokens += word %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
             else:
                 if start < 0:
                     start = pos
+        _debug("after parsing, depth=%r start=%r" % (depth, start))
         if depth == 0:
             if start >= 0:
+                _debug("tokens += final %r" % text[start:])
                 tokens.append(text[start:])
+            _debug("parse output: %r" % tokens)
             return tokens
         elif depth > 0:
             raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
