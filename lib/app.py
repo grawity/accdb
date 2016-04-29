@@ -230,7 +230,7 @@ class Interactive(cmd.Cmd):
 
         self.do_dump("", outdb)
 
-    def do_rgrep(self, arg):
+    def do_raw(self, arg):
         """Display entries for exporting"""
         db.dump_header(sys.stdout)
         for entry in Filter._cli_compile_and_search(db, arg):
@@ -474,6 +474,7 @@ class Interactive(cmd.Cmd):
     do_c     = do_copy
     do_g     = do_grep
     do_re    = do_reveal
+    do_rgrep = do_reveal
     do_s     = do_show
     do_w     = do_touch
 
