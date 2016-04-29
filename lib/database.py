@@ -208,7 +208,11 @@ class Database(object):
 
     def dump_yaml(self, fh=sys.stdout):
         import yaml
-        print(yaml.dump(self.to_structure()), file=fh)
+        try:
+            from yaml import CDumper as Dumper
+        except ImportError:
+            from yaml import Dumper
+        print(yaml.dump(self.to_structure(), Dumper=Dumper), file=fh)
 
     def dump_json(self, fh=sys.stdout):
         import json
