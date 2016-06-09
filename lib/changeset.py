@@ -48,6 +48,8 @@ class Changeset(list):
     def apply_to(self, target, transform_cb=None):
         _debug("applying to %r", target)
         for op, k, v in self:
+            # keep original key, value for use in error messages
+            _k, _v = k, v
             if self._key_alias:
                 k = self._key_alias.get(k, k)
             if transform_cb:
@@ -79,6 +81,11 @@ class Changeset(list):
             elif op == "move":
                 if self._key_alias:
                     v = self._key_alias.get(v, v)
+                if k == v:
+                    Core.err("destination is the same as source: %r = %r" % (_k, _v))
+                    continue
+                    # note to future self: if this check is not done, then 'del target[v]'
+                    #                      can lose the attribute entirely when k == v.
                 if v in target:
                     target[k] = target[v]
                     del target[v]
