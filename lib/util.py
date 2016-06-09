@@ -6,13 +6,14 @@ import sys
 
 class FancyFormatter(logging.Formatter):
     _colors = {
+        logging.ERROR: "\033[1;31m",
         logging.DEBUG: "\033[36m",
     }
 
     def format(self, record):
         arg0 = "accdb"
 
-        color = self._colors.get(record.levelno)
+        color = self._colors.get(record.levelno, "")
         reset = "\033[m" if color else ""
 
         prefix = record.levelname.lower()
@@ -29,13 +30,9 @@ class FancyFormatter(logging.Formatter):
 debug = os.environ.get("DEBUG", "")
 
 handler = logging.StreamHandler()
-formatter = FancyFormatter()
-handler.setFormatter(formatter)
+handler.setFormatter(FancyFormatter())
 logging.getLogger().addHandler(handler)
 logging.getLogger().setLevel(logging.DEBUG if debug else logging.INFO)
-
-#logging.basicConfig(format="accdb: %(levelname)s: (%(module)s) %(message)s",
-#                    level=(logging.DEBUG if debug else logging.INFO))
 
 _debug = logging.debug
 

@@ -42,7 +42,7 @@ class Changeset(list):
                 self.append((op, k, v))
                 dwim.add(k)
             else:
-                Core.err("syntax error in %r" % a)
+                _err("syntax error in %r" % a)
         _debug("parsed changes: %r", self)
 
     def apply_to(self, target, transform_cb=None):
