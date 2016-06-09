@@ -82,7 +82,7 @@ class Changeset(list):
                 if self._key_alias:
                     v = self._key_alias.get(v, v)
                 if k == v:
-                    Core.err("destination is the same as source: %r = %r" % (_k, _v))
+                    _err("destination is the same as source: %r = %r" % (_k, _v))
                     continue
                     # note to future self: if this check is not done, then 'del target[v]'
                     #                      can lose the attribute entirely when k == v.
