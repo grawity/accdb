@@ -24,11 +24,14 @@ class Changeset(list):
             _debug(" arg %r", a)
             if a.startswith("-"):
                 k = a[1:]
-                self.append(("del", k, None))
                 _debug("  del-key %r", k)
+                if not k:
+                    _err("empty key name in change %r" % a)
+                    continue
+                self.append(("del", k, None))
             elif "=" in a:
                 k, v = a.split("=", 1)
-                if k[-1] in _ops:
+                if k and k[-1] in _ops:
                     op = _ops[k[-1]]
                     k = k[:-1]
                     _debug("  %s: %r = %r", op, k, v)
@@ -39,10 +42,13 @@ class Changeset(list):
                     else:
                         op = "set"
                         _debug("  set-value %r = %r", k, v)
+                if not k:
+                    _err("empty key name in change %r" % a)
+                    continue
                 self.append((op, k, v))
                 dwim.add(k)
             else:
-                _err("syntax error in %r" % a)
+                _err("syntax error in change %r" % a)
         _debug("parsed changes: %r", self)
 
     def apply_to(self, target, transform_cb=None):
