@@ -267,7 +267,8 @@ class Entry(object):
 
         tmp = self.attributes.get("2fa.subject",
               self.attributes.get("login",
-              self.attributes.get("email")))
+              self.attributes.get("username",
+              self.attributes.get("email"))))
         if tmp:
             p.login = tmp[0]
         else:

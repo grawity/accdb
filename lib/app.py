@@ -263,7 +263,8 @@ class Interactive(cmd.Cmd):
         for entry in Filter._cli_compile_and_search(db, arg):
             name = entry.name
             user = entry.attributes.get("login",
-                   entry.attributes.get("email", []))
+                   entry.attributes.get("username",
+                   entry.attributes.get("email", [])))
             line_max = 70
             user_max = line_max // 3
             user_fmt = " (%s)"

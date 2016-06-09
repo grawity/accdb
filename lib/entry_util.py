@@ -6,8 +6,7 @@ attr_names = {
     "machine":  "host",
     "url":      "uri",
     "website":  "uri",
-    "user":     "login",
-    "username": "login",
+    "user":     "username",
     "nicname":  "nic-hdl",
     "password": "pass",
     "!pass":    "pass",
@@ -17,7 +16,7 @@ attr_names = {
 
 attr_groups = {
     "object":   ["entity", "host", "uri", "realm"],
-    "username": ["login", "login.", "nic-hdl", "principal"],
+    "username": ["login", "login.", "username", "nic-hdl", "principal"],
     "password": ["pass", "!pass"],
     "email":    ["email", "phone"],
 }
