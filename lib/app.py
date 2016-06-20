@@ -274,17 +274,22 @@ class Cmd(object):
         """Display the entry's OATH PSK as a Qr code"""
         for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry)
-            params = entry.oath_params
-            if params is None:
-                Core.err("cannot create Qr code: entry has no OATH PSK")
+            if entry.oath_params:
+                data = entry.oath_params.make_uri()
+            elif entry.wpa_params:
+                data = entry.wpa_params.make_uri()
             else:
-                uri = params.make_uri()
-                Core.debug("Qr code for %r" % uri)
-                with subprocess.Popen(["qrencode", "-tUTF8", uri],
+                data = None
+
+            if data:
+                Core.debug("Qr code for %r", data)
+                with subprocess.Popen(["qrencode", "-tUTF8", data],
                                       stdout=subprocess.PIPE) as proc:
                     for line in proc.stdout:
                         print("\t" + line.decode("utf-8"), end="")
                 print()
+            else:
+                Core.err("cannot genearte Qr code: entry has no PSK")
 
     def do_totp(self, argv):
         """Generate an OATH TOTP response"""

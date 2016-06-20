@@ -51,3 +51,12 @@ def sort_attrs(entry):
     names += sorted([k for k in entry.attributes if k not in names],
                     key=canonicalize)
     return names
+
+class WiFiParameters(object):
+    def __init__(self, essid, psk):
+        self.essid = essid
+        self.psk = psk
+
+    def make_uri(self):
+        # TODO: handle escaping if any
+        return "WIFI:T:WPA;S:%s;P:%s;;" % (self.essid, self.psk)

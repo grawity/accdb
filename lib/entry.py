@@ -295,6 +295,18 @@ class Entry(object):
 
         return p
 
+    @property
+    def wpa_params(self):
+        essid = self.attributes.get("wifi.essid")
+        if not essid:
+            return None
+
+        psk = self.attributes.get("!wifi.psk")
+        if not psk:
+            return None
+
+        return WiFiParameters(essid[0], psk[0])
+
     def sync_names(self, export=False):
         if export:
             self.attributes["@name"] = [self.name]
