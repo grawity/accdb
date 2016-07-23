@@ -252,6 +252,8 @@ class PatternFilter(Filter):
                             and any(date_cmp(value, "now+30") < 0
                                     for value in entry.attributes["date.expiry"])
                         )
+            elif pattern == ":untagged":
+                func = lambda entry: not len(entry.tags)
             else:
                 Core.die("unrecognized pattern %r" % pattern)
         elif pattern.startswith("{"):
