@@ -118,7 +118,9 @@ class Filter(object):
                 return ItemUuidFilter(args[0])
             # etc.
             else:
-                raise FilterSyntaxError("unknown operator %r in (%s)" % (op, pattern))
+                _debug("unknown operator %r in (%s), assuming AND" % (op, pattern))
+                filters = [Filter.compile(db, x) for x in tokens]
+                return ConjunctionFilter(*filters)
         elif " " in op or "(" in op or ")" in op:
             return Filter.compile(db, op)
         elif op.startswith("#"):
