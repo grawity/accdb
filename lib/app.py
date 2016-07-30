@@ -2,10 +2,8 @@
 # accdb - account database using human-editable flat files as storage
 
 from __future__ import print_function
-import cmd
 import os
 import re
-import shlex
 import subprocess
 import sys
 import time
@@ -123,17 +121,13 @@ def unwrap_secret(wrapped):
 
 # 'Interactive' {{{
 
-class Interactive(cmd.Cmd):
-    def __init__(self, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.prompt = "\001\033[34m\002" "accdb>" "\001\033[m\002" " "
-        self.banner = "Using %s" % db_path
-
-    def emptyline(self):
-        pass
-
-    def default(self, line):
-        Core.die("unknown command %r" % line.split()[0])
+class Interactive(object):
+    def onecmd_compat(self, argv):
+        func = getattr(self, "do_%s" % argv[0], None)
+        if func:
+            func(argv[1:])
+        else:
+            Core.die("unknown command %r" % argv[0])
 
     def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
         text = entry.dump(color=sys.stdout.isatty(), **kwargs)
@@ -155,20 +149,16 @@ class Interactive(cmd.Cmd):
                         except KeyError:
                             pass
 
-    def do_EOF(self, arg):
-        """Save changes and exit"""
-        return True
-
-    def do_help(self, arg):
+    def do_help(self, argv):
         """Print this text"""
         cmds = [k for k in dir(self) if k.startswith("do_")]
         for cmd in cmds:
             doc = getattr(self, cmd).__doc__ or "?"
             print("    %-14s  %s" % (cmd[3:], doc))
 
-    def do_copy(self, arg):
+    def do_copy(self, argv):
         """Copy password to clipboard"""
-        items = list(Filter._cli_compile_and_search(db, arg))
+        items = list(Filter._cli_compile_and_search(db, argv))
         if len(items) > 1:
             Core.die("too many arguments")
         entry = items[0]
@@ -180,31 +170,31 @@ class Interactive(cmd.Cmd):
             print("No password found!",
                 file=sys.stderr)
 
-    def do_dump(self, arg, db=None):
+    def do_dump(self, argv, db=None):
         """Dump the database to stdout (yaml, json, safe)"""
         if db is None:
             db = globals()["db"]
 
-        if arg == "":
+        if not argv:
             db.dump()
-        elif arg == "yaml":
+        elif argv[0] == "yaml":
             db.dump_yaml()
-        elif arg == "json":
+        elif argv[0] == "json":
             db.dump_json()
-        elif arg == "safe":
+        elif argv[0] == "safe":
             db.dump(storage=False)
         else:
-            print("Unsupported export format: %r" % arg,
+            print("Unsupported export format: %r" % argv[0],
                 file=sys.stderr)
 
-    def do_convert(self, arg):
+    def do_convert(self, argv):
         """Read entries from stdin and dump to stdout"""
 
         newdb = Database()
         newdb.parseinto(sys.stdin)
-        self.do_dump(arg, newdb)
+        self.do_dump(argv, newdb)
 
-    def do_merge(self, arg):
+    def do_merge(self, argv):
         """Read entries from stdin and merge to main database"""
 
         newdb = Database()
@@ -228,37 +218,37 @@ class Interactive(cmd.Cmd):
 
         self.do_dump("", outdb)
 
-    def do_raw(self, arg):
+    def do_raw(self, argv):
         """Display entries for exporting"""
         db.dump_header(sys.stdout)
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, argv):
             # TODO: remove conceal=False when wrap_secret is defined
             self._show_entry(entry, storage=True)
 
-    def do_show(self, arg):
+    def do_show(self, argv):
         """Display entries (safe)"""
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry)
 
     do_grep = do_show
 
-    def do_reveal(self, arg):
+    def do_reveal(self, argv):
         """Display entries (including sensitive information)"""
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry, conceal=False)
 
-    def do_rshow(self, arg):
+    def do_rshow(self, argv):
         """Display entries (safe, recursive)"""
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry, recurse=True, indent=True)
 
-    def do_ls(self, arg):
+    def do_ls(self, argv):
         """Display entries (names only)"""
         if sys.stdout.isatty():
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
             f = lambda arg, fmt: arg
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, argv):
             name = entry.name
             user = entry.attributes.get("login",
                    entry.attributes.get("username",
@@ -277,9 +267,9 @@ class Interactive(cmd.Cmd):
                 name = ellipsize(name, line_max)
             print("%5d │ %s" % (entry.itemno, name))
 
-    def do_qr(self, arg):
+    def do_qr(self, argv):
         """Display the entry's OATH PSK as a Qr code"""
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry)
             params = entry.oath_params
             if params is None:
@@ -293,9 +283,9 @@ class Interactive(cmd.Cmd):
                         print("\t" + line.decode("utf-8"), end="")
                 print()
 
-    def do_totp(self, arg):
+    def do_totp(self, argv):
         """Generate an OATH TOTP response"""
-        for entry in Filter._cli_compile_and_search(db, arg, Entry.FILTER_OATH):
+        for entry in Filter._cli_compile_and_search(db, argv, Entry.FILTER_OATH):
             params = entry.oath_params
             if params:
                 otp = params.generate()
@@ -304,9 +294,9 @@ class Interactive(cmd.Cmd):
                 print("(No OATH preshared key for this entry.)", file=sys.stderr)
                 sys.exit(1)
 
-    def do_t(self, arg):
+    def do_t(self, argv):
         """Copy OATH TOTP response to clipboard"""
-        items = list(Filter._cli_compile_and_search(db, arg, Entry.FILTER_OATH))
+        items = list(Filter._cli_compile_and_search(db, argv, Entry.FILTER_OATH))
         if len(items) > 1:
             Core.die("too many arguments")
         entry = items[0]
@@ -320,31 +310,30 @@ class Interactive(cmd.Cmd):
             print("(No OATH preshared key for this entry.)", file=sys.stderr)
             sys.exit(1)
 
-    def do_touch(self, arg):
+    def do_touch(self, argv):
         """Rewrite the accounts.db file"""
         db.modified = True
 
-    def do_undo(self, arg):
+    def do_undo(self, argv):
         """Revert the last commit to accounts.db"""
         call_git(db, "revert", "--no-edit", "HEAD")
 
-    def do_git(self, arg):
-        args = str_split_qwords(arg)
-        call_git(db, *args)
+    def do_git(self, argv):
+        call_git(db, *argv)
 
-    def do_sort(self, arg):
+    def do_sort(self, argv):
         """Sort and rewrite the database"""
         db.sort()
         db.modified = True
 
-    def do_tags(self, arg):
+    def do_tags(self, argv):
         """List all tags used by the database's entries"""
         for tag in sorted(db.tags()):
             print(tag)
 
-    def do_retag(self, arg):
+    def do_retag(self, argv):
         """Rename tags on all entries"""
-        tags = str_split_qwords(arg)
+        tags = argv
 
         new_tags = {t[1:] for t in tags if t.startswith("+")}
         old_tags = {t[1:] for t in tags if t.startswith("-")}
@@ -370,9 +359,9 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
-    def do_tag(self, arg):
+    def do_tag(self, argv):
         """Add or remove tags to an entry"""
-        query, *tags = str_split_qwords(arg)
+        query, *tags = argv
 
         add_tags = {t[1:] for t in tags if t.startswith("+")}
         rem_tags = {t[1:] for t in tags if t.startswith("-")}
@@ -396,9 +385,9 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
-    def do_set(self, arg):
+    def do_set(self, argv):
         """Change attributes of an entry"""
-        query, *args = str_split_qwords(arg)
+        query, *args = argv
         num = 0
 
         changes = Changeset(args, key_alias=attr_names)
@@ -439,16 +428,14 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
-    def do_new(self, arg):
-        args = str_split_qwords(arg)
-        return self._do_create(None, args[:])
+    def do_new(self, argv):
+        return self._do_create(None, argv[:])
 
-    def do_clone(self, arg):
-        args = str_split_qwords(arg)
-        return self._do_create(args[0], args[1:])
+    def do_clone(self, argv):
+        return self._do_create(argv[0], argv[1:])
 
-    def do_comment(self, arg):
-        query, *args = str_split_qwords(arg)
+    def do_comment(self, argv):
+        query, *args = argv
         num = 0
 
         changes = TextChangeset(args)
@@ -462,9 +449,9 @@ class Interactive(cmd.Cmd):
 
         db.modified = True
 
-    def do_rm(self, arg):
+    def do_rm(self, argv):
         """Delete an entry"""
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, argv):
             entry.deleted = True
             self._show_entry(entry)
 
@@ -543,11 +530,9 @@ def main():
     interp = Interactive()
 
     if len(sys.argv) > 1:
-        cmd = str_join_qwords(sys.argv[1:])
-        interp.onecmd(cmd)
+        interp.onecmd_compat(sys.argv[1:])
     else:
-        cmd = "[interactive]"
-        interp.cmdloop()
+        Core.die("no command given")
 
     if db.modified:
         if not Core._debug_mode:
