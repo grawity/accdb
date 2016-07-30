@@ -119,15 +119,18 @@ def unwrap_secret(wrapped):
 
 # }}}
 
-# 'Interactive' {{{
+# 'Cmd' {{{
 
-class Interactive(object):
-    def onecmd_compat(self, argv):
-        func = getattr(self, "do_%s" % argv[0], None)
-        if func:
-            func(argv[1:])
+class Cmd(object):
+    def call(self, argv):
+        if argv:
+            func = getattr(self, "do_%s" % argv[0], None)
+            if func:
+                func(argv[1:])
+            else:
+                Core.die("unknown command %r" % argv[0])
         else:
-            Core.die("unknown command %r" % argv[0])
+            Core.die("no command given")
 
     def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
         text = entry.dump(color=sys.stdout.isatty(), **kwargs)
@@ -527,12 +530,8 @@ def main():
         if sys.stderr.isatty():
             print("(Database is empty.)", file=sys.stderr)
 
-    interp = Interactive()
-
-    if len(sys.argv) > 1:
-        interp.onecmd_compat(sys.argv[1:])
-    else:
-        Core.die("no command given")
+    interp = Cmd()
+    interp.call(sys.argv[1:])
 
     if db.modified:
         if not Core._debug_mode:
