@@ -1,8 +1,4 @@
-from nullroute.core import Core
-from logging import (
-    error as _err,
-    debug as _debug
-)
+from nullroute.core import *
 
 # 'Changeset' {{{
 
@@ -19,14 +15,14 @@ class Changeset(list):
             "|": "merge",
         }
         dwim = set()
-        _debug("parsing %r", args)
+        Core.debug("parsing %r", args)
         for a in args:
-            _debug(" arg %r", a)
+            Core.debug(" arg %r", a)
             if a.startswith("-"):
                 k = a[1:]
-                _debug("  del-key %r", k)
+                Core.debug("  del-key %r", k)
                 if not k:
-                    _err("empty key name in change %r" % a)
+                    Core.err("empty key name in change %r" % a)
                     continue
                 self.append(("del", k, None))
             elif "=" in a:
@@ -34,25 +30,25 @@ class Changeset(list):
                 if k and k[-1] in _ops:
                     op = _ops[k[-1]]
                     k = k[:-1]
-                    _debug("  %s: %r = %r", op, k, v)
+                    Core.debug("  %s: %r = %r", op, k, v)
                 else:
                     if k in dwim:
                         op = "add"
-                        _debug("  set-value %r = %r, DWIM to add-value", k, v)
+                        Core.debug("  set-value %r = %r, DWIM to add-value", k, v)
                     else:
                         op = "set"
-                        _debug("  set-value %r = %r", k, v)
+                        Core.debug("  set-value %r = %r", k, v)
                 if not k:
-                    _err("empty key name in change %r" % a)
+                    Core.err("empty key name in change %r" % a)
                     continue
                 self.append((op, k, v))
                 dwim.add(k)
             else:
-                _err("syntax error in change %r" % a)
-        _debug("parsed changes: %r", self)
+                Core.err("syntax error in change %r" % a)
+        Core.debug("parsed changes: %r", self)
 
     def apply_to(self, target, transform_cb=None):
-        _debug("applying to %r", target)
+        Core.debug("applying to %r", target)
         for op, k, v in self:
             # keep original key, value for use in error messages
             _k, _v = k, v
@@ -60,7 +56,7 @@ class Changeset(list):
                 k = self._key_alias.get(k, k)
             if transform_cb:
                 v = transform_cb(k, v)
-            _debug(" key %r op %r val %r", k, op, v)
+            Core.debug(" key %r op %r val %r", k, op, v)
             if op == "set":
                 target[k] = [v]
             elif op == "tryset":
@@ -88,7 +84,7 @@ class Changeset(list):
                 if self._key_alias:
                     v = self._key_alias.get(v, v)
                 if k == v:
-                    _err("destination is the same as source: %r = %r" % (_k, _v))
+                    Core.err("destination is the same as source: %r = %r" % (_k, _v))
                     continue
                     # note to future self: if this check is not done, then 'del target[v]'
                     #                      can lose the attribute entirely when k == v.
@@ -121,15 +117,15 @@ class Changeset(list):
 
 class TextChangeset(list):
     def __init__(self, args):
-        _debug("parsing %r", args)
+        Core.debug("parsing %r", args)
         for arg in args:
-            _debug(" arg %r", arg)
+            Core.debug(" arg %r", arg)
             if arg == "-":
-                _debug("  empty");
+                Core.debug("  empty");
                 self.append(("empty",))
             elif arg.startswith("+"):
                 arg = arg[1:]
-                _debug("  add-line %r", arg)
+                Core.debug("  add-line %r", arg)
                 self.append(("append", arg))
             elif arg.startswith("s/"):
                 arg = arg[2:]
@@ -138,7 +134,7 @@ class TextChangeset(list):
                 arg = str_split_escaped(arg, "/", 1)
                 if len(arg) == 2:
                     from_re, to_str = arg
-                    _debug("  regex %r to %r", from_re, to_str)
+                    Core.debug("  regex %r to %r", from_re, to_str)
                     self.append(("resub", from_re, to_str))
                 else:
                     Core.die("not enough parameters: %r" % arg)
@@ -150,7 +146,7 @@ class TextChangeset(list):
         lines = target.rstrip("\n").split("\n")
 
         for op, *rest in self:
-            _debug("text changeset: op %r rest %r", op, rest)
+            Core.debug("text changeset: op %r rest %r", op, rest)
             if op == "empty":
                 lines = []
             elif op == "append":
@@ -161,7 +157,7 @@ class TextChangeset(list):
             else:
                 Core.die("unknown operation %r" % op)
 
-        _debug("text changeset: lines %r", lines)
+        Core.debug("text changeset: lines %r", lines)
         return "\n".join(lines)
 
 # }}}
