@@ -145,8 +145,7 @@ class Filter(object):
         return db.find(filter)
 
     @staticmethod
-    def _cli_compile(db, arg):
-        args = str_split_qwords(arg)
+    def _cli_compile(db, args):
         try:
             if len(args) > 1:
                 arg = "AND"
