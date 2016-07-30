@@ -62,8 +62,7 @@ class Entry(object):
             elif line.startswith("="):
                 if self.name:
                     # Ensure that Database only passes us single entries
-                    print("Line %d: ignoring multiple name headers" % lineno,
-                          file=sys.stderr)
+                    Core.warn("line %d: ignoring multiple name headers" % lineno)
                 self.name = line[1:].strip()
             elif line.startswith("+"):
                 self.tags |= split_tags(line[1:])
@@ -79,15 +78,13 @@ class Entry(object):
                 pass
             elif line.startswith("{") and line.endswith("}"):
                 if self.uuid:
-                    print("Line %d: ignoring multiple UUID headers" % lineno,
-                          file=sys.stderr)
+                    Core.warn("line %d: ignoring multiple UUID headers" % lineno)
                     continue
 
                 try:
                     self.uuid = uuid.UUID(line)
                 except ValueError:
-                    print("Line %d: ignoring badly formed UUID %r" % (lineno, line),
-                          file=sys.stderr)
+                    Core.warn("line %d: ignoring badly formed UUID %r" % (lineno, line))
                     self.comment += line + "\n"
             elif line.startswith("-- "):
                 # per-attribute comments
@@ -96,14 +93,12 @@ class Entry(object):
                 try:
                     key, val = re.split(self.RE_KEYVAL, line, 1)
                 except ValueError:
-                    print("Line %d: could not parse line %r" % (lineno, line),
-                          file=sys.stderr)
+                    Core.err("line %d: could not parse line %r" % (lineno, line))
                     self.comment += line + "\n"
                     continue
 
                 if val == "<private>":
-                    print("Line %d: lost private data, you're fucked" % lineno,
-                          file=sys.stderr)
+                    Core.err("line %d: private data has been lost" % lineno)
                     self._broken = True
                 elif val.startswith("<base64> "):
                     nval = val[len("<base64> "):]

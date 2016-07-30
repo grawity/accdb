@@ -162,16 +162,17 @@ class Cmd(object):
     def do_copy(self, argv):
         """Copy password to clipboard"""
         items = list(Filter._cli_compile_and_search(db, argv))
-        if len(items) > 1:
-            Core.die("too many arguments")
+        if not items:
+            Core.die("no entries found")
+        elif len(items) > 1:
+            Core.notice("using first result out of %d" % len(items))
         entry = items[0]
         self._show_entry(entry)
         if "pass" in entry.attributes:
             print("(Password copied to clipboard.)")
             Clipboard.put(entry.attributes["pass"][0])
         else:
-            print("No password found!",
-                file=sys.stderr)
+            Core.err("entry has no password")
 
     def do_dump(self, argv, db=None):
         """Dump the database to stdout (yaml, json, safe)"""
@@ -187,8 +188,7 @@ class Cmd(object):
         elif argv[0] == "safe":
             db.dump(storage=False)
         else:
-            print("Unsupported export format: %r" % argv[0],
-                file=sys.stderr)
+            Core.err("export format %r not supported" % argv[0])
 
     def do_convert(self, argv):
         """Read entries from stdin and dump to stdout"""
@@ -207,7 +207,7 @@ class Cmd(object):
 
         for newentry in newdb:
             if newentry._broken:
-                print("(warning: skipped broken entry)", file=sys.stderr)
+                Core.warn("skipped broken entry")
                 print(newentry.dump(storage=True), file=sys.stderr)
                 continue
 
@@ -276,7 +276,7 @@ class Cmd(object):
             self._show_entry(entry)
             params = entry.oath_params
             if params is None:
-                print("\t(No OATH preshared key for this entry.)")
+                Core.err("cannot create Qr code: entry has no OATH PSK")
             else:
                 uri = params.make_uri()
                 Core.debug("Qr code for %r" % uri)
@@ -294,24 +294,24 @@ class Cmd(object):
                 otp = params.generate()
                 print(otp)
             else:
-                print("(No OATH preshared key for this entry.)", file=sys.stderr)
-                sys.exit(1)
+                Core.err("cannot generate OTP: entry has no OATH PSK")
 
     def do_t(self, argv):
         """Copy OATH TOTP response to clipboard"""
         items = list(Filter._cli_compile_and_search(db, argv, Entry.FILTER_OATH))
-        if len(items) > 1:
-            Core.die("too many arguments")
+        if not items:
+            Core.die("no entries found")
+        elif len(items) > 1:
+            Core.notice("using first result out of %d" % len(items))
         entry = items[0]
         self._show_entry(entry)
         params = entry.oath_params
         if params:
             otp = params.generate()
             Clipboard.put(str(otp))
-            print("; OATH response copied to clipboard")
+            Core.notice("OATH response copied to clipboard")
         else:
-            print("(No OATH preshared key for this entry.)", file=sys.stderr)
-            sys.exit(1)
+            Core.err("cannot generate OTP: entry has no OATH PSK")
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
@@ -528,7 +528,7 @@ def main():
         db = Database()
         db.path = db_path
         if sys.stderr.isatty():
-            print("(Database is empty.)", file=sys.stderr)
+            Core.warn("database is empty")
 
     interp = Cmd()
     interp.call(sys.argv[1:])
@@ -541,6 +541,7 @@ def main():
             if "backup" in db.flags:
                 db_gpg_backup(db, db_backup_path)
         else:
+            Core.notice("discarding changes made in debug mode")
             Core.debug("skipping db.flush()")
             if "git" in db.flags:
                 Core.debug("skipping Git commit")

@@ -51,16 +51,14 @@ class Database(object):
                     try:
                         key, val = line[3:].strip().split(": ", 1)
                     except ValueError:
-                        print("line %d: malformed header %r" % (lineno, line),
-                              file=sys.stderr)
+                        Core.err("line %d: malformed header: %r" % (lineno, line))
                         continue
                     if key in {"options", "dbflags"}:
                         self.flags = split_tags(val)
                     else:
                         self.header[key] = val
                 else:
-                    print("line %d: header after data: %r" % (lineno, line),
-                          file=sys.stderr)
+                    Core.warn("line %d: header after data: %r" % (lineno, line))
             elif line.startswith("="):
                 if data:
                     entry = Entry.parse(data, lineno=lastno, database=self)
@@ -226,7 +224,7 @@ class Database(object):
         if not self.modified:
             return
         if self.readonly:
-            print("(Discarding changes, database read-only)", file=sys.stderr)
+            Core.notice("discarding changes, database is read-only")
             return
         if self.path is None:
             return
