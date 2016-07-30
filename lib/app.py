@@ -21,8 +21,6 @@ from .entry import Entry
 from .entry_util import *
 from .filter import Filter
 from .string import *
-from .util import _debug
-from .util import *
 
 # 'SecretStore' {{{
 
@@ -288,7 +286,7 @@ class Interactive(cmd.Cmd):
                 print("\t(No OATH preshared key for this entry.)")
             else:
                 uri = params.make_uri()
-                _debug("Qr code for %r", uri)
+                Core.debug("Qr code for %r" % uri)
                 with subprocess.Popen(["qrencode", "-tUTF8", uri],
                                       stdout=subprocess.PIPE) as proc:
                     for line in proc.stdout:
@@ -533,7 +531,7 @@ def main():
     except FileNotFoundError:
         ss = None
 
-    _debug("loading database from %r" % db_path)
+    Core.debug("loading database from %r" % db_path)
     try:
         db = Database.from_file(db_path)
     except FileNotFoundError:
@@ -559,11 +557,11 @@ def main():
             if "backup" in db.flags:
                 db_gpg_backup(db, db_backup_path)
         else:
-            _debug("skipping db.flush()")
+            Core.debug("skipping db.flush()")
             if "git" in db.flags:
-                _debug("skipping Git commit")
+                Core.debug("skipping Git commit")
             if "backup" in db.flags:
-                _debug("skipping GPG backup")
+                Core.debug("skipping GPG backup")
 
 if __name__ == "__main__":
     main()
