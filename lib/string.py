@@ -3,8 +3,7 @@ import datetime
 import fnmatch
 import re
 import shlex
-
-from .util import _debug
+from nullroute.core import *
 
 def b64_pad(string, max=4):
     n = len(string)
@@ -32,9 +31,9 @@ def str_split_escaped(string, sep, max=0):
     state = 0
     out = []
     cur = ""
-    _debug("str_split: <- %r", string)
+    Core.debug("str_split: <- %r", string)
     for char in string:
-        _debug("str_split:  char %r state %r", char, state)
+        Core.debug("str_split:  char %r state %r", char, state)
         if state == 0:
             if char == "\\":
                 state = 1
@@ -48,17 +47,17 @@ def str_split_escaped(string, sep, max=0):
             state = 0
     if cur:
         out.append(cur)
-    _debug("str_split: -> %r", out)
+    Core.debug("str_split: -> %r", out)
     return out
 
 def str_split_qwords(string):
-    _debug("parsing: <%s>" % string)
+    Core.debug("parsing: <%s>" % string)
     lex = shlex.shlex(string, posix=True)
     lex.commenters = ""
     lex.whitespace_split = True
     args = list(lex)
     for _arg in args:
-        _debug("output arg: <%s>" % _arg)
+        Core.debug("output arg: <%s>" % _arg)
     return args
 
 def str_join_qwords(args):
