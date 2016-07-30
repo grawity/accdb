@@ -550,7 +550,7 @@ def main():
         interp.cmdloop()
 
     if db.modified:
-        if not debug:
+        if not Core._debug_mode:
             db.flush()
             if "git" in db.flags:
                 db_git_backup(db, summary="accdb %s" % cmd)
