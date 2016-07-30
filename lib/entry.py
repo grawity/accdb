@@ -20,6 +20,8 @@ class Entry(object):
 
     RE_COLL = re.compile(r'\w.*$')
 
+    FILTER_OATH = "AND %s @!2fa.oath.psk"
+
     def __init__(self, database=None):
         self.attributes = dict()
         self.comment = ""

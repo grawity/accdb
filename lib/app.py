@@ -297,7 +297,7 @@ class Interactive(cmd.Cmd):
 
     def do_totp(self, arg):
         """Generate an OATH TOTP response"""
-        for entry in Filter._cli_compile_and_search(db, arg):
+        for entry in Filter._cli_compile_and_search(db, arg, Entry.FILTER_OATH):
             params = entry.oath_params
             if params:
                 otp = params.generate()
@@ -308,7 +308,7 @@ class Interactive(cmd.Cmd):
 
     def do_t(self, arg):
         """Copy OATH TOTP response to clipboard"""
-        items = list(Filter._cli_compile_and_search(db, arg))
+        items = list(Filter._cli_compile_and_search(db, arg, Entry.FILTER_OATH))
         if len(items) > 1:
             Core.die("too many arguments")
         entry = items[0]
