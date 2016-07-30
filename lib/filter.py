@@ -145,20 +145,15 @@ class Filter(object):
         return db.find(filter)
 
     @staticmethod
-    def _cli_compile(db, args):
+    def _cli_compile(db, argv):
         try:
-            if len(args) > 1:
-                arg = "AND"
-                for x in args:
-                    arg += (" (%s)" if " " in x else " %s") % x
-                filters = [Filter.compile(db, x) for x in args]
+            if len(argv) > 1:
+                filters = [Filter.compile(db, x) for x in argv]
                 filter = ConjunctionFilter(*filters)
-            elif len(args) > 0:
-                arg = args[0]
-                filter = Filter.compile(db, arg)
+            elif len(argv) > 0:
+                filter = Filter.compile(db, argv[0])
             else:
-                arg = "*"
-                filter = Filter.compile(db, arg)
+                filter = Filter.compile(db, "*")
         except FilterSyntaxError as e:
             Core.die("syntax error in filter: %s" % e.args)
         Core.debug("compiled filter: %s", filter)
