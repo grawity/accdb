@@ -167,8 +167,13 @@ class Filter(object):
         return filter
 
     @staticmethod
-    def _cli_compile_and_search(db, arg):
-        return db.find(Filter._cli_compile(db, arg))
+    def _cli_compile_and_search(db, arg, fmt=None):
+        filter = Filter._cli_compile(db, arg)
+        if fmt:
+            _debug("applying extra filter: %r", fmt)
+            filter = Filter.compile(db, fmt % filter)
+            _debug("compiled filter: %s", filter)
+        return db.find(filter)
 
 class PatternFilter(Filter):
     def __init__(self, db, pattern):
