@@ -123,11 +123,11 @@ def unwrap_secret(wrapped):
 
 class Interactive(object):
     def onecmd_compat(self, argv):
-        func = getattr(self, "do_%s" % argv[0], self.default)
-        func(str_join_qwords(argv[1:]))
-
-    def default(self, line):
-        Core.die("unknown command %r" % line.split()[0])
+        func = getattr(self, "do_%s" % argv[0], None)
+        if func:
+            func(str_join_qwords(argv[1:]))
+        else:
+            Core.die("unknown command %r" % argv[0])
 
     def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
         text = entry.dump(color=sys.stdout.isatty(), **kwargs)
