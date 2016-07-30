@@ -2,10 +2,8 @@
 # accdb - account database using human-editable flat files as storage
 
 from __future__ import print_function
-import cmd
 import os
 import re
-import shlex
 import subprocess
 import sys
 import time
@@ -123,14 +121,10 @@ def unwrap_secret(wrapped):
 
 # 'Interactive' {{{
 
-class Interactive(cmd.Cmd):
-    def __init__(self, *args, **kwargs):
-        cmd.Cmd.__init__(self, *args, **kwargs)
-        self.prompt = "\001\033[34m\002" "accdb>" "\001\033[m\002" " "
-        self.banner = "Using %s" % db_path
-
-    def emptyline(self):
-        pass
+class Interactive(object):
+    def onecmd_compat(self, argv):
+        func = getattr(self, "do_%s" % argv[0], self.default)
+        func(str_join_qwords(argv[1:]))
 
     def default(self, line):
         Core.die("unknown command %r" % line.split()[0])
@@ -154,10 +148,6 @@ class Interactive(cmd.Cmd):
                                              **kwargs)
                         except KeyError:
                             pass
-
-    def do_EOF(self, arg):
-        """Save changes and exit"""
-        return True
 
     def do_help(self, arg):
         """Print this text"""
@@ -543,11 +533,9 @@ def main():
     interp = Interactive()
 
     if len(sys.argv) > 1:
-        cmd = str_join_qwords(sys.argv[1:])
-        interp.onecmd(cmd)
+        interp.onecmd_compat(sys.argv[1:])
     else:
-        cmd = "[interactive]"
-        interp.cmdloop()
+        Core.die("no command given")
 
     if db.modified:
         if not Core._debug_mode:
