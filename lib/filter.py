@@ -172,7 +172,7 @@ class Filter(object):
         if fmt:
             _debug("applying extra filter: %r", fmt)
             filter = Filter.compile(db, fmt % filter)
-            _debug("compiled filter: %s", filter)
+            _debug("recompiled filter: %s", filter)
         return db.find(filter)
 
 class PatternFilter(Filter):
