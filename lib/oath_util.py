@@ -1,12 +1,10 @@
 import base64
 from collections import OrderedDict
-from nullroute.core import Core
+from nullroute.core import *
 import urllib.parse
 
 from . import hotpie as oath
-
 from .string import encode_psk
-from .util import _debug
 
 class OATHParameters(object):
     """
@@ -53,8 +51,8 @@ class OATHParameters(object):
         return uri
 
     def generate(self):
-        _debug("generating OTP from: %r",
-               base64.b32encode(self.raw_psk).decode("us-ascii"))
+        Core.debug("generating OTP from: %r" % \
+                   base64.b32encode(self.raw_psk).decode("us-ascii"))
 
         if self.otype == "totp":
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
