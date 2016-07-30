@@ -50,26 +50,13 @@ def str_split_escaped(string, sep, max=0):
     Core.debug("str_split: -> %r", out)
     return out
 
-def str_split_qwords(string):
-    Core.debug("parsing: <%s>" % string)
-    lex = shlex.shlex(string, posix=True)
-    lex.commenters = ""
-    lex.whitespace_split = True
-    args = list(lex)
-    for _arg in args:
-        Core.debug("output arg: <%s>" % _arg)
-    return args
+def str_split_qwords(arg):
+    Core.debug("noop for %r" % arg)
+    return arg
 
-def str_join_qwords(args):
-    out = []
-    quote_rx = re.compile("['\"\\\\ ]")
-    escape_rx = re.compile("['\"\\\\]")
-    func = lambda ch: "\\%s" % ch.group(0)
-    for arg in args:
-        if quote_rx.search(arg):
-            arg = "\"%s\"" % escape_rx.sub(func, arg)
-        out.append(arg)
-    return " ".join(out)
+def str_join_qwords(arg):
+    Core.debug("noop for %r" % arg)
+    return arg
 
 def expand_range(string):
     items = []
