@@ -1,9 +1,8 @@
-from nullroute.core import Core
+from nullroute.core import *
 import uuid
 
 from .entry_util import *
 from .string import *
-from .util import _debug
 
 class FilterSyntaxError(Exception):
     pass
@@ -19,13 +18,13 @@ class Filter(object):
         start = -1
         quoted = None
         qstart = -1
-        _debug("parse input: %r" % text)
+        Core.debug("parse input: %r" % text)
         for pos, char in enumerate(text):
-            #_debug("char %r [%d]" % (char, pos))
+            #Core.debug("char %r [%d]" % (char, pos))
             if quoted:
                 if char == quoted:
                     quoted = None
-                    _debug("tokens += quoted %r" % text[qstart:pos])
+                    Core.debug("tokens += quoted %r" % text[qstart:pos])
                     tokens.append(text[qstart:pos])
                 else:
                     pass
@@ -37,25 +36,25 @@ class Filter(object):
                 if depth == 0:
                     if start >= 0:
                         # handle "AND(foo)" when there's no whitespace
-                        _debug("tokens += prefix-word %r" % text[start:pos])
+                        Core.debug("tokens += prefix-word %r" % text[start:pos])
                         tokens.append(text[start:pos])
                     start = pos+1
                 depth += 1
             elif char == ")":
                 depth -= 1
                 if depth == 0 and start >= 0:
-                    _debug("tokens += grouped %r" % text[start:pos])
+                    Core.debug("tokens += grouped %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
             elif char in " \t\r\n":
                 if depth == 0 and start >= 0:
-                    _debug("tokens += word %r" % text[start:pos])
+                    Core.debug("tokens += word %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
             else:
                 if start < 0:
                     start = pos
-        _debug("after parsing, depth=%r start=%r" % (depth, start))
+        Core.debug("after parsing, depth=%r start=%r" % (depth, start))
         if quoted:
             raise FilterSyntaxError("unclosed %r quote" % quoted)
         elif depth > 0:
@@ -64,9 +63,9 @@ class Filter(object):
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
         else:
             if start >= 0 and start <= pos:
-                _debug("tokens += final %r" % text[start:])
+                Core.debug("tokens += final %r" % text[start:])
                 tokens.append(text[start:])
-            _debug("parse output: %r" % tokens)
+            Core.debug("parse output: %r" % tokens)
             return tokens
 
     @staticmethod
@@ -81,7 +80,7 @@ class Filter(object):
     @staticmethod
     def compile(db, pattern):
         tokens = Filter.parse(pattern)
-        _debug("parsing filter %r -> %r", pattern, tokens)
+        Core.debug("parsing filter %r -> %r", pattern, tokens)
 
         op, *args = tokens
         if len(args) > 0:
@@ -118,7 +117,7 @@ class Filter(object):
                 return ItemUuidFilter(args[0])
             # etc.
             else:
-                _debug("unknown operator %r in (%s), assuming AND" % (op, pattern))
+                Core.debug("unknown operator %r in (%s), assuming AND" % (op, pattern))
                 filters = [Filter.compile(db, x) for x in tokens]
                 return ConjunctionFilter(*filters)
         elif " " in op or "(" in op or ")" in op:
@@ -142,7 +141,7 @@ class Filter(object):
             filter = Filter.compile(db, text)
         except FilterSyntaxError as e:
             Core.die("syntax error in filter: %s" % e.args)
-        _debug("compiled filter: %s", filter)
+        Core.debug("compiled filter: %s", filter)
         return db.find(filter)
 
     @staticmethod
@@ -163,16 +162,16 @@ class Filter(object):
                 filter = Filter.compile(db, arg)
         except FilterSyntaxError as e:
             Core.die("syntax error in filter: %s" % e.args)
-        _debug("compiled filter: %s", filter)
+        Core.debug("compiled filter: %s", filter)
         return filter
 
     @staticmethod
     def _cli_compile_and_search(db, arg, fmt=None):
         filter = Filter._cli_compile(db, arg)
         if fmt:
-            _debug("applying extra filter: %r", fmt)
+            Core.debug("applying extra filter: %r", fmt)
             filter = Filter.compile(db, fmt % filter)
-            _debug("recompiled filter: %s", filter)
+            Core.debug("recompiled filter: %s", filter)
         return db.find(filter)
 
 class PatternFilter(Filter):
@@ -192,7 +191,7 @@ class PatternFilter(Filter):
 
     @staticmethod
     def compile(db, pattern):
-        _debug("compiling pattern %r", pattern)
+        Core.debug("compiling pattern %r", pattern)
 
         func = None
 
@@ -205,7 +204,7 @@ class PatternFilter(Filter):
                 if attr_is_reflink(attr) and glob.startswith("#"):
                     try:
                         value = db.expand_attr_cb(attr, glob)
-                        _debug("expanded match value %r to %r" % (glob, value))
+                        Core.debug("expanded match value %r to %r" % (glob, value))
                         func = lambda entry: value in entry.attributes.get(attr, [])
                     except IndexError:
                         func = lambda entry: False
