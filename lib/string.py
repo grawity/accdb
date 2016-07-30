@@ -50,14 +50,6 @@ def str_split_escaped(string, sep, max=0):
     Core.debug("str_split: -> %r", out)
     return out
 
-def str_split_qwords(arg):
-    Core.debug("noop for %r" % arg)
-    return arg
-
-def str_join_qwords(arg):
-    Core.debug("noop for %r" % arg)
-    return arg
-
 def expand_range(string):
     items = []
     for m, n in split_ranges(string):
