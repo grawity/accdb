@@ -364,7 +364,10 @@ class Cmd(object):
 
     def do_tag(self, argv):
         """Add or remove tags to an entry"""
-        query, *tags = argv
+        try:
+            query, *tags = argv
+        except ValueError:
+            Core.die("not enough arguments")
 
         add_tags = {t[1:] for t in tags if t.startswith("+")}
         rem_tags = {t[1:] for t in tags if t.startswith("-")}
@@ -390,10 +393,13 @@ class Cmd(object):
 
     def do_set(self, argv):
         """Change attributes of an entry"""
-        query, *args = argv
-        num = 0
+        try:
+            query, *args = argv
+        except ValueError:
+            Core.die("not enough arguments")
 
         changes = Changeset(args, key_alias=attr_names)
+        num = 0
         for entry in Filter._compile_and_search(db, query):
             changes.apply_to(entry.attributes, transform_cb=entry.expand_attr_cb)
             entry.sync_names()
