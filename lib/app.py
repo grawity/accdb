@@ -543,7 +543,7 @@ def main():
         if not Core._in_debug_mode():
             db.flush()
             if "git" in db.flags:
-                db_git_backup(db, summary="accdb %s" % cmd)
+                db_git_backup(db, summary="accdb %s" % str_join_qwords(sys.argv[1:]))
             if "backup" in db.flags:
                 db_gpg_backup(db, db_backup_path)
         else:
