@@ -540,7 +540,7 @@ def main():
     interp.call(sys.argv[1:])
 
     if db.modified:
-        if not Core._debug_mode:
+        if not Core._in_debug_mode():
             db.flush()
             if "git" in db.flags:
                 db_git_backup(db, summary="accdb %s" % cmd)
