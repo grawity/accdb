@@ -404,7 +404,10 @@ class AttributeFilter(Filter):
 
     def __str__(self):
         if self.value is None:
-            return "(ATTR %s %s)" % (self.mode, self.attr)
+            if self.mode == ":exact":
+                return "(ATTR %s)" % self.attr
+            else:
+                return "(ATTR %s %s)" % (self.mode, self.attr)
         else:
             return "(ATTR %s %s %s)" % (self.attr, self.mode, self.value)
 
