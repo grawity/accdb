@@ -126,11 +126,12 @@ class Filter(object):
             # etc.
             elif op in {"ANY", "any"}:
                 if len(args) == 1:
+                    mode = ":glob" if is_glob(args[0]) else ":exact"
                     return DisjunctionFilter(
-                        ItemNameFilter(":glob", *args),
-                        AttributeFilter(":glob", *args),
-                        AttributeFilter("*", ":glob", *args),
-                        TagFilter(":glob", *args),
+                        ItemNameFilter(mode, *args),
+                        AttributeFilter(mode, *args),
+                        AttributeFilter("*", mode, *args),
+                        TagFilter(mode, *args),
                     )
                 elif len(args) == 2:
                     return DisjunctionFilter(
@@ -301,8 +302,8 @@ class ItemUuidFilter(Filter):
 class ItemNameFilter(Filter):
     def __init__(self, *args):
         if len(args) == 1:
-            value, = args
             mode = ":glob"
+            value, = args
         elif len(args) == 2:
             mode, value = args
         elif len(args) >= 3:
