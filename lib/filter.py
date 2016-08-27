@@ -348,6 +348,24 @@ class AttributeFilter(Filter):
                 Core.trace("compiled to [attrs ~ %r]" % regex)
             else:
                 raise FilterSyntaxError("unknown attr-mode %r for 'ATTR'" % mode)
+        elif attr == "*":
+            if mode in {":exact", "="}:
+                self.mode = ":exact"
+                self.test = lambda entry: any(value in vs
+                                              for vs in entry.attributes.values())
+                Core.trace("compiled to [any = %r]" % value)
+            elif mode in {":glob", "*="}:
+                self.mode = ":glob"
+                regex = re_compile_glob(value)
+                self.test = lambda entry: any(any(regex.search(v) for v in vs)
+                                              for vs in entry.attributes.values())
+                Core.trace("compiled to [any * %r]" % regex)
+            elif mode in {":regex", "~"}:
+                self.mode = ":regex"
+                regex = re.compile(value, re.I | re.U)
+                self.test = lambda entry: any(any(regex.search(v) for v in vs)
+                                              for vs in entry.attributes.values())
+                Core.trace("compiled to [any ~ %r]" % regex)
         else:
             if mode in {":exact", "="}:
                 self.mode = ":exact"

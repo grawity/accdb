@@ -30,6 +30,8 @@ Only date attributes currently support `:gt` and `:lt` matches; the value can
 be an absolute date in `YYYY-MM-DD` format, or a relative date like `now` or
 `now±D`.
 
+Experimental: If name is `*`, all attributes' values are checked.
+
 ### ITEM
 
 Syntax: `ITEM <number>`
