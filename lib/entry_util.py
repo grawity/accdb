@@ -71,7 +71,7 @@ class WiFiParameters(object):
     def _escape(self, text, quote=True):
         for char in "\\;,:\"":
             text = text.replace(char, "\\" + char)
-        if quote and len(text) % 2 == 0 and re.match(r"^[0-9A-F]+$", text, re.I):
+        if quote and re.match(r"^([0-9A-F][0-9A-F])+$", text, re.I):
             text = '"%s"' % text
         return text
 
