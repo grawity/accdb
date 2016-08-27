@@ -111,6 +111,10 @@ class Filter(object):
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'ITEMRANGE'")
                 return ItemNumberRangeFilter(args[0])
+            elif op in {"NAME", "name"}:
+                if len(args) > 2:
+                    raise FilterSyntaxError("too many arguments for '%r'" % op)
+                return ItemNameFilter(*args)
             elif op in {"PATTERN", "pattern"}:
                 return PatternFilter(db, " ".join(args))
             elif op in {"TAG", "tag"}:
@@ -245,9 +249,7 @@ class PatternFilter(Filter):
             func = lambda entry: any(regex.search(v) for v in entry.names)
             Core.trace("-- compiled to (entry.names =~ %r)" % regex)
         elif pattern.startswith("="):
-            match = pattern[1:].casefold()
-            func = lambda entry: any(v.casefold() == match for v in entry.names)
-            Core.trace("-- compiled to (%r in entry.names)" % match)
+            func = ItemNameFilter(":exact", pattern[1:])
         elif pattern.startswith(":"):
             if pattern == ":expired":
                 func = Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
@@ -258,11 +260,9 @@ class PatternFilter(Filter):
         elif pattern.startswith("{"):
             func = ItemUuidFilter(pattern)
         else:
-            if "*" not in pattern:
-                pattern = "*" + pattern + "*"
-            regex = re_compile_glob(pattern)
-            func = lambda entry: any(regex.search(v) for v in entry.names)
-            Core.trace("-- compiled to (entry.names =~ %r)" % regex)
+            if not is_glob(pattern):
+                pattern = "*%s*" % pattern
+            func = ItemNameFilter(":glob", pattern)
 
         return func
 
@@ -304,6 +304,36 @@ class ItemUuidFilter(Filter):
 
     def __str__(self):
         return "(UUID %s)" % self.value
+
+class ItemNameFilter(Filter):
+    def __init__(self, *args):
+        if len(args) == 1:
+            value, = args
+            mode = ":glob"
+        elif len(args) == 2:
+            mode, value = args
+        elif len(args) >= 3:
+            raise FilterSyntaxError("too many arguments for %r" % "NAME")
+        else:
+            raise FilterSyntaxError("not enough arguments for %r" % "NAME")
+
+        self.mode = mode
+        self.value = value
+
+        if mode == ":exact":
+            value = value.casefold()
+            self.test = lambda entry: any(v.casefold() == value for v in entry.names)
+        elif mode == ":glob":
+            regex = re_compile_glob(value)
+            self.test = lambda entry: any(regex.search(v) for v in entry.names)
+        else:
+            raise FilterSyntaxError("unknown mode %r for %r" % (mode, "NAME"))
+
+    def __str__(self):
+        if self.mode == ":glob":
+            return "(NAME %s)" % self.value
+        else:
+            return "(NAME %s %s)" % (self.mode, self.value)
 
 class AttributeFilter(Filter):
     def __init__(self, attr, mode=None, value=None):
