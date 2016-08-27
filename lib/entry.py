@@ -152,10 +152,12 @@ class Entry(object):
         else:
             f = lambda arg, fmt: arg
 
+        paren_fmt = "38;5;244"
+
         data = ""
 
         if itemno and self.itemno:
-            data += "%s\n" % f("(item %s)" % self.itemno, "38;5;244")
+            data += "%s\n" % f("(item %s)" % self.itemno, paren_fmt)
 
         data += "= %s\n" % f(self.name, "38;5;50")
 
@@ -166,11 +168,21 @@ class Entry(object):
             if self.uuid:
                 data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
+            if storage or (not conceal):
+                hidden_attrs = []
+            else:
+                hidden_attrs = ["@hidden"]
+                hidden_attrs += self.attributes.get("@hidden", [])
+            n_hidden = 0
+
             for key in sort_attrs(self):
                 for value in self.attributes[key]:
                     key = translate_attr(key)
                     desc = None
-                    if attr_is_private(key):
+                    if attr_is_hidden(key, hidden_attrs):
+                        n_hidden += 1
+                        continue
+                    elif attr_is_private(key):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
                         if storage:
@@ -208,6 +220,9 @@ class Entry(object):
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
                     if desc and not storage:
                         data += "\t%s\n" % f(desc, "38;5;244")
+
+            if n_hidden:
+                data += "\t%s\n" % f("(%s hidden attributes)" % n_hidden, paren_fmt)
 
         if self.tags:
             tags = list(self.tags)

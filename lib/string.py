@@ -72,6 +72,11 @@ def re_compile_glob(glob, flags=None):
         flags = re.I
     return re.compile(fnmatch.translate(glob), flags | re.U)
 
+def match_globs(string, globs):
+    if not globs:
+        return False
+    return any(fnmatch.fnmatch(string, glob) for glob in globs)
+
 def encode_psk(b):
     return base64.b32encode(b).decode("us-ascii").rstrip("=")
 
