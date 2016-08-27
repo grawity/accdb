@@ -78,7 +78,9 @@ Legacy syntax wrapping ATTR, NAME, TAG, UUID filters.
 
 ### TAG
 
-Syntax: `TAG <name>`
+Syntax: `TAG [modifier] <name>`
+
+Modifier: `:exact`, `:glob`, `:regex`
 
 Shortcut: `+name`
 

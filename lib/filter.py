@@ -429,24 +429,55 @@ class AttributeFilter(Filter):
             return AttributeFilter(":exact", attr)
 
 class TagFilter(Filter):
-    def __init__(self, pattern):
-        self.value = pattern
-
-        if self.value == "":
-            self.test = lambda entry: len(entry.tags) == 0
-        elif self.value == "*":
-            self.test = lambda entry: len(entry.tags) > 0
-        elif is_glob(self.value):
-            self.regex = re_compile_glob(self.value)
-            self.test = lambda entry: any(self.regex.match(tag) for tag in entry.tags)
+    def __init__(self, *args):
+        if len(args) == 1:
+            mode = None
+            value, = args
+        elif len(args) == 2:
+            mode, value = args
+        elif len(args) >= 3:
+            raise FilterSyntaxError("too many arguments for %r" % "TAG")
         else:
-            self.test = lambda entry: self.value in entry.tags
+            raise FilterSyntaxError("not enough arguments for %r" % "TAG")
+
+        self.mode = mode
+        self.value = value
+
+        if mode is None:
+            if value == "":
+                self.test = lambda entry: len(entry.tags) == 0
+            elif value == "*":
+                self.test = lambda entry: len(entry.tags) > 0
+            elif is_glob(value):
+                self.mode = ":glob"
+                regex = re_compile_glob(self.value)
+                self.test = lambda entry: any(regex.match(t) for t in entry.tags)
+            else:
+                self.mode = ":exact"
+                self.test = lambda entry: value in entry.tags
+        else:
+            if mode in {":exact", "="}:
+                self.mode = ":exact"
+                self.test = lambda entry: value in entry.tags
+            elif mode in {":glob"}:
+                self.mode = ":glob"
+                regex = re_compile_glob(value)
+                self.test = lambda entry: any(regex.match(t) for t in entry.tags)
+            elif mode in {":regex", "~"}:
+                self.mode = ":regex"
+                regex = re.compile(value, re.I)
+                self.test = lambda entry: any(regex.match(t) for t in entry.tags)
+            else:
+                raise FilterSyntaxError("unknown mode %r for %r" % (mode, "TAG"))
 
     def __str__(self):
-        if self.value == "":
-            return "(NOT (TAG *))"
+        if self.mode is None:
+            if self.value:
+                return "(TAG %s)" % self.value
+            else:
+                return "(NOT (TAG *))"
         else:
-            return "(TAG %s)" % self.value
+            return "(TAG %s %s)" % (self.mode, self.value)
 
 class ConjunctionFilter(Filter):
     def __init__(self, *filters):
