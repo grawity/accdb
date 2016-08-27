@@ -313,13 +313,13 @@ class ItemNameFilter(Filter):
         self.mode = mode
         self.value = value
 
-        if mode == ":exact":
+        if mode in {":exact", "="}:
             value = value.casefold()
             self.test = lambda entry: any(v.casefold() == value for v in entry.names)
-        elif mode == ":glob":
+        elif mode in {":glob"}:
             regex = re_compile_glob(value)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
-        elif mode == ":regex":
+        elif mode in {":regex", "~"}:
             regex = re.compile(value, re.I | re.U)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
         else:
@@ -352,14 +352,14 @@ class AttributeFilter(Filter):
         self.value = value
 
         if value is None:
-            if mode == ":exact":
+            if mode in {":exact", "="}:
                 self.test = lambda entry: attr in entry.attributes
                 Core.trace("compiled to [%r present]" % attr)
-            elif mode == ":glob":
+            elif mode in {":glob"}:
                 regex = re_compile_glob(attr)
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
                 Core.trace("compiled to [attrs ~ %r]" % regex)
-            elif mode == ":regex":
+            elif mode in {":regex", "~"}:
                 regex = re.compile(attr)
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
                 Core.trace("compiled to [attrs ~ %r]" % regex)
@@ -371,7 +371,7 @@ class AttributeFilter(Filter):
                 self.test = lambda entry: any(value in vs
                                               for vs in entry.attributes.values())
                 Core.trace("compiled to [any = %r]" % value)
-            elif mode in {":glob", "*="}:
+            elif mode in {":glob"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
                 self.test = lambda entry: any(any(regex.search(v) for v in vs)
@@ -388,7 +388,7 @@ class AttributeFilter(Filter):
                 self.mode = ":exact"
                 self.test = lambda entry: value in entry.attributes.get(attr, [])
                 Core.trace("compiled to [%r = %r]" % (attr, value))
-            elif mode in {":glob", "*="}:
+            elif mode in {":glob"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
                 self.test = lambda entry: any(regex.search(v)
