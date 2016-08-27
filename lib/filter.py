@@ -419,7 +419,7 @@ class TagFilter(Filter):
             self.test = lambda entry: len(entry.tags) == 0
         elif self.value == "*":
             self.test = lambda entry: len(entry.tags) > 0
-        elif "*" in self.value:
+        elif is_glob(self.value):
             self.regex = re_compile_glob(self.value)
             self.test = lambda entry: any(self.regex.match(tag) for tag in entry.tags)
         else:
