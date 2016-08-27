@@ -13,13 +13,14 @@ attr_names = {
     "mail":     "email",
     "tel":      "phone",
     "ssid":     "wifi.essid",
+    "essid":    "wifi.essid",
     "wifi.ssid":"wifi.essid",
 }
 
 attr_groups = {
-    "object":   ["entity", "host", "uri", "realm"],
+    "object":   ["entity", "host", "uri", "realm", "wifi.essid"],
     "username": ["login", "login.", "username", "nic-hdl", "principal"],
-    "password": ["pass", "!pass"],
+    "password": ["pass"],
     "email":    ["email", "phone"],
 }
 
