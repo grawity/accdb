@@ -322,12 +322,20 @@ class Cmd(object):
         """Rewrite the accounts.db file"""
         db.modified = True
 
-    def do_undo(self, argv):
-        """Revert the last commit to accounts.db"""
-        call_git(db, "revert", "--no-edit", "HEAD")
-
     def do_git(self, argv):
         call_git(db, *argv)
+
+    def do_undo(self, argv):
+        """Revert the last commit to accounts.db"""
+        if db.modified:
+            Core.die("cannot revert unsaved database")
+        call_git(db, "revert", "--no-edit", "HEAD")
+
+    def do_commit(self, argv):
+        if db.modified:
+            Core.die("cannot commit unsaved database")
+        call_git(db, "add", "--all")
+        call_git(db, "commit", *argv)
 
     def do_sort(self, argv):
         """Sort and rewrite the database"""
