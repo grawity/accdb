@@ -67,6 +67,9 @@ def expand_range(string):
         items.extend(range(m, n))
     return items
 
+def is_glob(glob):
+    return ("*" in glob or "?" in glob or "[" in glob)
+
 def re_compile_glob(glob, flags=None):
     if flags is None:
         flags = re.I

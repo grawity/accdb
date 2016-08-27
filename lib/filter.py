@@ -97,6 +97,12 @@ class Filter(object):
                 filter = Filter.compile(db, args[0])
                 return NegationFilter(filter)
             # search filters
+            elif op in {"ATTR", "attr"}:
+                if len(args) < 1:
+                    raise FilterSyntaxError("not enough arguments for '%r'" % op)
+                elif len(args) > 3:
+                    raise FilterSyntaxError("too many arguments for '%r'" % op)
+                return AttributeFilter(*args)
             elif op in {"ITEM", "item"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for 'ITEM'")
@@ -205,50 +211,32 @@ class PatternFilter(Filter):
                     try:
                         value = db.expand_attr_cb(attr, glob)
                         Core.trace("-- expanded match value %r to %r" % (glob, value))
-                        func = lambda entry: value in entry.attributes.get(attr, [])
-                        Core.trace("-- compiled to (%r in entry[%r])" % (value, attr))
+                        func = AttributeFilter(attr, "value-exact", value)
                     except IndexError:
                         Core.trace("-- failed to expand match value %r" % glob)
                         func = ConstantFilter(False)
+                elif is_glob(glob):
+                    func = AttributeFilter(attr, "value-glob", glob)
                 else:
-                    regex = re_compile_glob(glob)
-                    func = lambda entry: any(regex.match(v)
-                                             for v in entry.attributes.get(attr, []))
-                    Core.trace("-- compiled to (entry[%r] =~ %r)" % (attr, regex))
+                    func = AttributeFilter(attr, "value-exact", glob)
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
                 attr = translate_attr(attr)
                 try:
-                    regex = re.compile(regex, re.I | re.U)
+                    func = AttributeFilter(attr, "value-regex", regex)
                 except re.error as e:
                     Core.die("invalid regex %r (%s)" % (regex, e))
-                func = lambda entry: any(regex.search(v)
-                                         for v in entry.attributes.get(attr, []))
-                Core.trace("-- compiled to (entry[%r] =~ %r)" % (attr, regex))
             elif "<" in pattern:
                 attr, match = pattern[1:].split("<", 1)
-                if attr.startswith("date."):
-                    func = lambda entry: any(date_cmp(v, match) < 0
-                                             for v in entry.attributes.get(attr, []))
-                    Core.trace("-- compiled to (entry[%r] < %r)" % (attr, match))
-                else:
-                    Core.die("unsupported operator '%s<'" % attr)
+                func = AttributeFilter(attr, "<", match)
             elif ">" in pattern:
                 attr, match = pattern[1:].split(">", 1)
-                if attr.startswith("date."):
-                    func = lambda entry: any(date_cmp(value, match) > 0
-                                             for value in entry.attributes.get(attr, []))
-                    Core.trace("-- compiled to (entry[%r] > %r)" % (attr, match))
-                else:
-                    Core.die("unsupported operator '%s>'" % attr)
+                func = AttributeFilter(attr, ">", match)
             elif "*" in pattern:
-                regex = re_compile_glob(pattern[1:])
-                func = lambda entry: any(regex.match(k) for k in entry.attributes)
-                Core.trace("-- compiled to (entry.attrs =~ %r)" % regex)
+                func = AttributeFilter(pattern[1:], "present-glob")
             else:
                 attr = translate_attr(pattern[1:])
-                func = lambda entry: attr in entry.attributes
-                Core.trace("-- compiled to (%r in entry)" % attr)
+                func = AttributeFilter(attr)
         elif pattern.startswith("~"):
             try:
                 regex = re.compile(pattern[1:], re.I | re.U)
@@ -264,8 +252,7 @@ class PatternFilter(Filter):
             if pattern == ":expired":
                 func = Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
             elif pattern == ":untagged":
-                func = lambda entry: not len(entry.tags)
-                Core.trace("-- compiled to (entry.tags is empty)")
+                func = Filter.compile(db, "NOT (TAG *)")
             else:
                 Core.die("unrecognized pattern %r" % pattern)
         elif pattern.startswith("{"):
@@ -317,6 +304,73 @@ class ItemUuidFilter(Filter):
 
     def __str__(self):
         return "(UUID %s)" % self.value
+
+class AttributeFilter(Filter):
+    def __init__(self, attr, mode=None, value=None):
+        if not mode:
+            mode = "present-glob" if is_glob(attr) else "present"
+
+        self.attr = attr
+        self.mode = mode
+        self.value = value
+
+        # attr present
+        if mode in {"present", "?"}:
+            self.mode = "?"
+            self.test = lambda entry: attr in entry.attributes
+            Core.trace("compiled to [%r present]" % attr)
+        elif mode in {"present-glob", "*?"}:
+            self.mode = "*?"
+            regex = re_compile_glob(attr)
+            self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
+            Core.trace("compiled to [attrs ~ %r]" % regex)
+        elif mode in {"present-regex", "~?"}:
+            self.mode = "~?"
+            regex = re.compile(attr)
+            self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
+            Core.trace("compiled to [attrs ~ %r]" % regex)
+        # value match
+        elif mode in {"value-exact", "value", "="}:
+            self.mode = "="
+            self.test = lambda entry: value in entry.attributes.get(attr, [])
+            Core.trace("compiled to [%r = %r]" % (attr, value))
+        elif mode in {"value-regex", "regex", "~=", "=~", "~"}:
+            self.mode = "~"
+            regex = re.compile(value, re.I | re.U)
+            self.test = lambda entry: any(regex.search(v)
+                                          for v in entry.attributes.get(attr, []))
+            Core.trace("compiled to [%r ~ %r]" % (attr, regex))
+        elif mode in {"value-glob", "glob", "*=", "*"}:
+            self.mode = "*="
+            regex = re_compile_glob(value)
+            self.test = lambda entry: any(regex.search(v)
+                                          for v in entry.attributes.get(attr, []))
+            Core.trace("compiled to [%r * %r]" % (attr, regex))
+        # value misc
+        elif mode in {"value-lt", "<"}:
+            self.mode = "<"
+            if attr.startswith("date."):
+                self.test = lambda entry: any(date_cmp(v, value) < 0
+                                              for v in entry.attributes.get(attr, []))
+                Core.trace("compiled to [%r < %r]" % (attr, value))
+            else:
+                raise FilterSyntaxError("unsupported op %r for attribute %r" % (mode, attr))
+        elif mode in {"value-gt", ">"}:
+            self.mode = ">"
+            if attr.startswith("date."):
+                self.test = lambda entry: any(date_cmp(v, value) > 0
+                                              for v in entry.attributes.get(attr, []))
+                Core.trace("compiled to [%r > %r]" % (attr, value))
+            else:
+                raise FilterSyntaxError("unsupported op %r for attribute %r" % (mode, attr))
+        else:
+            raise FilterSyntaxError("unknown mode %r for 'ATTR'" % mode)
+
+    def __str__(self):
+        if self.value:
+            return "(ATTR %s %s %s)" % (self.attr, self.mode, self.value)
+        else:
+            return "(ATTR %s %s)" % (self.attr, self.mode)
 
 class TagFilter(Filter):
     def __init__(self, pattern):
