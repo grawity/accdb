@@ -191,6 +191,7 @@ class PatternFilter(Filter):
 
         if pattern == "*":
             func = lambda entry: True
+            Core.trace("-- compiled to (TRUE)")
         elif pattern.startswith("@"):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
@@ -198,14 +199,18 @@ class PatternFilter(Filter):
                 if attr_is_reflink(attr) and glob.startswith("#"):
                     try:
                         value = db.expand_attr_cb(attr, glob)
-                        Core.debug("expanded match value %r to %r" % (glob, value))
+                        Core.trace("-- expanded match value %r to %r" % (glob, value))
                         func = lambda entry: value in entry.attributes.get(attr, [])
+                        Core.trace("-- compiled to (%r in entry[%r])" % (value, attr))
                     except IndexError:
+                        Core.trace("-- failed to expand match value %r" % glob)
                         func = lambda entry: False
+                        Core.trace("-- compiled to (FALSE)")
                 else:
                     regex = re_compile_glob(glob)
-                    func = lambda entry: any(regex.match(value)
-                                             for value in entry.attributes.get(attr, []))
+                    func = lambda entry: any(regex.match(v)
+                                             for v in entry.attributes.get(attr, []))
+                    Core.trace("-- compiled to (entry[%r] =~ %r)" % (attr, regex))
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
                 attr = translate_attr(attr)
@@ -213,13 +218,15 @@ class PatternFilter(Filter):
                     regex = re.compile(regex, re.I | re.U)
                 except re.error as e:
                     Core.die("invalid regex %r (%s)" % (regex, e))
-                func = lambda entry: any(regex.search(value)
-                                         for value in entry.attributes.get(attr, []))
+                func = lambda entry: any(regex.search(v)
+                                         for v in entry.attributes.get(attr, []))
+                Core.trace("-- compiled to (entry[%r] =~ %r)" % (attr, regex))
             elif "<" in pattern:
                 attr, match = pattern[1:].split("<", 1)
                 if attr.startswith("date."):
-                    func = lambda entry: any(date_cmp(value, match) < 0
-                                             for value in entry.attributes.get(attr, []))
+                    func = lambda entry: any(date_cmp(v, match) < 0
+                                             for v in entry.attributes.get(attr, []))
+                    Core.trace("-- compiled to (entry[%r] < %r)" % (attr, match))
                 else:
                     Core.die("unsupported operator '%s<'" % attr)
             elif ">" in pattern:
@@ -227,33 +234,40 @@ class PatternFilter(Filter):
                 if attr.startswith("date."):
                     func = lambda entry: any(date_cmp(value, match) > 0
                                              for value in entry.attributes.get(attr, []))
+                    Core.trace("-- compiled to (entry[%r] > %r)" % (attr, match))
                 else:
-                    Core.die("unsupported operator '%s<'" % attr)
+                    Core.die("unsupported operator '%s>'" % attr)
             elif "*" in pattern:
                 regex = re_compile_glob(pattern[1:])
-                func = lambda entry: any(regex.match(attr) for attr in entry.attributes)
+                func = lambda entry: any(regex.match(k) for k in entry.attributes)
+                Core.trace("-- compiled to (entry.attrs =~ %r)" % regex)
             else:
                 attr = translate_attr(pattern[1:])
                 func = lambda entry: attr in entry.attributes
+                Core.trace("-- compiled to (%r in entry)" % attr)
         elif pattern.startswith("~"):
             try:
                 regex = re.compile(pattern[1:], re.I | re.U)
             except re.error as e:
                 Core.die("invalid regex %r (%s)" % (pattern[1:], e))
-            func = lambda entry: any(regex.search(value) for value in entry.names)
+            func = lambda entry: any(regex.search(v) for v in entry.names)
+            Core.trace("-- compiled to (entry.names =~ %r)" % regex)
         elif pattern.startswith("="):
             match = pattern[1:].casefold()
-            func = lambda entry: any(value.casefold() == match for value in entry.names)
+            func = lambda entry: any(v.casefold() == match for v in entry.names)
+            Core.trace("-- compiled to (%r in entry.names)" % match)
         elif pattern.startswith(":"):
             if pattern == ":expired":
                 func = lambda entry: (
                             "date.expiry" in entry.attributes
                             and "expired" not in entry.tags
-                            and any(date_cmp(value, "now+30") < 0
-                                    for value in entry.attributes["date.expiry"])
+                            and any(date_cmp(v, "now+30") < 0
+                                    for v in entry.attributes["date.expiry"])
                         )
+                Core.trace("-- compiled to (AND @date.expiry (NOT +expired) (@date.expiry<now+30)")
             elif pattern == ":untagged":
                 func = lambda entry: not len(entry.tags)
+                Core.trace("-- compiled to (entry.tags is empty)")
             else:
                 Core.die("unrecognized pattern %r" % pattern)
         elif pattern.startswith("{"):
@@ -262,7 +276,8 @@ class PatternFilter(Filter):
             if "*" not in pattern:
                 pattern = "*" + pattern + "*"
             regex = re_compile_glob(pattern)
-            func = lambda entry: any(regex.search(value) for value in entry.names)
+            func = lambda entry: any(regex.search(v) for v in entry.names)
+            Core.trace("-- compiled to (entry.names =~ %r)" % regex)
 
         return func
 
