@@ -126,6 +126,25 @@ class Filter(object):
                     raise FilterSyntaxError("too many arguments for 'UUID'")
                 return ItemUuidFilter(args[0])
             # etc.
+            elif op in {"ANY", "any"}:
+                if len(args) == 1:
+                    return DisjunctionFilter(
+                        ItemNameFilter(":glob", *args),
+                        AttributeFilter(":glob", *args),
+                        AttributeFilter("*", ":glob", *args),
+                        TagFilter(":glob", *args),
+                    )
+                elif len(args) == 2:
+                    return DisjunctionFilter(
+                        ItemNameFilter(*args),
+                        AttributeFilter(*args),
+                        AttributeFilter("*", *args),
+                        TagFilter(*args),
+                    )
+                elif len(args) >= 3:
+                    raise FilterSyntaxError("too many arguments for %r" % op)
+                else:
+                    raise FilterSyntaxError("not enough arguments for %r" % op)
             elif op in {"TRUE", "true", "FALSE", "false"}:
                 raise FilterSyntaxError("too many arguments for %r" % op)
             else:

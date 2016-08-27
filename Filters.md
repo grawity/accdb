@@ -6,6 +6,15 @@ Syntax: `AND <filter>...`
 
 Shortcut: `& <filter>...`
 
+### ANY
+
+Syntax: `ANY [modifier] <text>`
+
+Modifier: `:exact`, `:glob` (default), `:regex`
+
+Experimental. Combines `NAME`, `ATTR`, `ATTR *`, and `TAG` filters, essentially
+searching anywhere in the item's data.
+
 ### ATTR (names)
 
 Syntax: `ATTR [modifier] <name>`
