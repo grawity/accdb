@@ -262,10 +262,7 @@ class PatternFilter(Filter):
             Core.trace("-- compiled to (%r in entry.names)" % match)
         elif pattern.startswith(":"):
             if pattern == ":expired":
-                func = ConjunctionFilter(
-                    Filter.compile(db, "NOT +expired"),
-                    Filter.compile(db, "@date.expiry<now+30")
-                )
+                func = Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
             elif pattern == ":untagged":
                 func = lambda entry: not len(entry.tags)
                 Core.trace("-- compiled to (entry.tags is empty)")
