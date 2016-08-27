@@ -153,6 +153,11 @@ Dumping the entire database:
 
   - `(` and `)` for grouping patterns (Lisp/Logo style)
 
+  - `:expired` – shortcut for all entries having `date.expired` in the next
+    month or in the past, but not yet acknowledged (tag with `+expired`)
+
+  - `:untagged` – shortcut for all entries with no tags
+
 For `ref.*` attributes, `@foo=#123` can be used to match by referenced item
 number instead of UUID.
 
