@@ -352,7 +352,7 @@ class AttributeFilter(Filter):
                                               for v in entry.attributes.get(attr, []))
                 Core.trace("compiled to [%r * %r]" % (attr, regex))
             elif mode in {":regex", "~"}:
-                self.mode = "~"
+                self.mode = ":regex"
                 regex = re.compile(value, re.I | re.U)
                 self.test = lambda entry: any(regex.search(v)
                                               for v in entry.attributes.get(attr, []))
