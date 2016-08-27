@@ -243,11 +243,9 @@ class PatternFilter(Filter):
                 func = AttributeFilter(attr)
         elif pattern.startswith("~"):
             try:
-                regex = re.compile(pattern[1:], re.I | re.U)
+                func = ItemNameFilter(":regex", pattern[1:])
             except re.error as e:
                 Core.die("invalid regex %r (%s)" % (pattern[1:], e))
-            func = lambda entry: any(regex.search(v) for v in entry.names)
-            Core.trace("-- compiled to (entry.names =~ %r)" % regex)
         elif pattern.startswith("="):
             func = ItemNameFilter(":exact", pattern[1:])
         elif pattern.startswith(":"):
@@ -325,6 +323,9 @@ class ItemNameFilter(Filter):
             self.test = lambda entry: any(v.casefold() == value for v in entry.names)
         elif mode == ":glob":
             regex = re_compile_glob(value)
+            self.test = lambda entry: any(regex.search(v) for v in entry.names)
+        elif mode == ":regex":
+            regex = re.compile(value, re.I | re.U)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
         else:
             raise FilterSyntaxError("unknown mode %r for %r" % (mode, "NAME"))
