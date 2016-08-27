@@ -142,6 +142,8 @@ class Filter(object):
             return ItemNumberFilter(op[1:])
         elif op.startswith("{"):
             return ItemUuidFilter(op)
+        elif op.startswith("@"):
+            return AttributeFilter.compile(db, op[1:])
         elif op.startswith("+"):
             return TagFilter(op[1:])
         elif op.isdecimal():
