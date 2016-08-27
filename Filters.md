@@ -24,8 +24,11 @@ Modifier: `:exact =`, `:glob`, `:regex ~`, `:gt >`, `:lt <`
 
 Shortcut: `@name=value` (glob), `@name~value` (regex), `@name>value` (gt), `@name<value` (lt)
 
-Search for entries where this attribute matches the given value. Only date
-attributes currently support `:gt` and `:lt` matches.
+Search for entries where this attribute matches the given value.
+
+Only date attributes currently support `:gt` and `:lt` matches; the value can
+be an absolute date in `YYYY-MM-DD` format, or a relative date like `now` or
+`now±D`.
 
 ### ITEM
 
