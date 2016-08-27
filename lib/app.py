@@ -528,8 +528,7 @@ def main():
 
     db_path = os.environ.get("ACCDB",
                 os.path.join(
-                    os.environ.get("XDG_DATA_HOME",
-                        os.path.expanduser("~/.local/share")),
+                    Env.xdg_data_home(),
                     "nullroute.eu.org",
                     "accounts.db.txt"))
 
