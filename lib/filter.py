@@ -215,19 +215,19 @@ class PatternFilter(Filter):
                     try:
                         value = db.expand_attr_cb(attr, glob)
                         Core.trace("-- expanded match value %r to %r" % (glob, value))
-                        func = AttributeFilter(attr, "value-exact", value)
+                        func = AttributeFilter(attr, ":exact", value)
                     except IndexError:
                         Core.trace("-- failed to expand match value %r" % glob)
                         func = ConstantFilter(False)
                 elif is_glob(glob):
-                    func = AttributeFilter(attr, "value-glob", glob)
+                    func = AttributeFilter(attr, ":glob", glob)
                 else:
-                    func = AttributeFilter(attr, "value-exact", glob)
+                    func = AttributeFilter(attr, ":exact", glob)
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
                 attr = translate_attr(attr)
                 try:
-                    func = AttributeFilter(attr, "value-regex", regex)
+                    func = AttributeFilter(attr, ":regex", regex)
                 except re.error as e:
                     Core.die("invalid regex %r (%s)" % (regex, e))
             elif "<" in pattern:
@@ -237,7 +237,7 @@ class PatternFilter(Filter):
                 attr, match = pattern[1:].split(">", 1)
                 func = AttributeFilter(attr, ">", match)
             elif "*" in pattern:
-                func = AttributeFilter(pattern[1:], "present-glob")
+                func = AttributeFilter(":glob", pattern[1:])
             else:
                 attr = translate_attr(pattern[1:])
                 func = AttributeFilter(attr)
@@ -336,71 +336,80 @@ class ItemNameFilter(Filter):
             return "(NAME %s %s)" % (self.mode, self.value)
 
 class AttributeFilter(Filter):
-    def __init__(self, attr, mode=None, value=None):
-        if not mode:
-            mode = "present-glob" if is_glob(attr) else "present"
+    def __init__(self, *args):
+        if len(args) == 1:
+            mode = ":exact"
+            attr, = args
+            value = None
+        elif len(args) == 2:
+            mode, attr = args
+            value = None
+        elif len(args) == 3:
+            attr, mode, value = args
+        elif len(args) >= 4:
+            raise FilterSyntaxError("too many arguments for %r" % "ATTR")
+        else:
+            raise FilterSyntaxError("not enough arguments for %r" % "ATTR")
 
         self.attr = attr
         self.mode = mode
         self.value = value
 
-        # attr present
-        if mode in {"present", "?"}:
-            self.mode = "?"
-            self.test = lambda entry: attr in entry.attributes
-            Core.trace("compiled to [%r present]" % attr)
-        elif mode in {"present-glob", "*?"}:
-            self.mode = "*?"
-            regex = re_compile_glob(attr)
-            self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
-            Core.trace("compiled to [attrs ~ %r]" % regex)
-        elif mode in {"present-regex", "~?"}:
-            self.mode = "~?"
-            regex = re.compile(attr)
-            self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
-            Core.trace("compiled to [attrs ~ %r]" % regex)
-        # value match
-        elif mode in {"value-exact", "value", "="}:
-            self.mode = "="
-            self.test = lambda entry: value in entry.attributes.get(attr, [])
-            Core.trace("compiled to [%r = %r]" % (attr, value))
-        elif mode in {"value-regex", "regex", "~=", "=~", "~"}:
-            self.mode = "~"
-            regex = re.compile(value, re.I | re.U)
-            self.test = lambda entry: any(regex.search(v)
-                                          for v in entry.attributes.get(attr, []))
-            Core.trace("compiled to [%r ~ %r]" % (attr, regex))
-        elif mode in {"value-glob", "glob", "*=", "*"}:
-            self.mode = "*="
-            regex = re_compile_glob(value)
-            self.test = lambda entry: any(regex.search(v)
-                                          for v in entry.attributes.get(attr, []))
-            Core.trace("compiled to [%r * %r]" % (attr, regex))
-        # value misc
-        elif mode in {"value-lt", "<"}:
-            self.mode = "<"
-            if attr.startswith("date."):
-                self.test = lambda entry: any(date_cmp(v, value) < 0
-                                              for v in entry.attributes.get(attr, []))
-                Core.trace("compiled to [%r < %r]" % (attr, value))
+        if value is None:
+            if mode == ":exact":
+                self.test = lambda entry: attr in entry.attributes
+                Core.trace("compiled to [%r present]" % attr)
+            elif mode == ":glob":
+                regex = re_compile_glob(attr)
+                self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
+                Core.trace("compiled to [attrs ~ %r]" % regex)
+            elif mode == ":regex":
+                regex = re.compile(attr)
+                self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
+                Core.trace("compiled to [attrs ~ %r]" % regex)
             else:
-                raise FilterSyntaxError("unsupported op %r for attribute %r" % (mode, attr))
-        elif mode in {"value-gt", ">"}:
-            self.mode = ">"
-            if attr.startswith("date."):
-                self.test = lambda entry: any(date_cmp(v, value) > 0
-                                              for v in entry.attributes.get(attr, []))
-                Core.trace("compiled to [%r > %r]" % (attr, value))
-            else:
-                raise FilterSyntaxError("unsupported op %r for attribute %r" % (mode, attr))
+                raise FilterSyntaxError("unknown attr-mode %r for 'ATTR'" % mode)
         else:
-            raise FilterSyntaxError("unknown mode %r for 'ATTR'" % mode)
+            if mode in {":exact", "="}:
+                self.mode = ":exact"
+                self.test = lambda entry: value in entry.attributes.get(attr, [])
+                Core.trace("compiled to [%r = %r]" % (attr, value))
+            elif mode in {":glob", "*="}:
+                self.mode = ":glob"
+                regex = re_compile_glob(value)
+                self.test = lambda entry: any(regex.search(v)
+                                              for v in entry.attributes.get(attr, []))
+                Core.trace("compiled to [%r * %r]" % (attr, regex))
+            elif mode in {":regex", "~"}:
+                self.mode = "~"
+                regex = re.compile(value, re.I | re.U)
+                self.test = lambda entry: any(regex.search(v)
+                                              for v in entry.attributes.get(attr, []))
+                Core.trace("compiled to [%r ~ %r]" % (attr, regex))
+            elif mode in {":lt", "<"}:
+                self.mode = "<"
+                if attr.startswith("date."):
+                    self.test = lambda entry: any(date_cmp(v, value) < 0
+                                                  for v in entry.attributes.get(attr, []))
+                    Core.trace("compiled to [%r < %r]" % (attr, value))
+                else:
+                    raise FilterSyntaxError("unsupported op %r %r " % (attr, mode))
+            elif mode in {":gt", ">"}:
+                self.mode = ">"
+                if attr.startswith("date."):
+                    self.test = lambda entry: any(date_cmp(v, value) > 0
+                                                  for v in entry.attributes.get(attr, []))
+                    Core.trace("compiled to [%r > %r]" % (attr, value))
+                else:
+                    raise FilterSyntaxError("unsupported op %r %r " % (attr, mode))
+            else:
+                raise FilterSyntaxError("unknown value-mode %r for 'ATTR'" % mode)
 
     def __str__(self):
-        if self.value:
-            return "(ATTR %s %s %s)" % (self.attr, self.mode, self.value)
+        if self.value is None:
+            return "(ATTR %s %s)" % (self.mode, self.attr)
         else:
-            return "(ATTR %s %s)" % (self.attr, self.mode)
+            return "(ATTR %s %s %s)" % (self.attr, self.mode, self.value)
 
 class TagFilter(Filter):
     def __init__(self, pattern):
