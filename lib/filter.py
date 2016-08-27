@@ -201,44 +201,12 @@ class PatternFilter(Filter):
 
     @staticmethod
     def compile(db, pattern):
-        Core.debug("compiling pattern %r", pattern)
+        Core.debug("PatternFilter: compiling %r", pattern)
 
         if pattern == "*":
             return ConstantFilter(True)
         elif pattern.startswith("@"):
-            if "=" in pattern:
-                attr, glob = pattern[1:].split("=", 1)
-                attr = translate_attr(attr)
-                if attr_is_reflink(attr) and glob.startswith("#"):
-                    try:
-                        value = db.expand_attr_cb(attr, glob)
-                        Core.trace("-- expanded match value %r to %r" % (glob, value))
-                        return AttributeFilter(attr, ":exact", value)
-                    except IndexError:
-                        Core.trace("-- failed to expand match value %r" % glob)
-                        return ConstantFilter(False)
-                elif is_glob(glob):
-                    return AttributeFilter(attr, ":glob", glob)
-                else:
-                    return AttributeFilter(attr, ":exact", glob)
-            elif "~" in pattern:
-                attr, regex = pattern[1:].split("~", 1)
-                attr = translate_attr(attr)
-                try:
-                    return AttributeFilter(attr, ":regex", regex)
-                except re.error as e:
-                    Core.die("invalid regex %r (%s)" % (regex, e))
-            elif "<" in pattern:
-                attr, match = pattern[1:].split("<", 1)
-                return AttributeFilter(attr, "<", match)
-            elif ">" in pattern:
-                attr, match = pattern[1:].split(">", 1)
-                return AttributeFilter(attr, ">", match)
-            elif "*" in pattern:
-                return AttributeFilter(":glob", pattern[1:])
-            else:
-                attr = translate_attr(pattern[1:])
-                return AttributeFilter(attr)
+            return AttributeFilter.compile(db, pattern[1:])
         elif pattern.startswith("~"):
             try:
                 return ItemNameFilter(":regex", pattern[1:])
@@ -407,6 +375,44 @@ class AttributeFilter(Filter):
             return "(ATTR %s %s)" % (self.mode, self.attr)
         else:
             return "(ATTR %s %s %s)" % (self.attr, self.mode, self.value)
+
+    @staticmethod
+    def compile(db, arg):
+        Core.debug("AttributeFilter: compiling %r", arg)
+
+        if "=" in arg:
+            attr, glob = arg.split("=", 1)
+            attr = translate_attr(attr)
+            if attr_is_reflink(attr) and glob.startswith("#"):
+                try:
+                    value = db.expand_attr_cb(attr, glob)
+                    Core.trace("-- expanded match value %r to %r" % (glob, value))
+                    return AttributeFilter(attr, ":exact", value)
+                except IndexError:
+                    Core.trace("-- failed to expand match value %r" % glob)
+                    return ConstantFilter(False)
+            elif is_glob(glob):
+                return AttributeFilter(attr, ":glob", glob)
+            else:
+                return AttributeFilter(attr, ":exact", glob)
+        elif "~" in arg:
+            attr, regex = arg.split("~", 1)
+            attr = translate_attr(attr)
+            try:
+                return AttributeFilter(attr, ":regex", regex)
+            except re.error as e:
+                Core.die("invalid regex %r (%s)" % (regex, e))
+        elif "<" in arg:
+            attr, match = arg.split("<", 1)
+            return AttributeFilter(attr, "<", match)
+        elif ">" in arg:
+            attr, match = arg.split(">", 1)
+            return AttributeFilter(attr, ">", match)
+        elif "*" in arg:
+            return AttributeFilter(":glob", arg)
+        else:
+            attr = translate_attr(arg)
+            return AttributeFilter(":exact", attr)
 
 class TagFilter(Filter):
     def __init__(self, pattern):
