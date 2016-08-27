@@ -361,7 +361,7 @@ class AttributeFilter(Filter):
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
                 Core.trace("compiled to [attrs ~ %r]" % regex)
             elif mode in {":regex", "~"}:
-                regex = re.compile(attr)
+                regex = re.compile(attr, re.I)
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
                 Core.trace("compiled to [attrs ~ %r]" % regex)
             else:
