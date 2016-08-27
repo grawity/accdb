@@ -221,7 +221,15 @@ class PatternFilter(Filter):
         elif pattern.startswith("="):
             return ItemNameFilter(":exact", pattern[1:])
         elif pattern.startswith(":"):
-            if pattern == ":expired":
+            if pattern == ":dead":
+                return Filter.compile(db, "AND (NOT +dead) @date.shutdown<now+3")
+            elif pattern == ":dying":
+                return Filter.compile(db, "AND (NOT +dead) @date.shutdown")
+            elif pattern == ":expired":
+                return Filter.compile(db, "OR"
+                                            " (AND (NOT +expired) @date.expiry<now+30)"
+                                            " (AND (NOT +dead) @date.shutdown<now+3)")
+            elif pattern == ":expiring":
                 return Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
             elif pattern == ":untagged":
                 return Filter.compile(db, "NOT (TAG *)")
