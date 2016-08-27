@@ -93,37 +93,35 @@ class Filter(object):
                 return DisjunctionFilter(*filters)
             elif op in {"NOT", "not", "!"}:
                 if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'NOT'")
+                    raise FilterSyntaxError("too many arguments for %r" % op)
                 filter = Filter.compile(db, args[0])
                 return NegationFilter(filter)
             # search filters
             elif op in {"ATTR", "attr"}:
-                if len(args) < 1:
-                    raise FilterSyntaxError("not enough arguments for '%r'" % op)
-                elif len(args) > 3:
-                    raise FilterSyntaxError("too many arguments for '%r'" % op)
+                if len(args) > 3:
+                    raise FilterSyntaxError("too many arguments for %r" % op)
                 return AttributeFilter(*args)
             elif op in {"ITEM", "item"}:
                 if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'ITEM'")
+                    raise FilterSyntaxError("too many arguments for %r" % op)
                 return ItemNumberFilter(args[0])
             elif op in {"ITEMRANGE", "itemrange"}:
                 if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'ITEMRANGE'")
+                    raise FilterSyntaxError("too many arguments for %r" % op)
                 return ItemNumberRangeFilter(args[0])
             elif op in {"NAME", "name"}:
                 if len(args) > 2:
-                    raise FilterSyntaxError("too many arguments for '%r'" % op)
+                    raise FilterSyntaxError("too many arguments for %r" % op)
                 return ItemNameFilter(*args)
             elif op in {"PATTERN", "pattern"}:
                 return PatternFilter(db, " ".join(args))
             elif op in {"TAG", "tag"}:
                 if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'TAG'")
+                    raise FilterSyntaxError("too many arguments for %r" % op)
                 return TagFilter(args[0])
             elif op in {"UUID", "uuid"}:
                 if len(args) > 1:
-                    raise FilterSyntaxError("too many arguments for 'UUID'")
+                    raise FilterSyntaxError("too many arguments for %r" % op)
                 return ItemUuidFilter(args[0])
             # etc.
             elif op in {"ANY", "any"}:
@@ -292,7 +290,7 @@ class ItemUuidFilter(Filter):
         try:
             self.value = uuid.UUID(pattern)
         except ValueError:
-            raise FilterSyntaxError("malformed value for 'UUID'")
+            raise FilterSyntaxError("malformed value for %r" % "UUID")
 
     def test(self, entry):
         return entry.uuid == self.value
@@ -366,7 +364,7 @@ class AttributeFilter(Filter):
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
                 Core.trace("compiled to [attrs ~ %r]" % regex)
             else:
-                raise FilterSyntaxError("unknown attr-mode %r for 'ATTR'" % mode)
+                raise FilterSyntaxError("unknown attr-mode %r for %r" % (mode, "ATTR"))
         elif attr == "*":
             if mode in {":exact", "="}:
                 self.mode = ":exact"
@@ -419,7 +417,7 @@ class AttributeFilter(Filter):
                 else:
                     raise FilterSyntaxError("unsupported op %r %r " % (attr, mode))
             else:
-                raise FilterSyntaxError("unknown value-mode %r for 'ATTR'" % mode)
+                raise FilterSyntaxError("unknown value-mode %r for %r" % (mode, "ATTR"))
 
     def __str__(self):
         if self.value is None:
