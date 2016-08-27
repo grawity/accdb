@@ -168,18 +168,18 @@ class Entry(object):
             if self.uuid:
                 data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
-            if storage or (not conceal):
-                hidden_attrs = []
-            else:
-                hidden_attrs = ["@hidden"]
+            if conceal and (not storage):
+                hidden_attrs = ["@*"]
                 hidden_attrs += self.attributes.get("@hidden", [])
+            else:
+                hidden_attrs = []
             n_hidden = 0
 
             for key in sort_attrs(self):
                 for value in self.attributes[key]:
                     key = translate_attr(key)
                     desc = None
-                    if attr_is_hidden(key, hidden_attrs):
+                    if match_globs(key, hidden_attrs):
                         n_hidden += 1
                         continue
                     elif attr_is_private(key):

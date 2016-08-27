@@ -1,7 +1,5 @@
 import re
 
-from .string import match_globs
-
 attr_names = {
     "@alias":   "@aka",
     "hostname": "host",
@@ -35,10 +33,6 @@ def attr_is_private(name):
 
 def attr_is_reflink(name):
     return name.startswith("ref.")
-
-def attr_is_hidden(name, globs=None):
-    return match_globs(name, globs) \
-        or attr_is_metadata(name)
 
 def translate_attr(name):
     return attr_names.get(name, name)
