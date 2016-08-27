@@ -259,9 +259,8 @@ class Entry(object):
     @property
     def names(self):
         n = [self.name]
-        a = self.attributes.get("@aka")
-        if a:
-            n += a
+        n += self.attributes.get("@aka", [])
+        n += self.attributes.get("wifi.essid", [])
         return n
 
     @property
@@ -313,14 +312,12 @@ class Entry(object):
     @property
     def wpa_params(self):
         essid = self.attributes.get("wifi.essid")
-        if not essid:
-            return None
-
         psk = self.attributes.get("!wifi.psk")
-        if not psk:
-            return None
+        sec = self.attributes.get("wifi.security", [None])
+        hidden = self.attributes.get("wifi.hidden")
 
-        return WiFiParameters(essid[0], psk[0])
+        if essid and psk:
+            return WiFiParameters(essid[0], psk[0], sec[0], hidden)
 
     def sync_names(self, export=False):
         if export:

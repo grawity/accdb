@@ -12,6 +12,8 @@ attr_names = {
     "!pass":    "pass",
     "mail":     "email",
     "tel":      "phone",
+    "ssid":     "wifi.essid",
+    "wifi.ssid":"wifi.essid",
 }
 
 attr_groups = {
@@ -53,10 +55,33 @@ def sort_attrs(entry):
     return names
 
 class WiFiParameters(object):
-    def __init__(self, essid, psk):
+    # https://github.com/zxing/zxing/wiki/Barcode-Contents
+
+    def __init__(self, essid, psk, sectype=None, hidden=False):
+        if sectype is None:
+            sectype = "WPA" if psk else "nopass"
+        elif sectype not in {"WPA", "WEP", "nopass"}:
+            raise ValueError("unknown Wi-Fi security type %r" % sectype)
+
         self.essid = essid
         self.psk = psk
+        self.sectype = sectype
+        self.hidden = hidden
+
+    def _escape(self, text, quote=True):
+        for char in "\\;,:\"":
+            text = text.replace(char, "\\" + char)
+        if quote and len(text) % 2 == 0 and re.match(r"^[0-9A-F]+$", text, re.I):
+            text = '"%s"' % text
+        return text
 
     def make_uri(self):
-        # TODO: handle escaping if any
-        return "WIFI:T:WPA;S:%s;P:%s;;" % (self.essid, self.psk)
+        data = ["S:%s" % self._escape(self.essid)]
+        if self.sectype != "nopass":
+            data += [
+                "T:%s" % self.sectype,
+                "P:%s" % self._escape(self.psk),
+            ]
+        if self.hidden:
+            data += ["H:true"]
+        return "WIFI:" + ";".join(data) + ";"
