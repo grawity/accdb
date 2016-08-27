@@ -116,10 +116,16 @@ class Filter(object):
                     raise FilterSyntaxError("too many arguments for 'UUID'")
                 return ItemUuidFilter(args[0])
             # etc.
+            elif op in {"TRUE", "true", "FALSE", "false"}:
+                raise FilterSyntaxError("too many arguments for %r" % op)
             else:
                 Core.debug("unknown operator %r in (%s), assuming AND" % (op, pattern))
                 filters = [Filter.compile(db, x) for x in tokens]
                 return ConjunctionFilter(*filters)
+        # constant filters
+        elif op in {"TRUE", "true", "FALSE", "false"}:
+            return ConstantFilter(op[0] in "Tt")
+        # shortcut syntaxes
         elif " " in op or "(" in op or ")" in op:
             return Filter.compile(db, op)
         elif op.startswith("#"):
@@ -190,8 +196,7 @@ class PatternFilter(Filter):
         func = None
 
         if pattern == "*":
-            func = lambda entry: True
-            Core.trace("-- compiled to (TRUE)")
+            func = ConstantFilter(True)
         elif pattern.startswith("@"):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
@@ -204,8 +209,7 @@ class PatternFilter(Filter):
                         Core.trace("-- compiled to (%r in entry[%r])" % (value, attr))
                     except IndexError:
                         Core.trace("-- failed to expand match value %r" % glob)
-                        func = lambda entry: False
-                        Core.trace("-- compiled to (FALSE)")
+                        func = ConstantFilter(False)
                 else:
                     regex = re_compile_glob(glob)
                     func = lambda entry: any(regex.match(v)
@@ -369,5 +373,15 @@ class NegationFilter(Filter):
 
     def __str__(self):
         return "(NOT %s)" % self.filter
+
+class ConstantFilter(Filter):
+    def __init__(self, result):
+        self.result = bool(result)
+
+    def test(self, entry):
+        return self.result
+
+    def __str__(self):
+        return "(TRUE)" if self.result else "(FALSE)"
 
 # }}}
