@@ -142,6 +142,8 @@ class Filter(object):
             return ItemNumberFilter(op[1:])
         elif op.startswith("{"):
             return ItemUuidFilter(op)
+        elif op.startswith("="):
+            return ItemNameFilter(":exact", op[1:])
         elif op.startswith("@"):
             return AttributeFilter.compile(db, op[1:])
         elif op.startswith("+"):
@@ -150,6 +152,8 @@ class Filter(object):
             return ItemNumberFilter(op)
         elif re.match(r"^[0-9,-]+$", op):
             return ItemNumberRangeFilter(op)
+        elif "=" in op:
+            return AttributeFilter.compile(db, op)
         else:
             return PatternFilter(db, op)
 
