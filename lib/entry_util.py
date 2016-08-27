@@ -72,15 +72,15 @@ class WiFiParameters(object):
         for char in "\\;,:\"":
             text = text.replace(char, "\\" + char)
         if quote and re.match(r"^([0-9A-F][0-9A-F])+$", text, re.I):
-            text = '"%s"' % text
+            text = "\"" + text + "\""
         return text
 
     def make_uri(self):
-        data = ["S:%s" % self._escape(self.essid)]
+        data = ["S:" + self._escape(self.essid)]
         if self.sectype != "nopass":
             data += [
-                "T:%s" % self.sectype,
-                "P:%s" % self._escape(self.psk),
+                "T:" + self.sectype,
+                "P:" + self._escape(self.psk),
             ]
         if self.hidden:
             data += ["H:true"]
