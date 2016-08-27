@@ -71,9 +71,7 @@ def is_glob(glob):
     return ("*" in glob or "?" in glob or "[" in glob)
 
 def re_compile_glob(glob, flags=None):
-    if flags is None:
-        flags = re.I
-    return re.compile(fnmatch.translate(glob), flags | re.U)
+    return re.compile(fnmatch.translate(glob), flags or re.I)
 
 def match_globs(string, globs):
     if not globs:

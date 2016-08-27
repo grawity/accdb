@@ -321,7 +321,7 @@ class ItemNameFilter(Filter):
             regex = re_compile_glob(value)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
         elif mode in {":regex", "~"}:
-            regex = re.compile(value, re.I | re.U)
+            regex = re.compile(value, re.I)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
         else:
             raise FilterSyntaxError("unknown mode %r for %r" % (mode, "NAME"))
@@ -380,7 +380,7 @@ class AttributeFilter(Filter):
                 Core.trace("compiled to [any * %r]" % regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
-                regex = re.compile(value, re.I | re.U)
+                regex = re.compile(value, re.I)
                 self.test = lambda entry: any(any(regex.search(v) for v in vs)
                                               for vs in entry.attributes.values())
                 Core.trace("compiled to [any ~ %r]" % regex)
@@ -397,7 +397,7 @@ class AttributeFilter(Filter):
                 Core.trace("compiled to [%r * %r]" % (attr, regex))
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
-                regex = re.compile(value, re.I | re.U)
+                regex = re.compile(value, re.I)
                 self.test = lambda entry: any(regex.search(v)
                                               for v in entry.attributes.get(attr, []))
                 Core.trace("compiled to [%r ~ %r]" % (attr, regex))
