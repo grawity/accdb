@@ -263,7 +263,6 @@ class PatternFilter(Filter):
         elif pattern.startswith(":"):
             if pattern == ":expired":
                 func = ConjunctionFilter(
-                    Filter.compile(db, "@date.expiry"),
                     Filter.compile(db, "NOT +expired"),
                     Filter.compile(db, "@date.expiry<now+30")
                 )
