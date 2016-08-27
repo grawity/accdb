@@ -203,10 +203,8 @@ class PatternFilter(Filter):
     def compile(db, pattern):
         Core.debug("compiling pattern %r", pattern)
 
-        func = None
-
         if pattern == "*":
-            func = ConstantFilter(True)
+            return ConstantFilter(True)
         elif pattern.startswith("@"):
             if "=" in pattern:
                 attr, glob = pattern[1:].split("=", 1)
@@ -215,54 +213,52 @@ class PatternFilter(Filter):
                     try:
                         value = db.expand_attr_cb(attr, glob)
                         Core.trace("-- expanded match value %r to %r" % (glob, value))
-                        func = AttributeFilter(attr, ":exact", value)
+                        return AttributeFilter(attr, ":exact", value)
                     except IndexError:
                         Core.trace("-- failed to expand match value %r" % glob)
-                        func = ConstantFilter(False)
+                        return ConstantFilter(False)
                 elif is_glob(glob):
-                    func = AttributeFilter(attr, ":glob", glob)
+                    return AttributeFilter(attr, ":glob", glob)
                 else:
-                    func = AttributeFilter(attr, ":exact", glob)
+                    return AttributeFilter(attr, ":exact", glob)
             elif "~" in pattern:
                 attr, regex = pattern[1:].split("~", 1)
                 attr = translate_attr(attr)
                 try:
-                    func = AttributeFilter(attr, ":regex", regex)
+                    return AttributeFilter(attr, ":regex", regex)
                 except re.error as e:
                     Core.die("invalid regex %r (%s)" % (regex, e))
             elif "<" in pattern:
                 attr, match = pattern[1:].split("<", 1)
-                func = AttributeFilter(attr, "<", match)
+                return AttributeFilter(attr, "<", match)
             elif ">" in pattern:
                 attr, match = pattern[1:].split(">", 1)
-                func = AttributeFilter(attr, ">", match)
+                return AttributeFilter(attr, ">", match)
             elif "*" in pattern:
-                func = AttributeFilter(":glob", pattern[1:])
+                return AttributeFilter(":glob", pattern[1:])
             else:
                 attr = translate_attr(pattern[1:])
-                func = AttributeFilter(attr)
+                return AttributeFilter(attr)
         elif pattern.startswith("~"):
             try:
-                func = ItemNameFilter(":regex", pattern[1:])
+                return ItemNameFilter(":regex", pattern[1:])
             except re.error as e:
                 Core.die("invalid regex %r (%s)" % (pattern[1:], e))
         elif pattern.startswith("="):
-            func = ItemNameFilter(":exact", pattern[1:])
+            return ItemNameFilter(":exact", pattern[1:])
         elif pattern.startswith(":"):
             if pattern == ":expired":
-                func = Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
+                return Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
             elif pattern == ":untagged":
-                func = Filter.compile(db, "NOT (TAG *)")
+                return Filter.compile(db, "NOT (TAG *)")
             else:
                 Core.die("unrecognized pattern %r" % pattern)
         elif pattern.startswith("{"):
-            func = ItemUuidFilter(pattern)
+            return ItemUuidFilter(pattern)
         else:
             if not is_glob(pattern):
                 pattern = "*%s*" % pattern
-            func = ItemNameFilter(":glob", pattern)
-
-        return func
+            return ItemNameFilter(":glob", pattern)
 
 # elementary filters {{{
 
