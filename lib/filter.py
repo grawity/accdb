@@ -181,6 +181,8 @@ class Filter(object):
             filter = Filter.compile(db, text)
         except FilterSyntaxError as e:
             Core.die("syntax error in filter: %s" % e.args)
+        except re.error as e:
+            Core.die("syntax error in regex: %s" % e.args)
         Core.debug("compiled filter: %s", filter)
         return db.find(filter)
 
@@ -196,12 +198,14 @@ class Filter(object):
                 filter = Filter.compile(db, "*")
         except FilterSyntaxError as e:
             Core.die("syntax error in filter: %s" % e.args)
+        except re.error as e:
+            Core.die("syntax error in regex: %s" % e.args)
         Core.debug("compiled filter: %s", filter)
         return filter
 
     @staticmethod
-    def _cli_compile_and_search(db, arg, fmt=None):
-        filter = Filter._cli_compile(db, arg)
+    def _cli_compile_and_search(db, argv, fmt=None):
+        filter = Filter._cli_compile(db, argv)
         if fmt:
             Core.debug("applying extra filter: %r", fmt)
             filter = Filter.compile(db, fmt % filter)
