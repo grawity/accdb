@@ -153,11 +153,15 @@ class Entry(object):
             f = lambda arg, fmt: arg
 
         paren_fmt = "38;5;244"
+        paren_del_fmt = "38;5;202"
 
         data = ""
 
         if itemno and self.itemno:
-            data += "%s\n" % f("(item %s)" % self.itemno, paren_fmt)
+            if self.deleted:
+                data += "%s\n" % f("(deleted item %s)" % self.itemno, paren_del_fmt)
+            else:
+                data += "%s\n" % f("(item %s)" % self.itemno, paren_fmt)
 
         data += "= %s\n" % f(self.name, "38;5;50")
 
