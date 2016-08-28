@@ -104,11 +104,11 @@ class Filter(object):
             elif op in {"ITEM", "item"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for %r" % op)
-                return ItemNumberFilter(args[0])
+                return ItemNumberFilter(*args)
             elif op in {"ITEMRANGE", "itemrange"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for %r" % op)
-                return ItemNumberRangeFilter(args[0])
+                return ItemNumberRangeFilter(*args)
             elif op in {"NAME", "name"}:
                 if len(args) > 2:
                     raise FilterSyntaxError("too many arguments for %r" % op)
@@ -116,13 +116,13 @@ class Filter(object):
             elif op in {"PATTERN", "pattern"}:
                 return PatternFilter(db, " ".join(args))
             elif op in {"TAG", "tag"}:
-                if len(args) > 1:
+                if len(args) > 2:
                     raise FilterSyntaxError("too many arguments for %r" % op)
-                return TagFilter(args[0])
+                return TagFilter(*args)
             elif op in {"UUID", "uuid"}:
                 if len(args) > 1:
                     raise FilterSyntaxError("too many arguments for %r" % op)
-                return ItemUuidFilter(args[0])
+                return ItemUuidFilter(*args)
             # etc.
             elif op in {"ANY", "any"}:
                 if len(args) == 1:
