@@ -149,6 +149,9 @@ class Entry(object):
         if itemno is None:
             itemno = not storage
 
+        if storage:
+            conceal = False
+
         if color:
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
@@ -174,7 +177,7 @@ class Entry(object):
             if self.uuid:
                 data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
-            if conceal and (not storage):
+            if conceal:
                 hidden_attrs = self.DEFAULT_HIDDEN_ATTRS[:]
                 hidden_attrs += self.attributes.get("@hidden", [])
             else:
@@ -212,8 +215,10 @@ class Entry(object):
                             except ValueError:
                                 value_fmt = "33"
                             else:
-                                desc = "-- %s" % value
-                                value = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
+                                desc = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
+                                if conceal:
+                                    value = desc
+                                    desc = None
                     elif attr_is_metadata(key):
                         key_fmt = "38;5;244"
                         value_fmt = key_fmt
@@ -225,7 +230,7 @@ class Entry(object):
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
                     if desc and not storage:
-                        data += "\t%s\n" % f(desc, "38;5;244")
+                        data += "\t%s\n" % f("-- %s" % desc, "38;5;244")
 
             if n_hidden:
                 data += "\t%s\n" % f("(%s hidden attributes)" % n_hidden, paren_fmt)
