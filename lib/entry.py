@@ -22,6 +22,8 @@ class Entry(object):
 
     FILTER_OATH = "AND %s @!2fa.oath.psk"
 
+    DEFAULT_HIDDEN_ATTRS = ["@*", "!*"]
+
     def __init__(self, database=None):
         self.attributes = dict()
         self.comment = ""
@@ -173,7 +175,7 @@ class Entry(object):
                 data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
 
             if conceal and (not storage):
-                hidden_attrs = ["@*"]
+                hidden_attrs = self.DEFAULT_HIDDEN_ATTRS[:]
                 hidden_attrs += self.attributes.get("@hidden", [])
             else:
                 hidden_attrs = []
