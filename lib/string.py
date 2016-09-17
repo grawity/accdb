@@ -135,25 +135,36 @@ def date_cmp(a, b):
     else:
         return 0
 
-def round_days(d, coarse=0):
+def round_days(d, coarse=0, terse=False):
+    if terse:
+        fmt_y = "%dy"
+        fmt_m = "%dmo"
+        fmt_d = "%dd"
+        fmt_s = " "
+    else:
+        fmt_y = "%d years"
+        fmt_m = "%d months"
+        fmt_d = "%d days"
+        fmt_s = ", "
+
     if d > 365:
         y, d = divmod(d, 365)
         if d < 30 or y > 3:
-            return "%d years" % y
-        elif d > 300:
-            return "%d years" % (y+1)
+            return fmt_y % y
+        elif d > 330:
+            return fmt_y % (y+1)
         else:
-            return "%d years, %s" % (y, round_days(d, 1))
+            return fmt_y % y + fmt_s + round_days(d, 1)
     elif d > 90:
         m, d = divmod(d, 30)
         if d < 3 or coarse:
-            return "%d months" % m
+            return fmt_m % m
         elif d > 27:
-            return "%d months" % (m+1)
+            return fmt_m % (m+1)
         else:
-            return "%d months, %d days" % (m, d)
+            return fmt_m % m + fmt_s + fmt_d % d
     else:
-        return "%d days" % d
+        return fmt_d % d
 
 def relative_date(s):
     a = date_parse(s).date()
