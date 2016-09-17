@@ -147,11 +147,11 @@ def round_days(d, coarse=0, terse=False):
         fmt_d = "%d days"
         fmt_s = ", "
 
-    if d > 365:
+    if d > 365-14:
         y, d = divmod(d, 365)
-        if d < 30 or y > 3:
+        if d < 60 or y > 2:
             return fmt_y % y
-        elif d > 330:
+        elif d > 365-60:
             return fmt_y % (y+1)
         else:
             return fmt_y % y + fmt_s + round_days(d, 1)
