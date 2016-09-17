@@ -485,8 +485,10 @@ class TagFilter(Filter):
 
         if mode is None:
             if value == "":
+                self.mode = ":exact"
                 self.test = lambda entry: len(entry.tags) == 0
             elif value == "*":
+                self.mode = ":glob"
                 self.test = lambda entry: len(entry.tags) > 0
             elif is_glob(value):
                 self.mode = ":glob"
@@ -511,11 +513,12 @@ class TagFilter(Filter):
                 raise FilterSyntaxError("unknown mode %r for %r" % (mode, "TAG"))
 
     def __str__(self):
-        if self.mode is None:
-            if self.value:
-                return "(TAG %s)" % self.value
-            else:
-                return "(NOT (TAG *))"
+        if self.value == "":
+            return "(NOT %s)" % "(TAG %s)" % "*"
+        elif self.value == "*":
+            return "(TAG %s)" % self.value
+        elif self.mode == ":exact":
+            return "(TAG %s)" % self.value
         else:
             return "(TAG %s %s)" % (self.mode, self.value)
 
