@@ -122,6 +122,7 @@ def date_parse(s):
         try:
             return datetime.datetime.strptime(s, "%Y-%m")
         except ValueError:
+            Core.err("failed to parse %r as date" % s)
             return datetime.datetime.fromordinal(1)
 
 def date_cmp(a, b):
@@ -133,3 +134,35 @@ def date_cmp(a, b):
         return 1
     else:
         return 0
+
+def round_days(d, coarse=0):
+    if d > 365:
+        y, d = divmod(d, 365)
+        if d < 30 or y > 3:
+            return "%d years" % y
+        elif d > 300:
+            return "%d years" % (y+1)
+        else:
+            return "%d years, %s" % (y, round_days(d, 1))
+    elif d > 90:
+        m, d = divmod(d, 30)
+        if d < 3 or coarse:
+            return "%d months" % m
+        elif d > 27:
+            return "%d months" % (m+1)
+        else:
+            return "%d months, %d days" % (m, d)
+    else:
+        return "%d days" % d
+
+def relative_date(s):
+    a = date_parse(s).date()
+    b = date_parse("now").date()
+    if a < b:
+        d = b - a
+        return "%s ago" % round_days(d.days)
+    elif a > b:
+        d = a - b
+        return "in %s" % round_days(d.days)
+    else:
+        return "today"

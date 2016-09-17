@@ -159,6 +159,8 @@ class Entry(object):
 
         paren_fmt = "38;5;244"
         paren_del_fmt = "38;5;202"
+        comment_fmt = "38;5;30"
+        uuid_fmt = "38;5;8"
 
         data = ""
 
@@ -172,10 +174,10 @@ class Entry(object):
 
         if show_contents:
             for line in self.comment.splitlines():
-                data += "%s%s\n" % (f(";", "38;5;8"), f(line, "38;5;30"))
+                data += "%s%s\n" % (f(";", uuid_fmt), f(line, comment_fmt))
 
             if self.uuid:
-                data += "\t%s\n" % f("{%s}" % self.uuid, "38;5;8")
+                data += "\t%s\n" % f("{%s}" % self.uuid, uuid_fmt)
 
             if conceal:
                 hidden_attrs = self.DEFAULT_HIDDEN_ATTRS[:]
@@ -225,8 +227,11 @@ class Entry(object):
                     else:
                         key_fmt = "38;5;228"
                         value_fmt = ""
-                        if key.startswith("date.") and value in {"now", "today"}:
-                            value = time.strftime("%Y-%m-%d")
+                        if key.startswith("date."):
+                            if value in {"now", "today"}:
+                                value = time.strftime("%Y-%m-%d")
+                            if conceal:
+                                value += f(" (%s)" % relative_date(value), paren_fmt)
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
                     if desc and not storage:
