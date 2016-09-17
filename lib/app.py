@@ -289,7 +289,7 @@ class Cmd(object):
                         print("\t" + line.decode("utf-8"), end="")
                 print()
             else:
-                Core.err("cannot generate Qr code: entry has no PSK")
+                Core.err("cannot generate Qr code: entry has no WPA PSK (!wifi.psk)")
 
     def do_totp(self, argv):
         """Generate an OATH TOTP response"""
@@ -299,7 +299,7 @@ class Cmd(object):
                 otp = params.generate()
                 print(otp)
             else:
-                Core.err("cannot generate OTP: entry has no OATH PSK")
+                Core.err("cannot generate OTP: entry has no OATH PSK (!2fa.oath.psk)")
 
     def do_t(self, argv):
         """Copy OATH TOTP response to clipboard"""
