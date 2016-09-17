@@ -289,7 +289,7 @@ class Cmd(object):
                         print("\t" + line.decode("utf-8"), end="")
                 print()
             else:
-                Core.err("cannot genearte Qr code: entry has no PSK")
+                Core.err("cannot generate Qr code: entry has no PSK")
 
     def do_totp(self, argv):
         """Generate an OATH TOTP response"""
