@@ -45,7 +45,7 @@ class OATHParameters(object):
         if self.image:
             data["image"] = self.image
 
-        uri = "otpauth://totp/%s?%s" % (urllib.parse.quote_plus(label),
+        uri = "otpauth://totp/%s?%s" % (urllib.parse.quote(label),
                                         urllib.parse.urlencode(data))
 
         return uri
