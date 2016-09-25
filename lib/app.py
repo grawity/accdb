@@ -479,6 +479,58 @@ class Cmd(object):
 
         db.modified = True
 
+    def _entry_kind(self, entry):
+        kind = entry.attributes.get("@kind")
+        if kind:
+            return kind[0]
+        if "luks" in entry.tags:
+            return "luks"
+
+    def do_keyring_store(self, argv):
+        for entry in Filter._cli_compile_and_search(db, argv):
+            self._show_entry(entry)
+            label = entry.name
+            kind = self._entry_kind(entry)
+            if kind == "luks":
+                secret = entry.attributes["pass"][0]
+                attrs = [
+                    "gvfs-luks-uuid", entry.attributes["uuid"][0],
+                    "xdg:schema", "org.gnome.GVfs.Luks.Password",
+                ]
+            else:
+                Core.err("unknown entry type")
+                continue
+
+            with subprocess.Popen(["secret-tool", "store",
+                                   "--label", label,
+                                   *attrs], stdin=subprocess.PIPE) as proc:
+                proc.stdin.write(secret.encode("utf-8"))
+                Core.info("stored %s secret in keyring" % kind)
+
+    def _do_keyring_query(self, argv, action):
+        for entry in Filter._cli_compile_and_search(db, argv):
+            self._show_entry(entry)
+            kind = self._entry_kind(entry)
+            if kind == "luks":
+                attrs = [
+                    "gvfs-luks-uuid", entry.attributes["uuid"][0],
+                ]
+            else:
+                Core.err("unknown entry type")
+                continue
+
+            if subprocess.run(["secret-tool", action, *attrs]):
+                if action == "clear":
+                    Core.info("removed matching %s secrets from keyring" % kind)
+            else:
+                Core.info("secret-tool %r failed for %r" % (action, attrs))
+
+    def do_keyring_search(self, argv):
+        return self._do_keyring_query(argv, "search")
+
+    def do_keyring_forget(self, argv):
+        return self._do_keyring_query(argv, "clear")
+
     do_c     = do_copy
     do_g     = do_grep
     do_re    = do_reveal
