@@ -124,7 +124,7 @@ def unwrap_secret(wrapped):
 class Cmd(object):
     def call(self, argv):
         if argv:
-            func = getattr(self, "do_%s" % argv[0], None)
+            func = getattr(self, "do_%s" % argv[0].replace("-", "_"), None)
             if func:
                 func(argv[1:])
             else:
