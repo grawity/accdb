@@ -483,47 +483,56 @@ class Cmd(object):
         kind = entry.attributes.get("@kind")
         if kind:
             return kind[0]
-        if "luks" in entry.tags:
+        elif "luks" in entry.tags:
             return "luks"
-
-    def do_keyring_store(self, argv):
-        for entry in Filter._cli_compile_and_search(db, argv):
-            self._show_entry(entry)
-            label = entry.name
-            kind = self._entry_kind(entry)
-            if kind == "luks":
-                secret = entry.attributes["pass"][0]
-                attrs = [
-                    "gvfs-luks-uuid", entry.attributes["uuid"][0],
-                    "xdg:schema", "org.gnome.GVfs.Luks.Password",
-                ]
-            else:
-                Core.err("unknown entry type")
-                continue
-
-            with subprocess.Popen(["secret-tool", "store",
-                                   "--label", label,
-                                   *attrs], stdin=subprocess.PIPE) as proc:
-                proc.stdin.write(secret.encode("utf-8"))
-                Core.info("stored %s secret in keyring" % kind)
+        elif "pgp" in entry.tags:
+            return "pgp"
 
     def _do_keyring_query(self, argv, action):
         for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry)
             kind = self._entry_kind(entry)
+            if action == "store":
+                label = entry.name
+                secret = entry.attributes["pass"][0]
             if kind == "luks":
-                attrs = [
+                set_attrs = [
+                    "xdg:schema", "org.gnome.GVfs.Luks.Password",
+                ]
+                get_attrs = [
                     "gvfs-luks-uuid", entry.attributes["uuid"][0],
+                ]
+            elif kind == "pgp":
+                set_attrs = [
+                    "xdg:schema", "org.gnupg.Passphrase",
+                ]
+                get_attrs = [
+                    "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
                 ]
             else:
                 Core.err("unknown entry type")
                 continue
 
-            if subprocess.run(["secret-tool", action, *attrs]):
-                if action == "clear":
-                    Core.info("removed matching %s secrets from keyring" % kind)
+            if action == "store":
+                Core.debug("store entry %r" % label)
+                Core.debug("set attrs %r" % set_attrs)
+                Core.debug("get attrs %r" % get_attrs)
+                with subprocess.Popen(["secret-tool", "store",
+                                       "--label", label,
+                                       *get_attrs, *set_attrs],
+                                       stdin=subprocess.PIPE) as proc:
+                    proc.stdin.write(secret.encode("utf-8"))
+                    Core.info("stored %s secret in keyring" % kind)
             else:
-                Core.info("secret-tool %r failed for %r" % (action, attrs))
+                Core.debug("get attrs %r" % get_attrs)
+                if subprocess.run(["secret-tool", action, *get_attrs]):
+                    if action == "clear":
+                        Core.info("removed matching %s secrets from keyring" % kind)
+                else:
+                    Core.info("secret-tool %r failed for %r" % (action, get_attrs))
+
+    def do_keyring_store(self, argv):
+        return self._do_keyring_query(argv, "store")
 
     def do_keyring_search(self, argv):
         return self._do_keyring_query(argv, "search")
