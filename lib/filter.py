@@ -388,6 +388,8 @@ class AttributeFilter(Filter):
                 self.test = lambda entry: any(any(regex.search(v) for v in vs)
                                               for vs in entry.attributes.values())
                 Core.trace("compiled to [any ~ %r]" % regex)
+            else:
+                raise FilterSyntaxError("unknown value-mode %r for %r" % (mode, "ATTR"))
         else:
             if mode in {":exact", "="}:
                 self.mode = ":exact"
