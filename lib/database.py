@@ -134,6 +134,13 @@ class Database(object):
         uuid_parsed = uuid.UUID(uuid_str)
         return self[uuid_parsed]
 
+    def has_uuid(self, uuid_str):
+        try:
+            uuid_parsed = uuid.UUID(uuid_str)
+            return uuid_parsed in self.entries
+        except:
+            return False
+
     def find(self, filter):
         for entry in self:
             if filter(entry):
