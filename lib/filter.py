@@ -256,7 +256,7 @@ class PatternFilter(Filter):
             elif pattern == ":untagged":
                 return Filter.compile(db, "NOT (TAG *)")
             elif pattern == ":badref":
-                return BadRefFilter(db)
+                return lambda entry: entry.has_bad_references()
             else:
                 Core.die("unrecognized pattern %r" % pattern)
         elif pattern.startswith("{"):
@@ -337,17 +337,6 @@ class ItemNameFilter(Filter):
             return "(NAME %s)" % self.value
         else:
             return "(NAME %s %s)" % (self.mode, self.value)
-
-class BadRefFilter(Filter):
-    def __init__(self, db):
-        self.db = db
-
-    def test(self, entry):
-        return any(any(not self.db.has_uuid(v) for v in entry.attributes[k])
-                    for k in entry.attributes if attr_is_reflink(k))
-
-    def __str__(self):
-        return ":badref"
 
 class AttributeFilter(Filter):
     def __init__(self, *args):

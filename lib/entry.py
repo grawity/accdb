@@ -335,6 +335,14 @@ class Entry(object):
         if essid and psk:
             return WiFiParameters(essid[0], psk[0], sec[0], hidden)
 
+    def has_bad_references(self):
+        if not self.db:
+            return False
+
+        return any(any(not self.db.has_uuid(v) for v in vs)
+                   for k, vs in self.attributes.items()
+                   if attr_is_reflink(k))
+
     def sync_names(self, export=False):
         if export:
             self.attributes["@name"] = [self.name]
