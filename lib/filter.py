@@ -16,22 +16,14 @@ class Filter(object):
         tokens = []
         depth = 0
         start = -1
-        quoted = None
-        qstart = -1
+        esc = False
         Core.debug("parse input: %r" % text)
         for pos, char in enumerate(text):
-            #Core.debug("char %r [%d]" % (char, pos))
-            if quoted:
-                if char == quoted:
-                    quoted = None
-                    Core.debug("tokens += quoted %r" % text[qstart:pos])
-                    tokens.append(text[qstart:pos])
-                else:
-                    pass
-            elif char == "\"":
-                if depth == 0:
-                    quoted = char
-                    qstart = pos+1
+            #Core.debug("char %r, pos %d, esc %r" % (char, pos, esc))
+            if esc:
+                esc = False
+            elif char == "\\":
+                esc = True
             elif char == "(":
                 if depth == 0:
                     if start >= 0:
@@ -55,8 +47,8 @@ class Filter(object):
                 if start < 0:
                     start = pos
         Core.debug("after parsing, depth=%r start=%r" % (depth, start))
-        if quoted:
-            raise FilterSyntaxError("unclosed %r quote" % quoted)
+        if esc:
+            raise FilterSyntaxError("trailing '\\'")
         elif depth > 0:
             raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
         elif depth < 0:
@@ -174,6 +166,7 @@ class Filter(object):
         elif "=" in op:
             return AttributeFilter.compile(db, op)
         else:
+            Core.debug("no known prefix, trying PatternFilter(%r)" % op)
             return PatternFilter(db, op)
 
     @staticmethod
