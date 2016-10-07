@@ -117,8 +117,12 @@ class Entry(object):
                         #val = nval.decode("utf-8")
                     except UnicodeDecodeError:
                         pass
-                elif key.startswith("date.") and val in {"now", "today"}:
-                    val = time.strftime("%Y-%m-%d")
+                elif key.startswith("date.") and (val in {"now", "today"}
+                                                  or val.startswith("now+")
+                                                  or val.startswith("now-")):
+                    Core.warn("line %d: key %r has relative date %r, expanding"
+                              % (lineno, key, val))
+                    val = str(date_parse(val).date())
 
                 key = translate_attr(key)
                 if key in self.attributes:
