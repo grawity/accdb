@@ -24,6 +24,8 @@ class Filter(object):
                 esc = False
             elif char == "\\":
                 esc = True
+                if start < 0:
+                    start = pos
             elif char == "(":
                 if depth == 0:
                     if start >= 0:
