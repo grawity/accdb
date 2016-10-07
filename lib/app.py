@@ -490,12 +490,16 @@ class Cmd(object):
             return "pgp"
 
     def _do_keyring_query(self, argv, action):
+        if action not in {"store", "lookup", "clear"}:
+            raise ValueError("unknown keyring action %r" % action)
+
         for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry)
             kind = self._entry_kind(entry)
             if action == "store":
                 label = entry.name
                 secret = entry.attributes["pass"][0]
+
             if kind == "luks":
                 set_attrs = [
                     "xdg:schema", "org.gnome.GVfs.Luks.Password",
@@ -511,7 +515,7 @@ class Cmd(object):
                     "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
                 ]
             else:
-                Core.err("unknown entry type")
+                Core.err("couldn't determine schema for entry (unknown kind %r)" % kind)
                 continue
 
             if action == "store":
@@ -520,13 +524,20 @@ class Cmd(object):
                 Core.debug("get attrs %r" % get_attrs)
                 if xdg_secret_store(label, secret, [*get_attrs, *set_attrs]):
                     Core.info("stored %s secret in keyring" % kind)
-            else:
+            elif action == "lookup":
                 Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_whatever(action, *get_attrs):
-                    if action == "clear":
-                        Core.info("removed matching %s secrets from keyring" % kind)
+                if xdg_secret_lookup_stdout(*get_attrs):
+                    pass
                 else:
-                    Core.info("secret-tool %r failed for %r" % (action, get_attrs))
+                    Core.info("secret-tool %s failed for %r" % (action, get_attrs))
+            elif action == "clear":
+                Core.debug("get attrs %r" % get_attrs)
+                if xdg_secret_clear(*get_attrs):
+                    Core.info("removed matching %s secrets from keyring" % kind)
+                else:
+                    Core.info("secret-tool %s failed for %r" % (action, get_attrs))
+            else:
+                raise ValueError("BUG: unhandled keyring action %r" % action)
 
     def do_keyring_store(self, argv):
         return self._do_keyring_query(argv, "store")
