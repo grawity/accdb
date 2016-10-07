@@ -644,6 +644,8 @@ def main():
             if "backup" in db.flags:
                 Core.debug("skipping GPG backup")
 
+    Core.exit()
+
 if __name__ == "__main__":
     main()
 
