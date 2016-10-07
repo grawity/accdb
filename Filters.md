@@ -1,5 +1,9 @@
 ## Search query language
 
+### Quirks
+
+ * Parens act as balanced quotes _except_ in shortcuts. Thus it's impossible to do `@name=Fred Foobar`, but `ATTR name = (Fred Foobar)` or even `ATTR(name)=(Fred Foobar)` works fine.
+
 ### AND
 
 Syntax: `AND <filter>...`
