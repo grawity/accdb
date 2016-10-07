@@ -496,26 +496,35 @@ class Cmd(object):
         for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry)
             kind = self._entry_kind(entry)
-            if action == "store":
-                label = entry.name
-                secret = entry.attributes["pass"][0]
 
-            if kind == "luks":
-                set_attrs = [
-                    "xdg:schema", "org.gnome.GVfs.Luks.Password",
-                ]
-                get_attrs = [
-                    "gvfs-luks-uuid", entry.attributes["uuid"][0],
-                ]
-            elif kind == "pgp":
-                set_attrs = [
-                    "xdg:schema", "org.gnupg.Passphrase",
-                ]
-                get_attrs = [
-                    "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
-                ]
-            else:
-                Core.err("couldn't determine schema for entry (unknown kind %r)" % kind)
+            if action == "store":
+                try:
+                    label = entry.name
+                    secret = entry.attributes["pass"][0]
+                except KeyError as e:
+                    Core.err("entry has no secret to store (no %s field)" % e)
+                    continue
+
+            try:
+                if kind == "luks":
+                    set_attrs = [
+                        "xdg:schema", "org.gnome.GVfs.Luks.Password",
+                    ]
+                    get_attrs = [
+                        "gvfs-luks-uuid", entry.attributes["uuid"][0],
+                    ]
+                elif kind == "pgp":
+                    set_attrs = [
+                        "xdg:schema", "org.gnupg.Passphrase",
+                    ]
+                    get_attrs = [
+                        "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
+                    ]
+                else:
+                    Core.err("couldn't determine entry schema (unknown kind %r)" % kind)
+                    continue
+            except KeyError as e:
+                Core.err("entry has no %s field (required for its kind %s)" % (e, kind))
                 continue
 
             if action == "store":
