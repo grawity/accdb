@@ -157,6 +157,11 @@ class Database(object):
                 pass
             else:
                 value = "{%s}" % entry.uuid
+        elif attr.startswith("date.") and value and (value in {"now", "today"}
+                                                     or value.startswith("now+")
+                                                     or value.startswith("now-")):
+            tmp = date_parse(value)
+            value = str(tmp.date())
         return value
 
     # Aggregate lookup
