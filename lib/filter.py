@@ -31,7 +31,7 @@ class Filter(object):
                     if start >= 0:
                         # handle "AND(foo)" when there's no whitespace
                         Core.debug("tokens += prefix-word %r" % text[start:pos])
-                        tokens.append(text[start:pos])
+                        tokens.append(str_unslash(text[start:pos]))
                     start = pos+1
                 depth += 1
             elif char == ")":
@@ -43,7 +43,7 @@ class Filter(object):
             elif char in " \t\r\n":
                 if depth == 0 and start >= 0:
                     Core.debug("tokens += word %r" % text[start:pos])
-                    tokens.append(text[start:pos])
+                    tokens.append(str_unslash(text[start:pos]))
                     start = -1
             else:
                 if start < 0:
@@ -58,7 +58,7 @@ class Filter(object):
         else:
             if start >= 0 and start <= pos:
                 Core.debug("tokens += final %r" % text[start:])
-                tokens.append(text[start:])
+                tokens.append(str_unslash(text[start:]))
             Core.debug("parse output: %r" % tokens)
             return tokens
 
