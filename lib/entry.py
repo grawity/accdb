@@ -117,12 +117,6 @@ class Entry(object):
                         #val = nval.decode("utf-8")
                     except UnicodeDecodeError:
                         pass
-                elif key.startswith("date.") and (val in {"now", "today"}
-                                                  or val.startswith("now+")
-                                                  or val.startswith("now-")):
-                    Core.warn("line %d: key %r has relative date %r, expanding"
-                              % (lineno, key, val))
-                    val = str(date_parse(val).date())
 
                 key = translate_attr(key)
                 if key in self.attributes:
@@ -232,8 +226,6 @@ class Entry(object):
                         key_fmt = "38;5;228"
                         value_fmt = ""
                         if key.startswith("date."):
-                            if value in {"now", "today"}:
-                                value = time.strftime("%Y-%m-%d")
                             if conceal:
                                 value += f(" (%s)" % relative_date(value), paren_fmt)
 
