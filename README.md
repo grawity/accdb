@@ -183,6 +183,12 @@ Synopsis: `ad set <filter> <operation...>`
   - `key«=key` – copy from another key
   - `key|=key` – merge from another key
 
+Special values:
+
+  - For `ref.*` keys, `#itemno` (e.g. `#42`) expands to that item's UUID;
+  - For `date.*` keys, `now[±n]` (e.g. `now` or `now+40`) expands to a full date;
+  - For all of the above, `=string` (e.g. `=now+1`) uses the string literally, without expansions.
+
 Synopsis: `ad tag <filter> <operation...>`
 
   - `+tag` – add tag
