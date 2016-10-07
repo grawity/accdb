@@ -16,17 +16,10 @@ class Filter(object):
         tokens = []
         depth = 0
         start = -1
-        esc = False
         Core.debug("parse input: %r" % text)
         for pos, char in enumerate(text):
             #Core.debug("char %r, pos %d, esc %r" % (char, pos, esc))
-            if esc:
-                esc = False
-            elif char == "\\":
-                esc = True
-                if start < 0:
-                    start = pos
-            elif char == "(":
+            if char == "(":
                 if depth == 0:
                     if start >= 0:
                         # handle "AND(foo)" when there's no whitespace
@@ -49,9 +42,7 @@ class Filter(object):
                 if start < 0:
                     start = pos
         Core.debug("after parsing, depth=%r start=%r" % (depth, start))
-        if esc:
-            raise FilterSyntaxError("trailing '\\'")
-        elif depth > 0:
+        if depth > 0:
             raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
         elif depth < 0:
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
@@ -368,6 +359,8 @@ class AttributeFilter(Filter):
                 Core.trace("compiled to [attrs ~ %r]" % regex)
             else:
                 raise FilterSyntaxError("unknown attr-mode %r for %r" % (mode, "ATTR"))
+        elif value == "":
+            raise FilterSyntaxError("empty match value (if you tried '@%s=(something)', that won't work)" % attr)
         elif attr == "*":
             if mode in {":exact", "="}:
                 self.mode = ":exact"
