@@ -57,6 +57,7 @@ class Filter(object):
             if start >= 0 and start <= pos:
                 Core.debug("tokens += final %r" % text[start:])
                 tokens.append(text[start:])
+            tokens = [str_unslash(t) for t in tokens]
             Core.debug("parse output: %r" % tokens)
             return tokens
 
