@@ -524,7 +524,7 @@ class Cmd(object):
                     Core.err("couldn't determine entry schema (unknown kind %r)" % kind)
                     continue
             except KeyError as e:
-                Core.err("entry has no %s field (required for its kind %s)" % (e, kind))
+                Core.err("entry has no %s field (required for its kind %r)" % (e, kind))
                 continue
 
             if action == "store":
