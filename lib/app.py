@@ -533,18 +533,20 @@ class Cmd(object):
                 Core.debug("get attrs %r" % get_attrs)
                 if xdg_secret_store(label, secret, [*get_attrs, *set_attrs]):
                     Core.info("stored %s secret in keyring" % kind)
+                else:
+                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
             elif action == "search":
                 Core.debug("get attrs %r" % get_attrs)
                 if xdg_secret_search_stdout(get_attrs):
                     pass
                 else:
-                    Core.info("secret-tool %s failed for %r" % (action, get_attrs))
+                    Core.warn("secret-tool %s failed for %r" % (action, get_attrs))
             elif action == "clear":
                 Core.debug("get attrs %r" % get_attrs)
                 if xdg_secret_clear(get_attrs):
                     Core.info("removed matching %s secrets from keyring" % kind)
                 else:
-                    Core.info("secret-tool %s failed for %r" % (action, get_attrs))
+                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
             else:
                 raise ValueError("BUG: unhandled keyring action %r" % action)
 
