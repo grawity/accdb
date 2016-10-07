@@ -147,11 +147,7 @@ class Database(object):
                 yield entry
 
     def expand_attr_cb(self, attr, value):
-        if value and value.startswith("="):
-            Core.debug("val %r has a literal prefix" % value)
-            value = value[1:]
-        elif attr_is_reflink(attr) and value and value.startswith("#"):
-            Core.debug("val %r looks like an #itemno" % value)
+        if attr_is_reflink(attr) and value and value.startswith("#"):
             try:
                 idx = int(value.split()[0][1:])
                 entry = self.find_by_itemno(idx)
@@ -164,7 +160,6 @@ class Database(object):
         elif attr.startswith("date.") and value and (value in {"now", "today"}
                                                      or value.startswith("now+")
                                                      or value.startswith("now-")):
-            Core.debug("val %r looks like a relative date" % value)
             tmp = date_parse(value)
             value = str(tmp.date())
         return value
