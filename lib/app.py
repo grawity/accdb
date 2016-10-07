@@ -19,6 +19,7 @@ from .entry import Entry
 from .entry_util import *
 from .filter import Filter
 from .string import *
+from .xdg_secret import *
 
 # 'SecretStore' {{{
 
@@ -517,15 +518,11 @@ class Cmd(object):
                 Core.debug("store entry %r" % label)
                 Core.debug("set attrs %r" % set_attrs)
                 Core.debug("get attrs %r" % get_attrs)
-                with subprocess.Popen(["secret-tool", "store",
-                                       "--label", label,
-                                       *get_attrs, *set_attrs],
-                                       stdin=subprocess.PIPE) as proc:
-                    proc.stdin.write(secret.encode("utf-8"))
+                if xdg_secret_store(label, secret, [*get_attrs, *set_attrs]):
                     Core.info("stored %s secret in keyring" % kind)
             else:
                 Core.debug("get attrs %r" % get_attrs)
-                if subprocess.run(["secret-tool", action, *get_attrs]):
+                if xdg_secret_whatever(action, *get_attrs):
                     if action == "clear":
                         Core.info("removed matching %s secrets from keyring" % kind)
                 else:
