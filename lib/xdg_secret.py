@@ -10,8 +10,8 @@ def xdg_secret_lookup_secret(attrs):
                            stdout=subprocess.PIPE) as proc:
         return proc.stdout.read().rstrip("\n")
 
-def xdg_secret_lookup_stdout(attrs):
-    return subprocess.run(["secret-tool", "lookup", *attrs])
+def xdg_secret_search_stdout(attrs):
+    return subprocess.run(["secret-tool", "search", *attrs])
 
 def xdg_secret_clear(attrs):
     return subprocess.run(["secret-tool", "clear", *attrs])

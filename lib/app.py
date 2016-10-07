@@ -490,7 +490,7 @@ class Cmd(object):
             return "pgp"
 
     def _do_keyring_query(self, argv, action):
-        if action not in {"store", "lookup", "clear"}:
+        if action not in {"clear", "search", "lookup", "store"}:
             raise ValueError("unknown keyring action %r" % action)
 
         for entry in Filter._cli_compile_and_search(db, argv):
@@ -524,15 +524,15 @@ class Cmd(object):
                 Core.debug("get attrs %r" % get_attrs)
                 if xdg_secret_store(label, secret, [*get_attrs, *set_attrs]):
                     Core.info("stored %s secret in keyring" % kind)
-            elif action == "lookup":
+            elif action == "search":
                 Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_lookup_stdout(*get_attrs):
+                if xdg_secret_search_stdout(get_attrs):
                     pass
                 else:
                     Core.info("secret-tool %s failed for %r" % (action, get_attrs))
             elif action == "clear":
                 Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_clear(*get_attrs):
+                if xdg_secret_clear(get_attrs):
                     Core.info("removed matching %s secrets from keyring" % kind)
                 else:
                     Core.info("secret-tool %s failed for %r" % (action, get_attrs))
