@@ -59,8 +59,10 @@ class Filter(object):
             return "\"%s\"" % token
         elif " " in token:
             return "(%s)" % token
-        else:
+        elif token:
             return token
+        else:
+            return "()"
 
     @staticmethod
     def compile(db, pattern):
