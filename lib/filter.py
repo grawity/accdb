@@ -202,6 +202,8 @@ class Filter(object):
             Core.debug("recompiled filter: %s", filter)
         return db.find(filter)
 
+# Kitchen sink filter (PATTERN) {{{
+
 class PatternFilter(Filter):
     def __init__(self, db, pattern):
         self.pattern = pattern
@@ -260,7 +262,8 @@ class PatternFilter(Filter):
                 pattern = "*%s*" % pattern
             return ItemNameFilter(":glob", pattern)
 
-# elementary filters {{{
+# }}}
+# Metadata filters (ITEM, UUID) {{{
 
 class ItemNumberFilter(Filter):
     def __init__(self, pattern):
@@ -298,6 +301,9 @@ class ItemUuidFilter(Filter):
 
     def __str__(self):
         return "(UUID %s)" % self.value
+
+# }}}
+# String match filters (NAME, ATTR, TAG) {{{
 
 class ItemNameFilter(Filter):
     def __init__(self, *args):
@@ -522,6 +528,9 @@ class TagFilter(Filter):
             return "(TAG %s)" % Filter.quote(self.value)
         else:
             return "(TAG %s %s)" % (self.mode, Filter.quote(self.value))
+
+# }}}
+# Basic boolean filters (AND, OR, NOT, TRUE, FALSE) {{{
 
 class ConjunctionFilter(Filter):
     def __init__(self, *filters):
