@@ -338,7 +338,7 @@ class AttributeFilter(Filter):
             else:
                 raise FilterSyntaxError("unknown attr-mode %r for %r" % (mode, "ATTR"))
         elif value == "":
-            raise FilterSyntaxError("empty match value (if you tried '@%s=(something)', that won't work)" % attr)
+            raise FilterSyntaxError("empty match value after %r" % attr)
         elif attr == "*":
             if mode in {":exact", "="}:
                 self.mode = ":exact"
