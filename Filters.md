@@ -2,7 +2,7 @@
 
 ### Quirks
 
- * Parens act as balanced quotes _except_ in shortcuts. Thus it's impossible to do `@name=Fred Foobar`, but `ATTR name = (Fred Foobar)` or even `ATTR(name)=(Fred Foobar)` works fine.
+ * Parens act as balanced quotes, e.g. `ATTR name = (Fred Foobar)` or even `ATTR(name)=(Fred Foobar)` works.
 
  * It is however impossible to use parens within a string, e.g. you cannot search for `ATTR name = foo(bar`. (I'll try harder to implement that.)
 

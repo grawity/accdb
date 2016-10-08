@@ -167,10 +167,8 @@ For `date.*` attributes, `@foo<bar` and `@foo>bar` will use date comparisons
 
 For example:
 
-    ad ls '(OR #123 (TAG is:hosting) {0a1588fd-84e7-427c-8c7b-f8534e7635e1} @nicname
-           +is:license Weibo (AND (OR @id.pgp-key @pgp.key-id +is:payment))'
-
-Note: There is no syntax for quoting or escaping spaces, but due to how query parsing works, parens essentially act as balanced quotes. Thus it's impossible to do `@name=Fred Foobar`, but `ATTR name = (Fred Foobar)` works perfectly fine.
+    ad ls '(OR #123 (TAG is:hosting) {0a1588fd-84e7-427c-8c7b-f8534e7635e1}
+           +is:license (@name=Fred Foobar) (AND (OR @pgp.key-id +is:payment))'
 
 ## Edit syntax
 
