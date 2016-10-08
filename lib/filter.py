@@ -134,6 +134,9 @@ class Filter(object):
                     raise FilterSyntaxError("not enough arguments for %r" % op)
             elif op in {"TRUE", "true", "FALSE", "false"}:
                 raise FilterSyntaxError("too many arguments for %r" % op)
+            elif op.startswith("="):
+                Core.debug("unknown operator %r in (%s), trying name match" % (op, pattern))
+                return ItemNameFilter(":exact", pattern[1:])
             elif "=" in op or "~" in op:
                 Core.debug("unknown operator %r in (%s), trying attribute match" % (op, pattern))
                 return AttributeFilter.compile(db, pattern)
