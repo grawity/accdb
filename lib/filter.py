@@ -263,46 +263,6 @@ class PatternFilter(Filter):
             return ItemNameFilter(":glob", pattern)
 
 # }}}
-# Metadata filters (ITEM, UUID) {{{
-
-class ItemNumberFilter(Filter):
-    def __init__(self, pattern):
-        try:
-            self.value = int(pattern)
-        except ValueError:
-            raise FilterSyntaxError("integer value expected for 'ITEM'")
-
-    def test(self, entry):
-        return entry.itemno == self.value
-
-    def __str__(self):
-        return "(ITEM %d)" % self.value
-
-class ItemNumberRangeFilter(Filter):
-    def __init__(self, pattern):
-        self.pattern = pattern
-        self.items = set(expand_range(pattern))
-
-    def test(self, entry):
-        return entry.itemno in self.items
-
-    def __str__(self):
-        return "(ITEMRANGE %s)" % self.pattern
-
-class ItemUuidFilter(Filter):
-    def __init__(self, pattern):
-        try:
-            self.value = uuid.UUID(pattern)
-        except ValueError:
-            raise FilterSyntaxError("malformed value for %r" % "UUID")
-
-    def test(self, entry):
-        return entry.uuid == self.value
-
-    def __str__(self):
-        return "(UUID %s)" % self.value
-
-# }}}
 # String match filters (NAME, ATTR, TAG) {{{
 
 class ItemNameFilter(Filter):
@@ -528,6 +488,46 @@ class TagFilter(Filter):
             return "(TAG %s)" % Filter.quote(self.value)
         else:
             return "(TAG %s %s)" % (self.mode, Filter.quote(self.value))
+
+# }}}
+# Metadata filters (ITEM, UUID) {{{
+
+class ItemNumberFilter(Filter):
+    def __init__(self, pattern):
+        try:
+            self.value = int(pattern)
+        except ValueError:
+            raise FilterSyntaxError("integer value expected for 'ITEM'")
+
+    def test(self, entry):
+        return entry.itemno == self.value
+
+    def __str__(self):
+        return "(ITEM %d)" % self.value
+
+class ItemNumberRangeFilter(Filter):
+    def __init__(self, pattern):
+        self.pattern = pattern
+        self.items = set(expand_range(pattern))
+
+    def test(self, entry):
+        return entry.itemno in self.items
+
+    def __str__(self):
+        return "(ITEMRANGE %s)" % self.pattern
+
+class ItemUuidFilter(Filter):
+    def __init__(self, pattern):
+        try:
+            self.value = uuid.UUID(pattern)
+        except ValueError:
+            raise FilterSyntaxError("malformed value for %r" % "UUID")
+
+    def test(self, entry):
+        return entry.uuid == self.value
+
+    def __str__(self):
+        return "(UUID %s)" % self.value
 
 # }}}
 # Basic boolean filters (AND, OR, NOT, TRUE, FALSE) {{{
