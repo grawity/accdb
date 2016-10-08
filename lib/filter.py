@@ -16,26 +16,26 @@ class Filter(object):
         tokens = []
         depth = 0
         start = -1
-        Core.debug("parse input: %r" % text)
+        Core.trace("parse input: %r" % text)
         for pos, char in enumerate(text):
-            #Core.debug("char %r, pos %d, esc %r" % (char, pos, esc))
+            #Core.trace("char %r, pos %d, esc %r" % (char, pos, esc))
             if char == "(":
                 if depth == 0:
                     if start >= 0:
                         # handle "AND(foo)" when there's no whitespace
-                        Core.debug("tokens += prefix-word %r" % text[start:pos])
+                        Core.trace("tokens += prefix-word %r" % text[start:pos])
                         tokens.append(text[start:pos])
                     start = pos+1
                 depth += 1
             elif char == ")":
                 depth -= 1
                 if depth == 0 and start >= 0:
-                    Core.debug("tokens += grouped %r" % text[start:pos])
+                    Core.trace("tokens += grouped %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
             elif char in " \t\r\n":
                 if depth == 0 and start >= 0:
-                    Core.debug("tokens += word %r" % text[start:pos])
+                    Core.trace("tokens += word %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
             else:
@@ -47,9 +47,9 @@ class Filter(object):
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
         else:
             if start >= 0 and start <= pos:
-                Core.debug("tokens += final %r" % text[start:])
+                Core.trace("tokens += final %r" % text[start:])
                 tokens.append(text[start:])
-            Core.debug("parse output: %r" % tokens)
+            Core.trace("parse output: %r" % tokens)
             return tokens
 
     @staticmethod
