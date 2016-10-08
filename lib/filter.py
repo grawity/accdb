@@ -132,6 +132,9 @@ class Filter(object):
                     raise FilterSyntaxError("not enough arguments for %r" % op)
             elif op in {"TRUE", "true", "FALSE", "false"}:
                 raise FilterSyntaxError("too many arguments for %r" % op)
+            elif "=" in op or "~" in op:
+                Core.debug("unknown operator %r in (%s), trying attribute match" % (op, pattern))
+                return AttributeFilter.compile(db, pattern)
             else:
                 Core.debug("unknown operator %r in (%s), assuming AND" % (op, pattern))
                 filters = [Filter.compile(db, x) for x in tokens]
