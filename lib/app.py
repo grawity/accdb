@@ -480,6 +480,10 @@ class Cmd(object):
 
         db.modified = True
 
+    def do_parse_filter(self, argv):
+        """Parse a filter and dump it as text"""
+        print(Filter._cli_compile(db, argv))
+
     def _entry_kind(self, entry):
         kind = entry.attributes.get("@kind")
         if kind:
