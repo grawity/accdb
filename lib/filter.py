@@ -321,9 +321,9 @@ class ItemNameFilter(Filter):
 
     def __str__(self):
         if self.mode == ":glob":
-            return "(NAME %s)" % self.value
+            return "(NAME %s)" % Filter.quote(self.value)
         else:
-            return "(NAME %s %s)" % (self.mode, self.value)
+            return "(NAME %s %s)" % (self.mode, Filter.quote(self.value))
 
 class AttributeFilter(Filter):
     def __init__(self, *args):
@@ -419,9 +419,10 @@ class AttributeFilter(Filter):
 
     def __str__(self):
         if self.value is None:
-            return "(ATTR %s %s)" % (self.mode, self.attr)
+            return "(ATTR %s %s)" % (self.mode, Filter.quote(self.attr))
         else:
-            return "(ATTR %s %s %s)" % (self.attr, self.mode, self.value)
+            return "(ATTR %s %s %s)" % (Filter.quote(self.attr), self.mode,
+                                        Filter.quote(self.value))
 
     @staticmethod
     def compile(db, arg):
@@ -511,9 +512,9 @@ class TagFilter(Filter):
         elif self.value == "*":
             return "(TAG %s)" % self.value
         elif self.mode == ":exact":
-            return "(TAG %s)" % self.value
+            return "(TAG %s)" % Filter.quote(self.value)
         else:
-            return "(TAG %s %s)" % (self.mode, self.value)
+            return "(TAG %s %s)" % (self.mode, Filter.quote(self.value))
 
 class ConjunctionFilter(Filter):
     def __init__(self, *filters):
