@@ -158,7 +158,7 @@ class Cmd(object):
         cmds = [k for k in dir(self) if k.startswith("do_")]
         for cmd in cmds:
             doc = getattr(self, cmd).__doc__ or "?"
-            print("    %-14s  %s" % (cmd[3:], doc))
+            print("    %-14s  %s" % (cmd[3:].replace("_", "-"), doc))
 
     def do_copy(self, argv):
         """Copy password to clipboard"""
@@ -324,6 +324,7 @@ class Cmd(object):
         db.modified = True
 
     def do_git(self, argv):
+        """Invoke 'git' inside the database repository"""
         call_git(db, *argv)
 
     def do_undo(self, argv):
@@ -333,6 +334,7 @@ class Cmd(object):
         call_git(db, "revert", "--no-edit", "HEAD")
 
     def do_commit(self, argv):
+        """Commit all external changes to accounts.db"""
         if db.modified:
             Core.die("cannot commit unsaved database")
         call_git(db, "add", "--all")
@@ -452,12 +454,15 @@ class Cmd(object):
         db.modified = True
 
     def do_new(self, argv):
+        """Create a new entry with given name and attributes"""
         return self._do_create(None, argv[:])
 
     def do_clone(self, argv):
+        """Create a duplicate of given entry, with different attributes"""
         return self._do_create(argv[0], argv[1:])
 
     def do_comment(self, argv):
+        """Deprecated: Edit an entry's comment"""
         query, *args = argv
         num = 0
 
@@ -555,12 +560,15 @@ class Cmd(object):
                 raise ValueError("BUG: unhandled keyring action %r" % action)
 
     def do_keyring_store(self, argv):
+        """Store an entry's password to system keyring"""
         return self._do_keyring_query(argv, "store")
 
     def do_keyring_search(self, argv):
+        """Check if an entry has matching secrets in system keyring"""
         return self._do_keyring_query(argv, "search")
 
     def do_keyring_forget(self, argv):
+        """Remove all secrets matching an entry from system keyring"""
         return self._do_keyring_query(argv, "clear")
 
     do_c     = do_copy
