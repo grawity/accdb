@@ -41,7 +41,6 @@ class Filter(object):
             else:
                 if start < 0:
                     start = pos
-        Core.debug("after parsing, depth=%r start=%r" % (depth, start))
         if depth > 0:
             raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
         elif depth < 0:
@@ -149,6 +148,7 @@ class Filter(object):
             return ConstantFilter(op[0] in "Tt")
         # shortcut syntaxes
         elif " " in op or "(" in op or ")" in op:
+            Core.debug("whitespace in operator %r in (%s), recursing" % (op, pattern))
             return Filter.compile(db, op)
         elif op.startswith("#"):
             return ItemNumberFilter(op[1:])
