@@ -164,7 +164,7 @@ class Filter(object):
             return ItemNumberFilter(op)
         elif re.match(r"^[0-9,-]+$", op):
             return ItemNumberRangeFilter(op)
-        elif "=" in op:
+        elif "=" in op or "~" in op:
             return AttributeFilter.compile(db, op)
         else:
             Core.debug("no known prefix, trying PatternFilter(%r)" % op)
