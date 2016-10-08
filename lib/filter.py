@@ -233,7 +233,11 @@ class PatternFilter(Filter):
         elif pattern.startswith("="):
             return ItemNameFilter(":exact", pattern[1:])
         elif pattern.startswith(":"):
-            if pattern == ":dead":
+            if pattern == ":active":
+                return Filter.compile(db, "NOT :inactive")
+            elif pattern == ":inactive":
+                return Filter.compile(db, "OR +cancelled +dead +expired +gone")
+            elif pattern == ":dead":
                 return Filter.compile(db, "AND (NOT +dead) @date.shutdown<now+3")
             elif pattern == ":dying":
                 return Filter.compile(db, "AND (NOT +dead) @date.shutdown")
