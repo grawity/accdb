@@ -137,11 +137,11 @@ class Entry(object):
              color=False, itemno=None):
         """
         storage:
-            output !private data
+            output private data
             output metadata (UUIDs, etc.)
             do not output line numbers
         conceal
-            base64-encode private data
+            do not display private data
         """
 
         if itemno is None:
@@ -202,6 +202,9 @@ class Entry(object):
                                 #value = value.decode("utf-8")
                                 #value = "<base64> %s" % value
                                 value = "<wrapped> %s" % value
+                            else:
+                                # store the value unencrypted
+                                pass
                         elif conceal:
                             value = "<private>"
                     elif attr_is_reflink(key):

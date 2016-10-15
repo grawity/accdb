@@ -509,8 +509,6 @@ class Cmd(object):
             db.dump_yaml()
         elif argv[0] == "json":
             db.dump_json()
-        elif argv[0] == "safe":
-            db.dump(storage=False)
         else:
             Core.err("export format %r not supported" % argv[0])
 

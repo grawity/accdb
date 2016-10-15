@@ -197,17 +197,12 @@ class Database(object):
             fh.write("\033[m")
         print(file=fh)
 
-    def dump(self, fh=sys.stdout, storage=True):
-        eargs = {"storage": storage,
-                 "conceal": ("conceal" in self.flags)}
-        if storage:
-            self.dump_header(fh)
+    def dump(self, fh=sys.stdout):
+        self.dump_header(fh)
         for entry in self:
-            if entry.deleted:
-                continue
-            print(entry.dump(**eargs), file=fh)
-        if storage:
-            print(";; end", file=fh)
+            if not entry.deleted:
+                print(entry.dump(storage=True), file=fh)
+        print(";; end", file=fh)
 
     def to_structure(self):
         return {
