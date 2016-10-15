@@ -160,21 +160,6 @@ class Cmd(object):
             doc = getattr(self, cmd).__doc__ or "?"
             print("    %-14s  %s" % (cmd[3:].replace("_", "-"), doc))
 
-    def do_copy(self, argv):
-        """Copy password to clipboard"""
-        items = list(Filter.cli_search_argv(db, argv))
-        if not items:
-            Core.die("no entries found")
-        elif len(items) > 1:
-            Core.notice("using first result out of %d" % len(items))
-        entry = items[0]
-        self._show_entry(entry)
-        if "pass" in entry.attributes:
-            Clipboard.put(entry.attributes["pass"][0])
-            Core.info("password copied to clipboard")
-        else:
-            Core.err("entry has no password")
-
     def do_dump(self, argv, db=None):
         """Dump the database to stdout (yaml, json, safe)"""
         if db is None:
@@ -239,15 +224,6 @@ class Cmd(object):
         for entry in Filter.cli_search_argv(db, argv):
             self._show_entry(entry, conceal=False)
 
-    def do_get(self, argv):
-        """Display the 'pass' field of the first matching entry"""
-        entry = Filter.cli_findfirst_argv(db, argv)
-        secret = entry.attributes.get("pass")
-        if secret:
-            print(secret[0])
-        else:
-            Core.err("entry has no password field")
-
     def do_rshow(self, argv):
         """Display entries (safe, recursive)"""
         for entry in Filter.cli_search_argv(db, argv):
@@ -299,27 +275,50 @@ class Cmd(object):
             else:
                 Core.err("cannot generate Qr code: entry has no WPA PSK (!wifi.psk)")
 
-    def do_totp(self, argv):
-        """Generate an OATH TOTP response"""
-        for entry in Filter.cli_search_argv(db, argv, Entry.FILTER_OATH):
-            params = entry.oath_params
-            if params:
-                otp = params.generate()
-                print(otp)
-            else:
-                Core.err("cannot generate OTP: entry has no OATH PSK (!2fa.oath.psk)")
+    def do_get_pass(self, argv):
+        """Display the 'pass' field of the first matching entry"""
+        entry = Filter.cli_findfirst_argv(db, argv)
+        secret = entry.attributes.get("pass")
+        if secret:
+            print(secret[0])
+        else:
+            Core.err("entry has no password")
 
-    def do_t(self, argv):
+    def do_copy_pass(self, argv):
+        """Copy password to clipboard"""
+        entry = Filter.cli_findfirst_argv(db, argv)
+        self._show_entry(entry)
+        secret = entry.attributes.get("pass")
+        if secret:
+            Clipboard.put(secret[0])
+            Core.info("password copied to clipboard")
+        else:
+            Core.err("entry has no password")
+
+    def do_get_totp(self, argv):
+        """Generate an OATH TOTP response"""
+        entry = Filter.cli_findfirst_argv(db, argv, Entry.FILTER_OATH)
+        params = entry.oath_params
+        if params:
+            print(params.generate())
+        else:
+            Core.err("entry has no OATH PSK")
+
+    def do_copy_totp(self, argv):
         """Copy OATH TOTP response to clipboard"""
         entry = Filter.cli_findfirst_argv(db, argv)
         self._show_entry(entry)
         params = entry.oath_params
         if params:
-            otp = params.generate()
-            Clipboard.put(str(otp))
+            Clipboard.put(str(params.generate()))
             Core.info("OATH response copied to clipboard")
         else:
-            Core.err("cannot generate OTP: entry has no OATH PSK")
+            Core.err("entry has no OATH PSK")
+
+    do_get      = do_get_pass
+    do_totp     = do_get_totp
+    do_c        = do_copy_pass
+    do_t        = do_copy_totp
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
