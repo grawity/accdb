@@ -288,30 +288,35 @@ class Entry(object):
         psk = decode_psk(tmp[0])
         p = OATHParameters(psk)
 
-        tmp = self.attributes.get("2fa.subject",
+        tmp = self.attributes.get("@2fa.subject",
+              self.attributes.get("2fa.subject",
               self.attributes.get("login",
               self.attributes.get("username",
-              self.attributes.get("email"))))
+              self.attributes.get("email")))))
         if tmp:
             p.login = tmp[0]
         else:
             p.login = self.name
 
-        tmp = self.attributes.get("2fa.issuer")
+        tmp = self.attributes.get("@2fa.issuer",
+              self.attributes.get("2fa.issuer"))
         if tmp:
             p.issuer = tmp[0]
         else:
             p.issuer = self.name
 
-        tmp = self.attributes.get("2fa.oath.type")
+        tmp = self.attributes.get("@2fa.oath.type",
+              self.attributes.get("2fa.oath.type"))
         if tmp:
             p.otype = tmp[0]
 
-        tmp = self.attributes.get("2fa.oath.digits")
+        tmp = self.attributes.get("@2fa.oath.digits",
+              self.attributes.get("2fa.oath.digits"))
         if tmp:
             p.digits = int(tmp[0])
 
-        tmp = self.attributes.get("2fa.oath.window")
+        tmp = self.attributes.get("@2fa.oath.window",
+              self.attributes.get("2fa.oath.window"))
         if tmp:
             p.window = int(tmp[0])
 
