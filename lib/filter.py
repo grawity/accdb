@@ -171,7 +171,7 @@ class Filter(object):
             return PatternFilter(db, op)
 
     @staticmethod
-    def _compile_and_search(db, text):
+    def cli_search_str(db, text):
         try:
             filter = Filter.compile(db, text)
         except FilterSyntaxError as e:
@@ -182,7 +182,7 @@ class Filter(object):
         return db.find(filter)
 
     @staticmethod
-    def _cli_compile(db, argv):
+    def cli_compile_argv(db, argv):
         try:
             if len(argv) > 1:
                 filters = [Filter.compile(db, x) for x in argv]
@@ -199,8 +199,8 @@ class Filter(object):
         return filter
 
     @staticmethod
-    def _cli_compile_and_search(db, argv, fmt=None):
-        filter = Filter._cli_compile(db, argv)
+    def cli_search_argv(db, argv, fmt=None):
+        filter = Filter.cli_compile_argv(db, argv)
         if fmt:
             Core.debug("applying extra filter: %r", fmt)
             filter = Filter.compile(db, fmt % filter)
@@ -208,8 +208,8 @@ class Filter(object):
         return db.find(filter)
 
     @staticmethod
-    def _cli_compile_and_find_first(db, argv, fmt=None):
-        items = list(Filter._cli_compile_and_search(db, argv, fmt))
+    def cli_findfirst_argv(db, argv, fmt=None):
+        items = list(Filter.cli_search_argv(db, argv, fmt))
         if not items:
             Core.die("no entries found")
         elif len(items) > 1:

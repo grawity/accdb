@@ -162,7 +162,7 @@ class Cmd(object):
 
     def do_copy(self, argv):
         """Copy password to clipboard"""
-        items = list(Filter._cli_compile_and_search(db, argv))
+        items = list(Filter.cli_search_argv(db, argv))
         if not items:
             Core.die("no entries found")
         elif len(items) > 1:
@@ -225,23 +225,23 @@ class Cmd(object):
     def do_raw(self, argv):
         """Display entries for exporting"""
         db.dump_header(sys.stdout)
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             # TODO: remove conceal=False when wrap_secret is defined
             self._show_entry(entry, storage=True)
 
     def do_show(self, argv):
         """Display entries (safe)"""
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             self._show_entry(entry)
 
     def do_reveal(self, argv):
         """Display entries (including sensitive information)"""
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             self._show_entry(entry, conceal=False)
 
     def do_get(self, argv):
         """Display the 'pass' field of the first matching entry"""
-        entry = Filter._cli_compile_and_find_first(db, argv)
+        entry = Filter.cli_findfirst_argv(db, argv)
         secret = entry.attributes.get("pass")
         if secret:
             print(secret[0])
@@ -250,7 +250,7 @@ class Cmd(object):
 
     def do_rshow(self, argv):
         """Display entries (safe, recursive)"""
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_ls(self, argv):
@@ -259,7 +259,7 @@ class Cmd(object):
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
             f = lambda arg, fmt: arg
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             name = entry.name
             user = entry.attributes.get("login",
                    entry.attributes.get("username",
@@ -280,7 +280,7 @@ class Cmd(object):
 
     def do_qr(self, argv):
         """Display the entry's OATH PSK as a Qr code"""
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             self._show_entry(entry)
             if entry.oath_params:
                 data = entry.oath_params.make_uri()
@@ -301,7 +301,7 @@ class Cmd(object):
 
     def do_totp(self, argv):
         """Generate an OATH TOTP response"""
-        for entry in Filter._cli_compile_and_search(db, argv, Entry.FILTER_OATH):
+        for entry in Filter.cli_search_argv(db, argv, Entry.FILTER_OATH):
             params = entry.oath_params
             if params:
                 otp = params.generate()
@@ -311,7 +311,7 @@ class Cmd(object):
 
     def do_t(self, argv):
         """Copy OATH TOTP response to clipboard"""
-        entry = Filter._cli_compile_and_find_first(db, argv)
+        entry = Filter.cli_findfirst_argv(db, argv)
         self._show_entry(entry)
         params = entry.oath_params
         if params:
@@ -366,7 +366,7 @@ class Cmd(object):
             Core.die("no old tags specified")
 
         query = "OR " + " ".join(["+%s" % tag for tag in old_tags])
-        items = Filter._compile_and_search(db, query)
+        items = Filter.cli_search_str(db, query)
         num   = 0
 
         for entry in items:
@@ -394,7 +394,7 @@ class Cmd(object):
         if bad_args:
             Core.die("bad arguments: %r" % bad_args)
 
-        items = Filter._compile_and_search(db, query)
+        items = Filter.cli_search_str(db, query)
         tags  = set(tags)
         num   = 0
 
@@ -418,7 +418,7 @@ class Cmd(object):
 
         changes = Changeset(args, key_alias=attr_names)
         num = 0
-        for entry in Filter._compile_and_search(db, query):
+        for entry in Filter.cli_search_str(db, query):
             changes.apply_to(entry.attributes, transform_cb=entry.expand_attr_cb)
             entry.sync_names()
             num += 1
@@ -469,7 +469,7 @@ class Cmd(object):
         num = 0
 
         changes = TextChangeset(args)
-        for entry in Filter._compile_and_search(db, query):
+        for entry in Filter.cli_search_str(db, query):
             entry.comment = changes.apply(entry.comment)
             num += 1
             self._show_entry(entry)
@@ -481,7 +481,7 @@ class Cmd(object):
 
     def do_rm(self, argv):
         """Delete an entry"""
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             entry.deleted = True
             self._show_entry(entry)
 
@@ -489,7 +489,7 @@ class Cmd(object):
 
     def do_parse_filter(self, argv):
         """Parse a filter and dump it as text"""
-        print(Filter._cli_compile(db, argv))
+        print(Filter.cli_compile_argv(db, argv))
 
     def _entry_kind(self, entry):
         kind = entry.attributes.get("@kind")
@@ -504,7 +504,7 @@ class Cmd(object):
         if action not in {"clear", "search", "lookup", "store"}:
             raise ValueError("unknown keyring action %r" % action)
 
-        for entry in Filter._cli_compile_and_search(db, argv):
+        for entry in Filter.cli_search_argv(db, argv):
             self._show_entry(entry)
             kind = self._entry_kind(entry)
 
