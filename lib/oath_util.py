@@ -1,9 +1,9 @@
 import base64
 from collections import OrderedDict
 from nullroute.core import *
+import nullroute.oath as oath
 import urllib.parse
 
-from . import hotpie as oath
 from .string import encode_psk
 
 class OATHParameters(object):
@@ -56,5 +56,7 @@ class OATHParameters(object):
 
         if self.otype == "totp":
             return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
+        elif self.otype == "steam-totp":
+            return oath.SteamTOTP(self.raw_psk)
         else:
             Core.err("OATH %r is not supported yet" % self.otype)
