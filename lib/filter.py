@@ -172,14 +172,7 @@ class Filter(object):
 
     @staticmethod
     def cli_search_str(db, text):
-        try:
-            filter = Filter.compile(db, text)
-        except FilterSyntaxError as e:
-            Core.die("syntax error in filter: %s" % e.args)
-        except re.error as e:
-            Core.die("syntax error in regex: %s" % e.args)
-        Core.debug("compiled filter: %s", filter)
-        return db.find(filter)
+        return Filter.cli_search_argv(db, [text])
 
     @staticmethod
     def cli_compile_argv(db, argv):
