@@ -572,7 +572,6 @@ class Cmd(object):
         """Remove all secrets matching an entry from system keyring"""
         return self._do_keyring_query(argv, "clear")
 
-    do_c        = do_copy
     do_g        = do_show
     do_grep     = do_show
     do_re       = do_reveal
