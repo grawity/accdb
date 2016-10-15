@@ -170,8 +170,8 @@ class Cmd(object):
         entry = items[0]
         self._show_entry(entry)
         if "pass" in entry.attributes:
-            print("(Password copied to clipboard.)")
             Clipboard.put(entry.attributes["pass"][0])
+            Core.info("password copied to clipboard")
         else:
             Core.err("entry has no password")
 
@@ -317,7 +317,7 @@ class Cmd(object):
         if params:
             otp = params.generate()
             Clipboard.put(str(otp))
-            Core.notice("OATH response copied to clipboard")
+            Core.info("OATH response copied to clipboard")
         else:
             Core.err("cannot generate OTP: entry has no OATH PSK")
 
