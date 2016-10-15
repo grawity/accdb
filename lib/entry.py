@@ -22,7 +22,7 @@ class Entry(object):
 
     FILTER_OATH = "AND %s @!2fa.oath.psk"
 
-    DEFAULT_HIDDEN_ATTRS = ["@*", "!2fa.*"]
+    DEFAULT_HIDDEN_ATTRS = ["@*", "!2fa.*", "2fa.oath.*"]
 
     def __init__(self, database=None):
         self.attributes = dict()
