@@ -188,7 +188,6 @@ class Filter(object):
             Core.die("syntax error in filter: %s" % e.args)
         except re.error as e:
             Core.die("syntax error in regex: %s" % e.args)
-        Core.debug("compiled filter: %s", filter)
         return filter
 
     @staticmethod
@@ -197,7 +196,6 @@ class Filter(object):
         if fmt:
             Core.debug("applying extra filter: %r", fmt)
             filter = Filter.compile(db, fmt % filter)
-            Core.debug("recompiled filter: %s", filter)
         return db.find(filter)
 
     @staticmethod
