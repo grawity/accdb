@@ -200,7 +200,6 @@ class Entry(object):
                                 value = wrap_secret(value)
                                 #value = base64.b64encode(value)
                                 #value = value.decode("utf-8")
-                                #value = "<base64> %s" % value
                                 value = "<wrapped> %s" % value
                             else:
                                 # store the value unencrypted
@@ -210,18 +209,16 @@ class Entry(object):
                     elif attr_is_reflink(key):
                         key_fmt = "38;5;250"
                         value_fmt = key_fmt
-                        if not storage:
-                            try:
-                                sub_entry = self.db.find_by_uuid(value)
-                            except KeyError:
-                                value_fmt = "33"
-                            except ValueError:
-                                value_fmt = "33"
-                            else:
-                                desc = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
-                                if conceal:
-                                    value = desc
-                                    desc = None
+                        try:
+                            sub_entry = self.db.find_by_uuid(value)
+                        except KeyError:
+                            value_fmt = "33"
+                        except ValueError:
+                            value_fmt = "33"
+                        else:
+                            desc = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
+                            if conceal:
+                                value, desc = desc, None
                     elif attr_is_metadata(key):
                         key_fmt = "38;5;244"
                         value_fmt = key_fmt
@@ -233,7 +230,7 @@ class Entry(object):
                                 value += f(" (%s)" % relative_date(value), paren_fmt)
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
-                    if desc and not storage:
+                    if desc:
                         data += "\t%s\n" % f("-- %s" % desc, "38;5;244")
 
             if n_hidden:
