@@ -241,13 +241,7 @@ class Cmd(object):
 
     def do_get(self, argv):
         """Display the 'pass' field of the first matching entry"""
-        items = list(Filter._cli_compile_and_search(db, argv))
-        if not items:
-            Core.die("no entries found")
-        elif len(items) > 1:
-            Core.notice("using first result out of %d" % len(items))
-        entry = items[0]
-
+        entry = Filter._cli_compile_and_find_first(db, argv)
         secret = entry.attributes.get("pass")
         if secret:
             print(secret[0])
@@ -317,13 +311,7 @@ class Cmd(object):
 
     def do_t(self, argv):
         """Copy OATH TOTP response to clipboard"""
-        items = list(Filter._cli_compile_and_search(db, argv, Entry.FILTER_OATH))
-        if not items:
-            Core.die("no entries found")
-        elif len(items) > 1:
-            Core.notice("using first result out of %d" % len(items))
-        entry = items[0]
-
+        entry = Filter._cli_compile_and_find_first(db, argv)
         self._show_entry(entry)
         params = entry.oath_params
         if params:

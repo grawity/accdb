@@ -207,6 +207,15 @@ class Filter(object):
             Core.debug("recompiled filter: %s", filter)
         return db.find(filter)
 
+    @staticmethod
+    def _cli_compile_and_find_first(db, argv, fmt=None):
+        items = list(Filter._cli_compile_and_search(db, argv, fmt))
+        if not items:
+            Core.die("no entries found")
+        elif len(items) > 1:
+            Core.notice("using first result out of %d" % len(items))
+        return items[0]
+
 # Kitchen sink filter (PATTERN) {{{
 
 class PatternFilter(Filter):
