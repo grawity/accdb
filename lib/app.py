@@ -133,26 +133,6 @@ class Cmd(object):
         else:
             Core.die("no command given")
 
-    def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
-        text = entry.dump(color=sys.stdout.isatty(), **kwargs)
-        if indent:
-            for line in text.split("\n"):
-                print("\t"*depth + line)
-        else:
-            print(text)
-        if recurse:
-            for key in entry.attributes:
-                if attr_is_reflink(key):
-                    for value in entry.attributes[key]:
-                        try:
-                            sub_entry = db.find_by_uuid(value)
-                            self._show_entry(sub_entry,
-                                             indent=indent,
-                                             depth=depth+1,
-                                             **kwargs)
-                        except KeyError:
-                            pass
-
     def do_help(self, argv):
         """Print this text"""
         cmds = [k for k in dir(self) if k.startswith("do_")]
@@ -160,74 +140,7 @@ class Cmd(object):
             doc = getattr(self, cmd).__doc__ or "?"
             print("    %-14s  %s" % (cmd[3:].replace("_", "-"), doc))
 
-    def do_dump(self, argv, db=None):
-        """Dump the database to stdout (yaml, json, safe)"""
-        if db is None:
-            db = globals()["db"]
-
-        if not argv:
-            db.dump()
-        elif argv[0] == "yaml":
-            db.dump_yaml()
-        elif argv[0] == "json":
-            db.dump_json()
-        elif argv[0] == "safe":
-            db.dump(storage=False)
-        else:
-            Core.err("export format %r not supported" % argv[0])
-
-    def do_convert(self, argv):
-        """Read entries from stdin and dump to stdout"""
-
-        newdb = Database()
-        newdb.parseinto(sys.stdin)
-        self.do_dump(argv, newdb)
-
-    def do_merge(self, argv):
-        """Read entries from stdin and merge to main database"""
-
-        newdb = Database()
-        outdb = Database()
-
-        newdb.parseinto(sys.stdin)
-
-        for newentry in newdb:
-            if newentry._broken:
-                Core.warn("skipped broken entry")
-                print(newentry.dump(storage=True), file=sys.stderr)
-                continue
-
-            try:
-                entry = db.replace(newentry)
-            except KeyError:
-                entry = db.add(newentry)
-            outdb.add(entry)
-
-        db.modified = True
-
-        self.do_dump("", outdb)
-
-    def do_raw(self, argv):
-        """Display entries for exporting"""
-        db.dump_header(sys.stdout)
-        for entry in Filter.cli_search_argv(db, argv):
-            # TODO: remove conceal=False when wrap_secret is defined
-            self._show_entry(entry, storage=True)
-
-    def do_show(self, argv):
-        """Display entries (safe)"""
-        for entry in Filter.cli_search_argv(db, argv):
-            self._show_entry(entry)
-
-    def do_reveal(self, argv):
-        """Display entries (including sensitive information)"""
-        for entry in Filter.cli_search_argv(db, argv):
-            self._show_entry(entry, conceal=False)
-
-    def do_rshow(self, argv):
-        """Display entries (safe, recursive)"""
-        for entry in Filter.cli_search_argv(db, argv):
-            self._show_entry(entry, recurse=True, indent=True)
+    ### Lookup commands (display)
 
     def do_ls(self, argv):
         """Display entries (names only)"""
@@ -254,6 +167,46 @@ class Cmd(object):
                 name = ellipsize(name, line_max)
             print("%5d │ %s" % (entry.itemno, name))
 
+    def _show_entry(self, entry, recurse=False, indent=False, depth=0, **kwargs):
+        text = entry.dump(color=sys.stdout.isatty(), **kwargs)
+        if indent:
+            for line in text.split("\n"):
+                print("\t"*depth + line)
+        else:
+            print(text)
+        if recurse:
+            for key in entry.attributes:
+                if attr_is_reflink(key):
+                    for value in entry.attributes[key]:
+                        try:
+                            sub_entry = db.find_by_uuid(value)
+                            self._show_entry(sub_entry, indent=indent,
+                                             depth=depth+1, **kwargs)
+                        except KeyError:
+                            pass
+
+    def do_show(self, argv):
+        """Display entries (safe)"""
+        for entry in Filter.cli_search_argv(db, argv):
+            self._show_entry(entry)
+
+    def do_rshow(self, argv):
+        """Display entries (safe, recursive)"""
+        for entry in Filter.cli_search_argv(db, argv):
+            self._show_entry(entry, recurse=True, indent=True)
+
+    def do_reveal(self, argv):
+        """Display entries (including sensitive information)"""
+        for entry in Filter.cli_search_argv(db, argv):
+            self._show_entry(entry, conceal=False)
+
+    def do_raw(self, argv):
+        """Display entries for exporting"""
+        db.dump_header(sys.stdout)
+        for entry in Filter.cli_search_argv(db, argv):
+            # TODO: remove conceal=False when wrap_secret is defined
+            self._show_entry(entry, storage=True)
+
     def do_qr(self, argv):
         """Display the entry's OATH PSK as a Qr code"""
         for entry in Filter.cli_search_argv(db, argv):
@@ -274,6 +227,8 @@ class Cmd(object):
                 print()
             else:
                 Core.err("cannot generate Qr code: entry has no WPA PSK (!wifi.psk)")
+
+    ### Lookup commands (single-target)
 
     def do_get_pass(self, argv):
         """Display the 'pass' field of the first matching entry"""
@@ -320,36 +275,91 @@ class Cmd(object):
     do_c        = do_copy_pass
     do_t        = do_copy_totp
 
-    def do_touch(self, argv):
-        """Rewrite the accounts.db file"""
-        db.modified = True
+    ### Lookup commands (keyring)
 
-    def do_git(self, argv):
-        """Invoke 'git' inside the database repository"""
-        call_git(db, *argv)
+    def _entry_kind(self, entry):
+        kind = entry.attributes.get("@kind")
+        if kind:
+            return kind[0]
+        elif "luks" in entry.tags:
+            return "luks"
+        elif "pgp" in entry.tags:
+            return "pgp"
 
-    def do_undo(self, argv):
-        """Revert the last commit to accounts.db"""
-        if db.modified:
-            Core.die("cannot revert unsaved database")
-        call_git(db, "revert", "--no-edit", "HEAD")
+    def _do_keyring_query(self, argv, action):
+        if action not in {"clear", "search", "lookup", "store"}:
+            raise ValueError("unknown keyring action %r" % action)
 
-    def do_commit(self, argv):
-        """Commit all external changes to accounts.db"""
-        if db.modified:
-            Core.die("cannot commit unsaved database")
-        call_git(db, "add", "--all")
-        call_git(db, "commit", *argv)
+        for entry in Filter.cli_search_argv(db, argv):
+            self._show_entry(entry)
+            kind = self._entry_kind(entry)
 
-    def do_sort(self, argv):
-        """Sort and rewrite the database"""
-        db.sort()
-        db.modified = True
+            if action == "store":
+                try:
+                    label = entry.name
+                    secret = entry.attributes["pass"][0]
+                except KeyError as e:
+                    Core.err("entry has no secret to store (no %s field)" % e)
+                    continue
 
-    def do_tags(self, argv):
-        """List all tags used by the database's entries"""
-        for tag in sorted(db.tags()):
-            print(tag)
+            try:
+                if kind == "luks":
+                    set_attrs = [
+                        "xdg:schema", "org.gnome.GVfs.Luks.Password",
+                    ]
+                    get_attrs = [
+                        "gvfs-luks-uuid", entry.attributes["uuid"][0],
+                    ]
+                elif kind == "pgp":
+                    set_attrs = [
+                        "xdg:schema", "org.gnupg.Passphrase",
+                    ]
+                    get_attrs = [
+                        "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
+                    ]
+                else:
+                    Core.err("couldn't determine entry schema (unknown kind %r)" % kind)
+                    continue
+            except KeyError as e:
+                Core.err("entry has no %s field (required for its kind %r)" % (e, kind))
+                continue
+
+            if action == "store":
+                Core.debug("store entry %r" % label)
+                Core.debug("set attrs %r" % set_attrs)
+                Core.debug("get attrs %r" % get_attrs)
+                if xdg_secret_store(label, secret, [*get_attrs, *set_attrs]):
+                    Core.info("stored %s secret in keyring" % kind)
+                else:
+                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
+            elif action == "search":
+                Core.debug("get attrs %r" % get_attrs)
+                if xdg_secret_search_stdout(get_attrs):
+                    pass
+                else:
+                    Core.warn("secret-tool %s failed for %r" % (action, get_attrs))
+            elif action == "clear":
+                Core.debug("get attrs %r" % get_attrs)
+                if xdg_secret_clear(get_attrs):
+                    Core.info("removed matching %s secrets from keyring" % kind)
+                else:
+                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
+            else:
+                raise ValueError("BUG: unhandled keyring action %r" % action)
+
+    def do_keyring_store(self, argv):
+        """Store an entry's password to system keyring"""
+        return self._do_keyring_query(argv, "store")
+
+    def do_keyring_search(self, argv):
+        """Check if an entry has matching secrets in system keyring"""
+        return self._do_keyring_query(argv, "search")
+
+    def do_keyring_forget(self, argv):
+        """Remove all secrets matching an entry from system keyring"""
+        return self._do_keyring_query(argv, "clear")
+
+    ### Entry modification commands
 
     def do_retag(self, argv):
         """Rename tags on all entries"""
@@ -486,91 +496,89 @@ class Cmd(object):
 
         db.modified = True
 
+    ### Database commands
+
+    def do_dump(self, argv, db=None):
+        """Dump the database to stdout (yaml, json, safe)"""
+        if db is None:
+            db = globals()["db"]
+
+        if not argv:
+            db.dump()
+        elif argv[0] == "yaml":
+            db.dump_yaml()
+        elif argv[0] == "json":
+            db.dump_json()
+        elif argv[0] == "safe":
+            db.dump(storage=False)
+        else:
+            Core.err("export format %r not supported" % argv[0])
+
+    def do_convert(self, argv):
+        """Read entries from stdin and dump to stdout"""
+
+        newdb = Database()
+        newdb.parseinto(sys.stdin)
+        self.do_dump(argv, newdb)
+
+    def do_merge(self, argv):
+        """Read entries from stdin and merge to main database"""
+
+        newdb = Database()
+        outdb = Database()
+
+        newdb.parseinto(sys.stdin)
+
+        for newentry in newdb:
+            if newentry._broken:
+                Core.warn("skipped broken entry")
+                print(newentry.dump(storage=True), file=sys.stderr)
+                continue
+
+            try:
+                entry = db.replace(newentry)
+            except KeyError:
+                entry = db.add(newentry)
+            outdb.add(entry)
+
+        db.modified = True
+
+        self.do_dump("", outdb)
+
+    def do_touch(self, argv):
+        """Rewrite the accounts.db file"""
+        db.modified = True
+
+    def do_git(self, argv):
+        """Invoke 'git' inside the database repository"""
+        call_git(db, *argv)
+
+    def do_undo(self, argv):
+        """Revert the last commit to accounts.db"""
+        if db.modified:
+            Core.die("cannot revert unsaved database")
+        call_git(db, "revert", "--no-edit", "HEAD")
+
+    def do_commit(self, argv):
+        """Commit all external changes to accounts.db"""
+        if db.modified:
+            Core.die("cannot commit unsaved database")
+        call_git(db, "add", "--all")
+        call_git(db, "commit", *argv)
+
+    def do_sort(self, argv):
+        """Sort and rewrite the database"""
+        db.sort()
+        db.modified = True
+
+    def do_tags(self, argv):
+        """List all tags used by the database's entries"""
+        for tag in sorted(db.tags()):
+            print(tag)
+
     def do_parse_filter(self, argv):
         """Parse a filter and dump it as text"""
         print(Filter.cli_compile_argv(db, argv))
-
-    def _entry_kind(self, entry):
-        kind = entry.attributes.get("@kind")
-        if kind:
-            return kind[0]
-        elif "luks" in entry.tags:
-            return "luks"
-        elif "pgp" in entry.tags:
-            return "pgp"
-
-    def _do_keyring_query(self, argv, action):
-        if action not in {"clear", "search", "lookup", "store"}:
-            raise ValueError("unknown keyring action %r" % action)
-
-        for entry in Filter.cli_search_argv(db, argv):
-            self._show_entry(entry)
-            kind = self._entry_kind(entry)
-
-            if action == "store":
-                try:
-                    label = entry.name
-                    secret = entry.attributes["pass"][0]
-                except KeyError as e:
-                    Core.err("entry has no secret to store (no %s field)" % e)
-                    continue
-
-            try:
-                if kind == "luks":
-                    set_attrs = [
-                        "xdg:schema", "org.gnome.GVfs.Luks.Password",
-                    ]
-                    get_attrs = [
-                        "gvfs-luks-uuid", entry.attributes["uuid"][0],
-                    ]
-                elif kind == "pgp":
-                    set_attrs = [
-                        "xdg:schema", "org.gnupg.Passphrase",
-                    ]
-                    get_attrs = [
-                        "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
-                    ]
-                else:
-                    Core.err("couldn't determine entry schema (unknown kind %r)" % kind)
-                    continue
-            except KeyError as e:
-                Core.err("entry has no %s field (required for its kind %r)" % (e, kind))
-                continue
-
-            if action == "store":
-                Core.debug("store entry %r" % label)
-                Core.debug("set attrs %r" % set_attrs)
-                Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_store(label, secret, [*get_attrs, *set_attrs]):
-                    Core.info("stored %s secret in keyring" % kind)
-                else:
-                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
-            elif action == "search":
-                Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_search_stdout(get_attrs):
-                    pass
-                else:
-                    Core.warn("secret-tool %s failed for %r" % (action, get_attrs))
-            elif action == "clear":
-                Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_clear(get_attrs):
-                    Core.info("removed matching %s secrets from keyring" % kind)
-                else:
-                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
-            else:
-                raise ValueError("BUG: unhandled keyring action %r" % action)
-
-    def do_keyring_store(self, argv):
-        """Store an entry's password to system keyring"""
-        return self._do_keyring_query(argv, "store")
-
-    def do_keyring_search(self, argv):
-        """Check if an entry has matching secrets in system keyring"""
-        return self._do_keyring_query(argv, "search")
-
-    def do_keyring_forget(self, argv):
-        """Remove all secrets matching an entry from system keyring"""
-        return self._do_keyring_query(argv, "clear")
 
     do_g        = do_show
     do_grep     = do_show
