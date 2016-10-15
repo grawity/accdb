@@ -234,12 +234,25 @@ class Cmd(object):
         for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry)
 
-    do_grep = do_show
-
     def do_reveal(self, argv):
         """Display entries (including sensitive information)"""
         for entry in Filter._cli_compile_and_search(db, argv):
             self._show_entry(entry, conceal=False)
+
+    def do_get(self, argv):
+        """Display the 'pass' field of the first matching entry"""
+        items = list(Filter._cli_compile_and_search(db, argv))
+        if not items:
+            Core.die("no entries found")
+        elif len(items) > 1:
+            Core.notice("using first result out of %d" % len(items))
+        entry = items[0]
+
+        secret = entry.attributes.get("pass")
+        if secret:
+            print(secret[0])
+        else:
+            Core.err("entry has no password field")
 
     def do_rshow(self, argv):
         """Display entries (safe, recursive)"""
@@ -310,6 +323,7 @@ class Cmd(object):
         elif len(items) > 1:
             Core.notice("using first result out of %d" % len(items))
         entry = items[0]
+
         self._show_entry(entry)
         params = entry.oath_params
         if params:
@@ -571,12 +585,12 @@ class Cmd(object):
         """Remove all secrets matching an entry from system keyring"""
         return self._do_keyring_query(argv, "clear")
 
-    do_c     = do_copy
-    do_g     = do_grep
-    do_re    = do_reveal
-    do_rgrep = do_reveal
-    do_s     = do_show
-    do_w     = do_touch
+    do_c        = do_copy
+    do_g        = do_show
+    do_grep     = do_show
+    do_re       = do_reveal
+    do_rgrep    = do_reveal
+    do_s        = do_show
 
 # }}}
 
