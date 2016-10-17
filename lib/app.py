@@ -328,7 +328,7 @@ class Cmd(object):
                 Core.debug("store entry %r" % label)
                 Core.debug("set attrs %r" % set_attrs)
                 Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_store(label, secret, [*get_attrs, *set_attrs]):
+                if xdg_secret_store(label, secret, get_attrs+set_attrs):
                     Core.info("stored %s secret in keyring" % kind)
                 else:
                     Core.err("secret-tool %s failed for %r" % (action, get_attrs))
