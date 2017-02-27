@@ -232,23 +232,35 @@ class Cmd(object):
 
     def do_get_pass(self, argv):
         """Display the 'pass' field of the first matching entry"""
+        attr = "pass"
+        if argv[-1].startswith("!"):
+            attr = argv.pop()
         entry = Filter.cli_findfirst_argv(db, argv)
-        secret = entry.attributes.get("pass")
+        secret = entry.attributes.get(attr)
         if secret:
+            if len(secret) > 1:
+                Core.notice("entry has %d values for %r, using first" \
+                            % (len(secret), attr))
             print(secret[0])
         else:
-            Core.err("entry has no password")
+            Core.err("entry has no %r attribute" % attr)
 
     def do_copy_pass(self, argv):
         """Copy password to clipboard"""
+        attr = "pass"
+        if argv[-1].startswith("!"):
+            attr = argv.pop()
         entry = Filter.cli_findfirst_argv(db, argv)
         self._show_entry(entry)
-        secret = entry.attributes.get("pass")
+        secret = entry.attributes.get(attr)
         if secret:
+            if len(secret) > 1:
+                Core.notice("entry has %d values for %r, using first" \
+                            % (len(secret), attr))
             Clipboard.put(secret[0])
-            Core.info("password copied to clipboard")
+            Core.info("%r attribute copied to clipboard" % attr)
         else:
-            Core.err("entry has no password")
+            Core.err("entry has no %r attribute" % attr)
 
     def do_get_totp(self, argv):
         """Generate an OATH TOTP response"""
