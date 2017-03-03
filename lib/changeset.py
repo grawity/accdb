@@ -122,7 +122,7 @@ class Changeset(list):
                 if k in target:
                     del target[k]
             else:
-                Core.die("unknown changeset operation %r" % op)
+                Core.die("BUG: unknown changeset operation %r" % op)
         return target
 
 # }}}
