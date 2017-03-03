@@ -113,7 +113,7 @@ class Filter(object):
             # etc.
             elif op in {"ANY", "any", "~"}:
                 if op == "~":
-                    args = [op, *args]
+                    args.insert(0, op)
                 if len(args) == 1:
                     mode = ":glob" if is_glob(args[0]) else ":exact"
                     return DisjunctionFilter(
