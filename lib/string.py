@@ -5,6 +5,13 @@ import re
 import shlex
 from nullroute.core import *
 
+def b64_encode(buf):
+    if hasattr(buf, "encode"):
+        buf = buf.encode()
+    buf = base64.b64encode(buf)
+    buf = buf.decode()
+    return buf
+
 def b64_pad(string, max=4):
     n = len(string)
     if n % max:

@@ -196,38 +196,47 @@ class Entry(object):
                         value_fmt = "34"
                         if storage:
                             if "encrypt" in self.db.flags:
-                                #value = value.encode("utf-8")
                                 value = wrap_secret(value)
-                                #value = base64.b64encode(value)
-                                #value = value.decode("utf-8")
                                 value = "<wrapped> %s" % value
+                            elif val_is_unsafe(value):
+                                value = "<base64> %s" % b64_encode(value)
                             else:
-                                # store the value unencrypted
                                 pass
                         elif conceal:
                             value = "<private>"
-                    elif attr_is_reflink(key):
-                        key_fmt = "38;5;250"
-                        value_fmt = key_fmt
-                        try:
-                            sub_entry = self.db.find_by_uuid(value)
-                        except KeyError:
-                            value_fmt = "33"
-                        except ValueError:
-                            value_fmt = "33"
                         else:
-                            desc = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
-                            if conceal:
-                                value, desc = desc, None
-                    elif attr_is_metadata(key):
-                        key_fmt = "38;5;244"
-                        value_fmt = key_fmt
+                            value = value.replace("\n",
+                                                  "\n\t" + " " * len(key) + "  ")
                     else:
-                        key_fmt = "38;5;228"
-                        value_fmt = ""
-                        if key.startswith("date."):
-                            if conceal:
-                                value += f(" (%s)" % relative_date(value), paren_fmt)
+                        if attr_is_reflink(key):
+                            key_fmt = "38;5;250"
+                            value_fmt = key_fmt
+                            try:
+                                sub_entry = self.db.find_by_uuid(value)
+                            except KeyError:
+                                value_fmt = "33"
+                            except ValueError:
+                                value_fmt = "33"
+                            else:
+                                desc = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
+                                if conceal:
+                                    value, desc = desc, None
+                        elif attr_is_metadata(key):
+                            key_fmt = "38;5;244"
+                            value_fmt = key_fmt
+                        else:
+                            key_fmt = "38;5;228"
+                            value_fmt = ""
+                            if key.startswith("date."):
+                                if conceal:
+                                    value += f(" (%s)" % relative_date(value), paren_fmt)
+
+                        if val_is_unsafe(value):
+                            if storage:
+                                value = "<base64> %s" % b64_encode(value)
+                            else:
+                                value = value.replace("\n",
+                                                      "\n\t" + " " * len(key) + "  ")
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
                     if desc:

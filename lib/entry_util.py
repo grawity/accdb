@@ -55,6 +55,11 @@ def sort_attrs(entry):
                     key=canonicalize)
     return names
 
+def val_is_unsafe(value):
+    return ("\n" in value) \
+           or value.startswith("<base64> ") \
+           or value.startswith("<wrapped> ")
+
 class WiFiParameters(object):
     # https://github.com/zxing/zxing/wiki/Barcode-Contents
 
