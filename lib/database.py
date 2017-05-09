@@ -6,6 +6,8 @@ from .entry import *
 # 'Database' {{{
 
 class Database(object):
+    SUPPORTED_FEATURES = {"b64value"}
+
     def __init__(self):
         self.count = 0
         self.path = None
@@ -15,7 +17,8 @@ class Database(object):
         self.order = list()
         self.modified = False
         self.readonly = False
-        self.flags = set()
+        self.options = set()
+        self.features = set()
 
     # Import
 
@@ -43,7 +46,7 @@ class Database(object):
                 self.modeline = line.strip()
             elif line.startswith("; dbflags:"):
                 key, val = line[2:].strip().split(": ", 1)
-                self.flags = split_tags(val)
+                self.options = split_tags(val)
             elif line.strip() == ";; end":
                 pass
             elif line.startswith(";; "):
@@ -54,7 +57,12 @@ class Database(object):
                         Core.err("line %d: malformed header: %r" % (lineno, line))
                         continue
                     if key in {"options", "dbflags"}:
-                        self.flags = split_tags(val)
+                        self.options = split_tags(val)
+                    elif key == "features":
+                        self.features = split_tags(val)
+                        r = self.features - self.SUPPORTED_FEATURES
+                        if r:
+                            Core.die("line %d: unsupported features %r are used in this file" % (lineno, r))
                     else:
                         self.header[key] = val
                 else:
@@ -189,8 +197,10 @@ class Database(object):
             fh.write("\033[38;5;244m")
         if self.modeline:
             print(self.modeline, file=fh)
-        if self.flags:
-            print(";; options: %s" % ", ".join(sorted(self.flags)), file=fh)
+        if self.options:
+            print(";; options: %s" % ", ".join(sorted(self.options)), file=fh)
+        if self.features:
+            print(";; features: %s" % ", ".join(sorted(self.features)), file=fh)
         for key, val in self.header.items():
             print(";; %s: %s" % (key, val), file=fh)
         if tty:

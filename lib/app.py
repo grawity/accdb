@@ -612,7 +612,7 @@ def db_git_backup(db, summary="snapshot", body=""):
         call_git(db, "commit", "-m", summary, "-m", body, db.path,
                  stdout=null_fh)
 
-        if "autopush" in db.flags:
+        if "autopush" in db.options:
             call_git(db, "push", "-q")
 
 def db_gpg_backup(db, backup_path):
@@ -660,16 +660,16 @@ def main():
     if db.modified:
         if not os.environ.get("DRYRUN"):
             db.flush()
-            if "git" in db.flags:
+            if "git" in db.options:
                 db_git_backup(db, summary="accdb %s" % str_join_qwords(sys.argv[1:]))
-            if "backup" in db.flags:
+            if "backup" in db.options:
                 db_gpg_backup(db, db_backup_path)
         else:
             Core.notice("discarding changes made in debug mode")
             Core.debug("skipping db.flush()")
-            if "git" in db.flags:
+            if "git" in db.options:
                 Core.debug("skipping Git commit")
-            if "backup" in db.flags:
+            if "backup" in db.options:
                 Core.debug("skipping GPG backup")
 
     Core.exit()
