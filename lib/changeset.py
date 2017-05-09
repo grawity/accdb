@@ -58,21 +58,28 @@ class Changeset(list):
                 v = transform_cb(k, v)
             Core.debug(" key %r op %r val %r", k, op, v)
             if op == "set":
+                # set value, discarding previous values
                 target[k] = [v]
             elif op == "tryset":
+                # set value, but only if k1 has no values
                 if k not in target:
                     target[k] == [v]
             elif op == "add":
+                # add value if not present (ignore duplicates)
                 if k not in target:
                     target[k] = [v]
                 elif v not in target[k]:
                     target[k].append(v)
             elif op == "rem":
+                # remove value if present
                 if k not in target:
                     continue
                 elif v in target[k]:
                     target[k].remove(v)
             elif op == "copy":
+                # copy/overwrite all values from k1 to k2
+                #   - k1: unchanged
+                #   - k2: equal to k1
                 if self._key_alias:
                     v = self._key_alias.get(v, v)
                 if v in target:
@@ -81,6 +88,9 @@ class Changeset(list):
                     if k in target:
                         del target[k]
             elif op == "move":
+                # move all values from k1 to k2
+                #  - k1: deleted after move
+                #  - k2: contents of k1 (all previous values discarded)
                 if self._key_alias:
                     v = self._key_alias.get(v, v)
                 if k == v:
@@ -95,6 +105,9 @@ class Changeset(list):
                     if k in target:
                         del target[k]
             elif op == "merge":
+                # copy/merge all values from k1 to k2
+                #   - k1: unchanged
+                #   - k2: unique values from both (k1 ∪ old_k2)
                 if self._key_alias:
                     v = self._key_alias.get(v, v)
                 if v not in target:
@@ -105,10 +118,11 @@ class Changeset(list):
                 else:
                     target[k] = target[v][:]
             elif op == "del":
+                # delete k1 entirely
                 if k in target:
                     del target[k]
             else:
-                Core.die("unknown changeset operation %r" % op)
+                Core.die("BUG: unknown changeset operation %r" % op)
         return target
 
 # }}}

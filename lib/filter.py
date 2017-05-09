@@ -111,7 +111,9 @@ class Filter(object):
                     raise FilterSyntaxError("too many arguments for %r" % op)
                 return ItemUuidFilter(*args)
             # etc.
-            elif op in {"ANY", "any"}:
+            elif op in {"ANY", "any", "~"}:
+                if op == "~":
+                    args.insert(0, op)
                 if len(args) == 1:
                     mode = ":glob" if is_glob(args[0]) else ":exact"
                     return DisjunctionFilter(
@@ -164,7 +166,7 @@ class Filter(object):
             return ItemNumberFilter(op)
         elif re.match(r"^[0-9,-]+$", op):
             return ItemNumberRangeFilter(op)
-        elif "=" in op or "~" in op:
+        elif "=" in op[1:] or "~" in op[1:]:
             return AttributeFilter.compile(db, op)
         else:
             Core.debug("no known prefix, trying PatternFilter(%r)" % op)
