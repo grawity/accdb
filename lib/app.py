@@ -658,7 +658,7 @@ def main():
     interp.call(sys.argv[1:])
 
     if db.modified:
-        if not Core._in_debug_mode():
+        if not os.environ.get("DRYRUN"):
             db.flush()
             if "git" in db.flags:
                 db_git_backup(db, summary="accdb %s" % str_join_qwords(sys.argv[1:]))
