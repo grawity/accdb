@@ -290,7 +290,7 @@ class ItemNameFilter(Filter):
             Core.trace("compiled to [name = %r]", value)
         elif mode in {":glob", "?"}:
             regex = re_compile_glob(value)
-            self.test = lambda entry: any(regex.search(v) for v in entry.names)
+            self.test = lambda entry: any(regex.fullmatch(v) for v in entry.names)
             Core.trace("compiled to [name ~ %r]", regex)
         elif mode in {":regex", "~"}:
             regex = re.compile(value, re.I)
@@ -330,7 +330,7 @@ class AttributeFilter(Filter):
             elif mode in {":glob", "?"}:
                 regex = re_compile_glob(attr)
                 self.mode = ":glob"
-                self.test = lambda entry: any(regex.search(k) for k in entry.attributes)
+                self.test = lambda entry: any(regex.fullmatch(k) for k in entry.attributes)
                 Core.trace("compiled to [keys ~ %r]" % regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
@@ -350,7 +350,7 @@ class AttributeFilter(Filter):
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
-                self.test = lambda entry: any(any(regex.search(v) for v in vs)
+                self.test = lambda entry: any(any(regex.fullmatch(v) for v in vs)
                                               for vs in entry.attributes.values())
                 Core.trace("compiled to [values ~ %r]" % regex)
             elif mode in {":regex", "~"}:
@@ -369,7 +369,7 @@ class AttributeFilter(Filter):
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
-                self.test = lambda entry: any(regex.search(v)
+                self.test = lambda entry: any(regex.fullmatch(v)
                                               for v in entry.attributes.get(attr, []))
                 Core.trace("compiled to [%r ~ %r]" % (attr, regex))
             elif mode in {":regex", "~"}:
@@ -467,7 +467,7 @@ class TagFilter(Filter):
             elif is_glob(value):
                 self.mode = ":glob"
                 regex = re_compile_glob(self.value)
-                self.test = lambda entry: any(regex.search(t) for t in entry.tags)
+                self.test = lambda entry: any(regex.fullmatch(t) for t in entry.tags)
             else:
                 self.mode = ":exact"
                 self.test = lambda entry: value in entry.tags
@@ -478,7 +478,7 @@ class TagFilter(Filter):
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
-                self.test = lambda entry: any(regex.search(t) for t in entry.tags)
+                self.test = lambda entry: any(regex.fullmatch(t) for t in entry.tags)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
