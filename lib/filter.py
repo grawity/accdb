@@ -330,13 +330,16 @@ class AttributeFilter(Filter):
 
         if value is None:
             if mode in {":exact", "="}:
+                self.mode = ":exact"
                 self.test = lambda entry: attr in entry.attributes
                 Core.trace("compiled to [%r present]" % attr)
             elif mode in {":glob", "?"}:
                 regex = re_compile_glob(attr)
+                self.mode = ":glob"
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
                 Core.trace("compiled to [attrs ~ %r]" % regex)
             elif mode in {":regex", "~"}:
+                self.mode = ":regex"
                 regex = re.compile(attr, re.I)
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
                 Core.trace("compiled to [attrs ~ %r]" % regex)
