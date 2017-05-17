@@ -290,12 +290,15 @@ class ItemNameFilter(Filter):
         if mode in {":exact", "="}:
             value = value.casefold()
             self.test = lambda entry: any(v.casefold() == value for v in entry.names)
+            Core.trace("compiled to [name = %r]", value)
         elif mode in {":glob", "?"}:
             regex = re_compile_glob(value)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
+            Core.trace("compiled to [name ~ %r]", regex)
         elif mode in {":regex", "~"}:
             regex = re.compile(value, re.I)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
+            Core.trace("compiled to [name ~ %r]", regex)
         else:
             raise FilterSyntaxError("unknown mode %r for %r" % (mode, "NAME"))
 
@@ -326,17 +329,17 @@ class AttributeFilter(Filter):
             if mode in {":exact", "="}:
                 self.mode = ":exact"
                 self.test = lambda entry: attr in entry.attributes
-                Core.trace("compiled to [%r present]" % attr)
+                Core.trace("compiled to [key %r present]" % attr)
             elif mode in {":glob", "?"}:
                 regex = re_compile_glob(attr)
                 self.mode = ":glob"
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
-                Core.trace("compiled to [attrs ~ %r]" % regex)
+                Core.trace("compiled to [keys ~ %r]" % regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(attr, re.I)
                 self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
-                Core.trace("compiled to [attrs ~ %r]" % regex)
+                Core.trace("compiled to [keys ~ %r]" % regex)
             else:
                 raise FilterSyntaxError("unknown attr-mode %r for %r" % (mode, "ATTR"))
         elif value == "":
@@ -346,19 +349,19 @@ class AttributeFilter(Filter):
                 self.mode = ":exact"
                 self.test = lambda entry: any(value in vs
                                               for vs in entry.attributes.values())
-                Core.trace("compiled to [any = %r]" % value)
+                Core.trace("compiled to [values = %r]" % value)
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
                 self.test = lambda entry: any(any(regex.search(v) for v in vs)
                                               for vs in entry.attributes.values())
-                Core.trace("compiled to [any * %r]" % regex)
+                Core.trace("compiled to [values ~ %r]" % regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
                 self.test = lambda entry: any(any(regex.search(v) for v in vs)
                                               for vs in entry.attributes.values())
-                Core.trace("compiled to [any ~ %r]" % regex)
+                Core.trace("compiled to [values ~ %r]" % regex)
             else:
                 raise FilterSyntaxError("unknown value-mode %r for %r" % (mode, "ATTR"))
         else:
@@ -371,7 +374,7 @@ class AttributeFilter(Filter):
                 regex = re_compile_glob(value)
                 self.test = lambda entry: any(regex.search(v)
                                               for v in entry.attributes.get(attr, []))
-                Core.trace("compiled to [%r * %r]" % (attr, regex))
+                Core.trace("compiled to [%r ~ %r]" % (attr, regex))
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
