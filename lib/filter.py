@@ -111,8 +111,8 @@ class Filter(object):
                     raise FilterSyntaxError("too many arguments for %r" % op)
                 return ItemUuidFilter(*args)
             # etc.
-            elif op in {"ANY", "any", "~"}:
-                if op == "~":
+            elif op in {"ANY", "any", "?", "~"}:
+                if op in {"?", "~"}:
                     args.insert(0, op)
                 if len(args) == 1:
                     mode = ":glob" if is_glob(args[0]) else ":exact"
