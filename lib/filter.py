@@ -116,19 +116,9 @@ class Filter(object):
                     args.insert(0, op)
                 if len(args) == 1:
                     mode = ":glob" if is_glob(args[0]) else ":exact"
-                    return DisjunctionFilter(
-                        ItemNameFilter(mode, *args),
-                        AttributeFilter(mode, *args),
-                        AttributeFilter("*", mode, *args),
-                        TagFilter(mode, *args),
-                    )
+                    return AnyFilter(mode, *args)
                 elif len(args) == 2:
-                    return DisjunctionFilter(
-                        ItemNameFilter(*args),
-                        AttributeFilter(*args),
-                        AttributeFilter("*", *args),
-                        TagFilter(*args),
-                    )
+                    return AnyFilter(*args)
                 elif len(args) >= 3:
                     raise FilterSyntaxError("too many arguments for %r" % op)
                 else:
@@ -208,6 +198,14 @@ class Filter(object):
         elif len(items) > 1:
             Core.notice("using first result out of %d" % len(items))
         return items[0]
+
+def AnyFilter(*args):
+    return DisjunctionFilter(
+        ItemNameFilter(*args),
+        AttributeFilter(*args),
+        AttributeFilter("*", *args),
+        TagFilter(*args),
+    )
 
 # Kitchen sink filter (PATTERN) {{{
 
