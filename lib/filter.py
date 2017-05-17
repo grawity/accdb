@@ -300,10 +300,7 @@ class ItemNameFilter(Filter):
             raise FilterSyntaxError("unknown mode %r for %r" % (mode, "NAME"))
 
     def __str__(self):
-        if self.mode in {":glob", "?"}:
-            return "(NAME %s)" % Filter.quote(self.value)
-        else:
-            return "(NAME %s %s)" % (self.mode, Filter.quote(self.value))
+        return "(NAME %s %s)" % (self.mode, Filter.quote(self.value))
 
 class AttributeFilter(Filter):
     def __init__(self, *args):
