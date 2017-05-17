@@ -267,8 +267,6 @@ class PatternFilter(Filter):
         elif arg.startswith("{"):
             return ItemUuidFilter(arg)
         else:
-            if not is_glob(arg):
-                arg = "*%s*" % arg
             return ItemNameFilter(":glob", arg)
 
 # }}}
