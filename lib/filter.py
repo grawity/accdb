@@ -142,6 +142,7 @@ class Filter(object):
         elif " " in op or "(" in op or ")" in op:
             Core.debug("whitespace in operator %r in (%s), recursing" % (op, pattern))
             return Filter.compile(db, op)
+        # maybe these *should* be part of PatternFilter
         elif op.startswith("#"):
             return ItemNumberFilter(op[1:])
         elif op.startswith("{"):
@@ -230,47 +231,47 @@ class PatternFilter(Filter):
             return "(PATTERN %s)" % Filter.quote(self.pattern)
 
     @staticmethod
-    def compile(db, pattern):
-        Core.debug("PatternFilter: compiling %r", pattern)
+    def compile(db, arg):
+        Core.debug("PatternFilter: compiling %r", arg)
 
-        if pattern == "*":
+        if arg == "*":
             return ConstantFilter(True)
-        elif pattern.startswith("@"):
-            return AttributeFilter.compile(db, pattern[1:])
-        elif pattern.startswith("~"):
+        elif arg.startswith("@"):
+            return AttributeFilter.compile(db, arg[1:])
+        elif arg.startswith("~"):
             try:
-                return ItemNameFilter(":regex", pattern[1:])
+                return ItemNameFilter(":regex", arg[1:])
             except re.error as e:
-                Core.die("invalid regex %r (%s)" % (pattern[1:], e))
-        elif pattern.startswith("="):
-            return ItemNameFilter(":exact", pattern[1:])
-        elif pattern.startswith(":"):
-            if pattern == ":active":
+                Core.die("invalid regex %r (%s)" % (arg[1:], e))
+        elif arg.startswith("="):
+            return ItemNameFilter(":exact", arg[1:])
+        elif arg.startswith(":"):
+            if arg == ":active":
                 return Filter.compile(db, "NOT :inactive")
-            elif pattern == ":inactive":
+            elif arg == ":inactive":
                 return Filter.compile(db, "OR +cancelled +dead +expired +gone")
-            elif pattern == ":dead":
+            elif arg == ":dead":
                 return Filter.compile(db, "AND (NOT +dead) @date.shutdown<now+3")
-            elif pattern == ":dying":
+            elif arg == ":dying":
                 return Filter.compile(db, "AND (NOT +dead) @date.shutdown")
-            elif pattern == ":expired":
+            elif arg == ":expired":
                 return Filter.compile(db, "OR"
                                             " (AND (NOT +expired) @date.expiry<now+30)"
                                             " (AND (NOT +dead) @date.shutdown<now+3)")
-            elif pattern == ":expiring":
+            elif arg == ":expiring":
                 return Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
-            elif pattern == ":untagged":
+            elif arg == ":untagged":
                 return Filter.compile(db, "NOT (TAG *)")
-            elif pattern == ":badref":
+            elif arg == ":badref":
                 return lambda entry: entry.has_bad_references()
             else:
-                Core.die("unrecognized pattern %r" % pattern)
-        elif pattern.startswith("{"):
-            return ItemUuidFilter(pattern)
+                Core.die("unrecognized pattern %r" % arg)
+        elif arg.startswith("{"):
+            return ItemUuidFilter(arg)
         else:
-            if not is_glob(pattern):
-                pattern = "*%s*" % pattern
-            return ItemNameFilter(":glob", pattern)
+            if not is_glob(arg):
+                arg = "*%s*" % arg
+            return ItemNameFilter(":glob", arg)
 
 # }}}
 # String match filters (NAME, ATTR, TAG) {{{
