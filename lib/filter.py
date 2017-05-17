@@ -152,6 +152,11 @@ class Filter(object):
             return AttributeFilter.compile(db, op[1:])
         elif op.startswith("+"):
             return TagFilter(op[1:])
+        elif op.startswith("?"):
+            if op.startswith("?~"):
+                return AnyFilter(":regex", op[2:])
+            else:
+                return AnyFilter(":glob", op[1:])
         elif op.isdecimal():
             return ItemNumberFilter(op)
         elif re.match(r"^[0-9,-]+$", op):
