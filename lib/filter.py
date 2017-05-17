@@ -65,8 +65,9 @@ class Filter(object):
 
     @staticmethod
     def compile(db, pattern):
+        Core.debug("Filter: compiling %r", pattern)
+
         tokens = Filter.parse(pattern)
-        Core.debug("parsing filter %r -> %r", pattern, tokens)
         if not tokens:
             return ConstantFilter(False)
         op, *args = tokens
