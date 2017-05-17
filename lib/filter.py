@@ -333,12 +333,12 @@ class AttributeFilter(Filter):
             elif mode in {":glob", "?"}:
                 regex = re_compile_glob(attr)
                 self.mode = ":glob"
-                self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
+                self.test = lambda entry: any(regex.search(k) for k in entry.attributes)
                 Core.trace("compiled to [keys ~ %r]" % regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(attr, re.I)
-                self.test = lambda entry: any(regex.match(k) for k in entry.attributes)
+                self.test = lambda entry: any(regex.search(k) for k in entry.attributes)
                 Core.trace("compiled to [keys ~ %r]" % regex)
             else:
                 raise FilterSyntaxError("unknown attr-mode %r for %r" % (mode, "ATTR"))
@@ -470,7 +470,7 @@ class TagFilter(Filter):
             elif is_glob(value):
                 self.mode = ":glob"
                 regex = re_compile_glob(self.value)
-                self.test = lambda entry: any(regex.match(t) for t in entry.tags)
+                self.test = lambda entry: any(regex.search(t) for t in entry.tags)
             else:
                 self.mode = ":exact"
                 self.test = lambda entry: value in entry.tags
@@ -481,11 +481,11 @@ class TagFilter(Filter):
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
-                self.test = lambda entry: any(regex.match(t) for t in entry.tags)
+                self.test = lambda entry: any(regex.search(t) for t in entry.tags)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
-                self.test = lambda entry: any(regex.match(t) for t in entry.tags)
+                self.test = lambda entry: any(regex.search(t) for t in entry.tags)
             else:
                 raise FilterSyntaxError("unknown mode %r for %r" % (mode, "TAG"))
 
