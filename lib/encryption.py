@@ -4,10 +4,13 @@ import os
 class UnknownAlgorithmError(Exception):
     pass
 
+class MessageAuthenticationError(Exception):
+    pass
+
 class Cipher(object):
     def __init__(self, key, algo=None):
         self.key = key
-        self.algo = algo or ("aes-128-cfb" if key else "none")
+        self.algo = algo or ("aes-128-cfb-siv" if key else "none")
 
     def _generate_key(self, nbits) -> "bytes":
         if nbits % 8:
@@ -39,7 +42,10 @@ class Cipher(object):
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
                 if algo[2] == "cfb":
-                    iv = self._deterministic_iv(clear, AES.block_size)
+                    if "siv" in algo[3:]:
+                        iv = self._deterministic_iv(clear, AES.block_size)
+                    else:
+                        iv = os.urandom(AES.block_size)
                     cipher = AES.new(key, AES.MODE_CFB, iv)
                     return iv + cipher.encrypt(clear)
         else:
@@ -58,7 +64,11 @@ class Cipher(object):
                     iv = wrapped[:AES.block_size]
                     buf = wrapped[AES.block_size:]
                     cipher = AES.new(key, AES.MODE_CFB, iv)
-                    return cipher.decrypt(buf)
+                    clear = cipher.decrypt(buf)
+                    if "siv" in algo[3:]:
+                        if iv != self._deterministic_iv(clear, AES.block_size):
+                            raise MessageAuthenticationError()
+                    return clear
         else:
             raise UnknownAlgorithmError()
 
