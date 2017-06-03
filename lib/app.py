@@ -475,27 +475,23 @@ class Cmd(object):
     def do_change_password(self, argv):
         """Set or change the master password (KEK) for database encryption"""
 
-        passwd = db.keyring.get_password("Input new master password:")
-        if passwd:
-            db.change_password(passwd)
-            Core.info("master password changed, database is encrypted")
+        if argv and argv[0] in {"--remove", "--decrypt"}:
+            if "encrypted" in db.features:
+                db.change_password(None)
+            if "--decrypt" in argv:
+                db.set_encryption(False)
+                db.modified = True
+            if "encrypted" in db.features:
+                Core.info("master password removed (database remains encrypted)")
+            else:
+                Core.info("database fully decrypted")
         else:
-            Core.warn("password change cancelled")
-
-    def do_remove_password(self, argv):
-        """Remove the master password (KEK) and optionally decrypt the database"""
-
-        if "encrypted" in db.features:
-            db.change_password(None)
-
-        if "--full" in argv:
-            db.set_encryption(False)
-            db.modified = True
-
-        if "encrypted" in db.features:
-            Core.info("master password removed (database remains encrypted)")
-        else:
-            Core.info("database fully decrypted")
+            passwd = db.keyring.get_password("Input new master password:")
+            if passwd:
+                db.change_password(passwd)
+                Core.info("master password changed, database is encrypted")
+            else:
+                Core.warn("password change cancelled")
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
