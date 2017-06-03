@@ -2,7 +2,6 @@
 # accdb - account database using human-editable flat files as storage
 
 from __future__ import print_function
-import base64
 import os
 import re
 import subprocess
@@ -19,6 +18,7 @@ from .database import Database
 from .entry import Entry
 from .entry_util import *
 from .filter import Filter
+from .keyring import *
 from .string import *
 from .xdg_secret import *
 
@@ -529,37 +529,6 @@ def db_gpg_backup(db, backup_path):
                 db.dump(backup_in)
 
 # }}}
-
-class Keyring(object):
-    def get_kek(self, uuid):
-        raise NotImplementedError()
-
-    def store_kek(self, uuid, kek):
-        raise NotImplementedError()
-
-class XdgKeyring(Keyring):
-    def get_kek(self, uuid):
-        attrs = [
-            "xdg:schema", "lt.nullroute.Accdb.Kek",
-            "uuid", str(uuid),
-        ]
-        secret = xdg_secret_lookup_secret(attrs)
-        if secret:
-            return base64.b64decode(secret)
-        else:
-            return None
-
-    def store_kek(self, uuid, kek):
-        label = "accdb master key for %s" % uuid
-        secret = base64.b64encode(kek).decode()
-        attrs = [
-            "xdg:schema", "lt.nullroute.Accdb.Kek",
-            "uuid", str(uuid),
-        ]
-        if xdg_secret_store(label, secret, attrs):
-            return True
-        else:
-            raise Exception("failed to store master key in keyring")
 
 def main():
     global db_path
