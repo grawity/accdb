@@ -93,11 +93,16 @@ class Database(object):
             if entry and not entry.deleted:
                 self.add(entry)
 
-        if (not self.sec.dek_cipher) and ("encrypt" in self.options):
+        if (not self.sec.dek_cipher) and ("encrypt!" in self.options):
             Core.notice("generating data encryption key")
             self.sec.generate_dek()
             self.features.add("encrypted")
-            self.options.remove("encrypt")
+            self.options.remove("encrypt!")
+
+        if self.sec.dek_cipher and ("decrypt!" in self.options):
+            self.sec.dek_cipher = None
+            self.features.remove("encrypted")
+            self.options.remove("decrypt!")
 
         return self
 
