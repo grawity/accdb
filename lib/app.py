@@ -470,6 +470,7 @@ class Cmd(object):
 
         db.set_encryption("encrypted" in feat)
         db.features = feat
+        db.modified = True
 
     def do_change_password(self, argv):
         """Set or change the master password (KEK) for database encryption"""
@@ -484,14 +485,17 @@ class Cmd(object):
     def do_remove_password(self, argv):
         """Remove the master password (KEK) and optionally decrypt the database"""
 
+        if "encrypted" in db.features:
+            db.change_password(None)
+
         if "--full" in argv:
             db.set_encryption(False)
-        db.change_password(None)
+            db.modified = True
 
         if "encrypted" in db.features:
             Core.info("master password removed (database remains encrypted)")
         else:
-            Core.warn("database fully decrypted")
+            Core.info("database fully decrypted")
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""

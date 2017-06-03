@@ -81,11 +81,15 @@ class Database(object):
 
     def set_encryption(self, enable):
         if enable > ("encrypted" in self.features):
+            if not self.sec.kek_cipher:
+                self.sec.set_raw_kek(None)
             self.sec.generate_dek()
             self.features.add("encrypted")
+            self.options.discard("keyring")
         elif enable < ("encrypted" in self.features):
             self.sec.dek_cipher = None
             self.features.discard("encrypted")
+            self.options.discard("keyring")
 
     def change_password(self, passwd):
         """Enable database encryption and set the KEK from original password"""
