@@ -39,6 +39,14 @@ class Database(object):
     def parse(self, *args, **kwargs):
         return self().parseinto(*args, **kwargs)
 
+    def _process_header(self):
+        if "encrypted" in self.features:
+            if "dek" in header:
+                self.sec.set_wrapped_dek(header["dek"])
+                del header["dek"]
+            else:
+                Core.die("database encrypted but DEK not found in header")
+
     def parseinto(self, fh):
         data = ""
         lineno = 0
@@ -69,16 +77,13 @@ class Database(object):
                         r = self.features - self.SUPPORTED_FEATURES
                         if r:
                             Core.die("line %d: unsupported features %r are used in this file" % (lineno, r))
-                    elif key == "dek":
-                        self.sec.set_wrapped_dek(val)
                     else:
                         self.header[key] = val
                 else:
                     Core.warn("line %d: header after data: %r" % (lineno, line))
             elif line.startswith("="):
                 if header:
-                    if (not self.sec.dek_cipher) and ("encrypted" in self.features):
-                        Core.die("database encrypted but DEK not found in header")
+                    self._process_header()
                     header = False
                 if data:
                     entry = Entry.parse(data, lineno=lastno, database=self)
