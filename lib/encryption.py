@@ -126,7 +126,7 @@ class SecureStorage(object):
         elif not self.kek_cipher:
             raise Exception("KEK not yet set")
         else:
-            dek = os.urandom(16)
+            dek = os.urandom(32)
             self.dek_cipher = Cipher(dek)
 
     def set_wrapped_dek(self, wrapped_dek):
