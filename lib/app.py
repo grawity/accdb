@@ -466,17 +466,32 @@ class Cmd(object):
 
         r = feat - db.SUPPORTED_FEATURES
         if r:
-            Core.die("refusing to enable unsupported features %r" % (lineno, r))
+            Core.die("refusing to enable unsupported features %r" % r)
 
         db.set_encryption("encrypted" in feat)
         db.features = feat
 
     def do_change_password(self, argv):
+        """Set or change the master password (KEK) for database encryption"""
+
         passwd = db.keyring.get_password("Input new master password:")
-        db.change_password(passwd)
+        if passwd:
+            db.change_password(passwd)
+            Core.info("master password changed, database is encrypted")
+        else:
+            Core.warn("password change cancelled")
 
     def do_remove_password(self, argv):
+        """Remove the master password (KEK) and optionally decrypt the database"""
+
+        if "--full" in argv:
+            db.set_encryption(False)
         db.change_password(None)
+
+        if "encrypted" in db.features:
+            Core.info("master password removed (database remains encrypted)")
+        else:
+            Core.warn("database fully decrypted")
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""

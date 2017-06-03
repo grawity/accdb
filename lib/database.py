@@ -81,7 +81,6 @@ class Database(object):
 
     def set_encryption(self, enable):
         if enable > ("encrypted" in self.features):
-            Core.notice("generating data encryption key")
             self.sec.generate_dek()
             self.features.add("encrypted")
         elif enable < ("encrypted" in self.features):
@@ -89,6 +88,7 @@ class Database(object):
             self.features.discard("encrypted")
 
     def change_password(self, passwd):
+        """Enable database encryption and set the KEK from original password"""
         if passwd:
             kek = self.sec.kdf(passwd)
             if self.sec.kek_cipher:
