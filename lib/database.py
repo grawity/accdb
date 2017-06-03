@@ -49,7 +49,17 @@ class Database(object):
             self.uuid = uuid.uuid4()
 
         if "encrypted" in self.features:
-            self.sec.set_null_kek()
+            kek = None
+            if not kek:
+                kek = self.keyring.get_kek(self.uuid)
+                if not kek:
+                    Core.warn("database encrypted but KEK not found in keyring")
+            if not kek:
+                passwd = self.keyring.get_password("Input master password for unlocking:")
+                if not passwd:
+                    Core.die("database encrypted but password not provided")
+                kek = self.sec.kdf(passwd)
+            self.sec.set_raw_kek(kek)
 
             if "dek" in header:
                 self.sec.set_wrapped_dek(header["dek"])
@@ -68,6 +78,18 @@ class Database(object):
                 header["dek"] = self.sec.get_wrapped_dek()
 
         return header
+
+    def change_password(self, passwd):
+        if passwd:
+            kek = self.sec.kdf(passwd)
+            self.sec.change_raw_kek(kek)
+            self.options.add("keyring")
+            self.keyring.store_kek(self.uuid, kek)
+            self.modified = True
+        else:
+            self.sec.change_raw_kek(None)
+            self.options.discard("keyring")
+            self.modified = True
 
     @classmethod
     def parse(self, *args, **kwargs):
@@ -128,12 +150,12 @@ class Database(object):
             Core.notice("generating data encryption key")
             self.sec.generate_dek()
             self.features.add("encrypted")
-            self.options.remove("encrypt!")
+            self.options.discard("encrypt!")
 
         if self.sec.dek_cipher and ("decrypt!" in self.options):
             self.sec.dek_cipher = None
-            self.features.remove("encrypted")
-            self.options.remove("decrypt!")
+            self.features.discard("encrypted")
+            self.options.discard("decrypt!")
 
         return self
 

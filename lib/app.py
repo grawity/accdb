@@ -453,6 +453,17 @@ class Cmd(object):
 
         self.do_dump("", outdb)
 
+    def do_change_password(self, argv):
+        passwd = db.keyring.get_password("Input new master password:")
+        db.change_password(passwd)
+        db.features.add("encrypted")
+
+    def do_remove_password(self, argv):
+        db.change_password(None)
+
+    def do_disable_encryption(self, argv):
+        db.features.discard("encrypted")
+
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
         db.modified = True
