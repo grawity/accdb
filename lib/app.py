@@ -589,14 +589,17 @@ def main():
     keyring = XdgKeyring()
 
     Core.debug("loading database from %r" % db_path)
+    db = Database()
+    db.path = db_path
+    db.keyring = keyring
     try:
-        db = Database.from_file(db_path, keyring)
+        fh = open(db_path)
     except FileNotFoundError:
-        db = Database()
-        db.path = db_path
-        db.keyring = keyring
         if sys.stderr.isatty():
             Core.warn("database is empty")
+    else:
+        db.parseinto(fh)
+        fh.close()
 
     interp = Cmd()
     interp.call(sys.argv[1:])
