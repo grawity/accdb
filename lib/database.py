@@ -54,10 +54,8 @@ class Database(object):
                         kek = self.keyring.lookup_kek(self.uuid)
                     except FileNotFoundError:
                         kek = None
-                    if not kek:
-                        Core.warn("database encrypted but KEK not found in keyring")
                 if not kek:
-                    Core.debug("prompting for password for {%s}", self.uuid)
+                    Core.debug("didn't find KEK in keyring; prompting for password")
                     try:
                         passwd = self.keyring.get_password("Input master database password:")
                     except FileNotFoundError:
