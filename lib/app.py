@@ -542,17 +542,23 @@ def main():
 
     db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
+    kek_path = os.path.expanduser("~/Private/accdb.key")
+
+    ss = SecureStorage()
     try:
-        ss = SecretStore(key=open("/mnt/keycard/grawity/accdb.key", "rb").read())
+        with open(kek_path, "rb") as fh:
+            kek = fh.read()
+        ss.set_raw_kek(kek)
     except FileNotFoundError:
-        ss = None
+        ss.set_null_kek()
 
     Core.debug("loading database from %r" % db_path)
     try:
-        db = Database.from_file(db_path)
+        db = Database.from_file(db_path, sec=ss)
     except FileNotFoundError:
         db = Database()
         db.path = db_path
+        db.sec = ss
         if sys.stderr.isatty():
             Core.warn("database is empty")
 

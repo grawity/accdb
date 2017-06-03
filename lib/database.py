@@ -11,6 +11,7 @@ class Database(object):
     def __init__(self):
         self.count = 0
         self.path = None
+        self.sec = None
         self.header = OrderedDict()
         self.modeline = "; vim: ft=accdb:"
         self.entries = dict()
@@ -23,9 +24,10 @@ class Database(object):
     # Import
 
     @classmethod
-    def from_file(self, path):
+    def from_file(self, path, sec):
         db = self()
         db.path = path
+        db.sec = sec
         with open(path, "r", encoding="utf-8") as fh:
             db.parseinto(fh)
         return db
@@ -63,6 +65,8 @@ class Database(object):
                         r = self.features - self.SUPPORTED_FEATURES
                         if r:
                             Core.die("line %d: unsupported features %r are used in this file" % (lineno, r))
+                    elif key == "dek":
+                        self.sec.set_wrapped_dek(val)
                     else:
                         self.header[key] = val
                 else:
@@ -181,6 +185,12 @@ class Database(object):
         for uuid in self.order:
             yield self.entries[uuid]
 
+    def _get_header(self):
+        header = self.header.copy()
+        if self.sec.dek_cipher:
+            header["dek"] = self.sec.get_wrapped_dek()
+        return header
+
     def dump_header(self, fh):
         tty = getattr(fh, "isatty", lambda: True)()
         if tty:
@@ -191,7 +201,7 @@ class Database(object):
             print(";; options: %s" % ", ".join(sorted(self.options)), file=fh)
         if self.features:
             print(";; features: %s" % ", ".join(sorted(self.features)), file=fh)
-        for key, val in self.header.items():
+        for key, val in self._get_header().items():
             print(";; %s: %s" % (key, val), file=fh)
         if tty:
             fh.write("\033[m")
@@ -206,7 +216,7 @@ class Database(object):
 
     def to_structure(self):
         return {
-            "header": dict(self.header),
+            "header": dict(self._get_header()),
             "entries": [entry.to_structure() for entry in self],
         }
 
