@@ -1,5 +1,6 @@
-import sys
 from collections import OrderedDict
+import sys
+import uuid
 
 from .entry import *
 
@@ -16,6 +17,7 @@ class Database(object):
         self.path = None
         self.sec = None
         self.header = OrderedDict()
+        self.uuid = None
         self.modeline = "; vim: ft=accdb:"
         self.entries = dict()
         self.order = list()
@@ -35,12 +37,15 @@ class Database(object):
             db.parseinto(fh)
         return db
 
-    @classmethod
-    def parse(self, *args, **kwargs):
-        return self().parseinto(*args, **kwargs)
-
     def _process_header(self):
         header = self.header
+
+        if "uuid" in header:
+            self.uuid = uuid.UUID(header["uuid"])
+            del header["uuid"]
+        else:
+            self.uuid = uuid.uuid4()
+
         if "encrypted" in self.features:
             if "dek" in header:
                 self.sec.set_wrapped_dek(header["dek"])
@@ -50,10 +55,19 @@ class Database(object):
 
     def _get_header(self):
         header = self.header.copy()
+
+        if self.uuid:
+            header["uuid"] = str(self.uuid)
+
         if "encrypted" in self.features:
             if self.sec.dek_cipher:
                 header["dek"] = self.sec.get_wrapped_dek()
+
         return header
+
+    @classmethod
+    def parse(self, *args, **kwargs):
+        return self().parseinto(*args, **kwargs)
 
     def parseinto(self, fh):
         data = ""
