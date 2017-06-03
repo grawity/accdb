@@ -1,16 +1,12 @@
 # accdb
 
-It's like passwords.txt but better.
-
-Seriously.
+Everybody tells me "use `pass`", "use LastPass", "use KeePass". I've tried all of them.
 
   - I want my password list to be editable anywhere I go.
   - I want to edit it with Vim and Notepad2.
   - I want to use my own field names for everything.
-  - But I don't want to be annoyed with strict syntax requirements.
+  - I don't want to be annoyed with strict syntax requirements.
   - I want it to be searchable from command line, conveniently.
-
-So yes, I have a `passwords.txt`.
 
 ## Syntax
 
@@ -41,15 +37,15 @@ This is more convenient for me than YAML or such stuff. I even wrote myself a Vi
 
 Basic syntax features:
 
-  * Fields starting with `!` are hidden by `accdb grep` when displaying search results, showing just `!field: <private>` by default. (The same applies to the `pass` field due to reasons.)
+  * Fields starting with `!` are encrypted when storing, and concealed by `accdb grep` when displaying search results (showing just `!field: <private>`). The same applies to the `pass` field for compatibility reasons.
+
+  * Fields starting with `@` are hidden from search results; they contain various metadata.
 
   * Fields starting with `ref.` must contain UUID references to other entries; `accdb grep` will look up the name, and `accdb rshow` will show the referenced entries as well.
 
 Weirder stuff:
 
   * For convenience, `field=value` is also accepted (but translated to `field: value` when saving).
-
-  * Field values starting with "`<base64> `" will be Base64-decoded when reading (see the `conceal` flag below).
 
   * In fields named `date.*`, the values "now" and "today" are expanded to current date.
 
@@ -59,23 +55,24 @@ Weirder stuff:
 
   * Lines starting with `(` and ending with `)` are ignored when reading. They contain such information as "item 243" or "found 2 search results" that doesn't need to be preserved.
 
-  * A comment line starting with `vim:` is the Vim modeline. It's not used by accdb directly, but will be preserved when saving the database.
+  * A line starting with `; vim:` is the Vim modeline. It's not used by accdb
+    directly, but will be preserved when saving the database.
 
-  * A comment line starting with `dbflags:` is parsed as a list of flags.
-
-    If the `cache` flag is set, accdb will write a second copy of the database at `~/Private/accounts.cache.txt` when updating the main database. accdb uses this cache when the main database is not found.
-
-    If the `conceal` flag is set, accdb will base64-encode private fields when saving the database. This _doesn't_ really add security, it just helps against people glancing at my screen.
+  * A line starting with `;;` is parsed as a header line. Special headers are
+    `options` (compatible flags), `features` (incompatible flags), `uuid`
+    (identifier for key lookup), `dek` (data encryption key).
 
 Some OATH TOTP support:
 
-  * Running `ad totp <id>` will generate an OATH TOTP password based on the `!2fa.oath.psk` attribute. (`2fa.oath.type` can be set to "dynadot-totp" for Dynadot's broken TOTP, `2fa.oath.digits` to 8 for Battle.net, `2fa.oath.window` to 60 for some sites.)
+  * Running `ad totp <id>` will generate an OATH TOTP password based on the
+    `!2fa.oath.psk` attribute. (`2fa.oath.digits` can be set to 8 for
+    Battle.net, `2fa.oath.window` to 60 for some sites.)
 
   * Running `ad qr <id>` will generate a Qr code for importing the OATH TOTP key into a softtoken, including the `login` and optional `2fa.issuer` attributes.
 
-  * The PSK can be prefixed with `{hex} `, `{b64} `, or `{raw} ` (e.g. the latter for Dynadot token serial numbers), otherwise it's in Base32.
+  * The PSK can be prefixed with `{hex} `, `{b64} `, or `{raw} `; otherwise it's in Base32.
 
-  * Yes, **I know** this is so stupid it hurts. It's for testing only. I promise. (I have future plans for this though.) Don't actually use it.
+  * Yes, I know this is so stupid it hurts. It's for testing only. I promise.
 
 ## Usage
 
@@ -185,6 +182,7 @@ Special values:
 
   - For `ref.*` keys, `#itemno` (e.g. `#42`) expands to that item's UUID;
   - For `date.*` keys, `now[±n]` (e.g. `now` or `now+40`) expands to a full date;
+  - The `@name` key corresponds to the entry's title, which is not an attribute.
 
 Synopsis: `ad tag <filter> <operation...>`
 
