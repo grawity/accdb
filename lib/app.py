@@ -503,7 +503,7 @@ class Cmd(object):
     do_g        = do_show
     do_grep     = do_show
     do_r        = do_reveal
-    do_re       = do_show
+    do_re       = do_reveal
     do_rgrep    = do_reveal
     do_s        = do_show
     do_chpw     = do_change_password
