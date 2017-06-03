@@ -243,12 +243,6 @@ class Cmd(object):
                     Core.info("stored %s secret in keyring" % kind)
                 else:
                     Core.err("secret-tool %s failed for %r" % (action, get_attrs))
-            elif action == "search":
-                Core.debug("get attrs %r" % get_attrs)
-                if kr._search_stdout(get_attrs):
-                    pass
-                else:
-                    Core.warn("secret-tool %s failed for %r" % (action, get_attrs))
             elif action == "clear":
                 Core.debug("get attrs %r" % get_attrs)
                 if kr.clear(get_attrs):
@@ -261,10 +255,6 @@ class Cmd(object):
     def do_keyring_store(self, argv):
         """Store an entry's password to system keyring"""
         return self._do_keyring_query(argv, "store")
-
-    def do_keyring_search(self, argv):
-        """Check if an entry has matching secrets in system keyring"""
-        return self._do_keyring_query(argv, "search")
 
     def do_keyring_forget(self, argv):
         """Remove all secrets matching an entry from system keyring"""

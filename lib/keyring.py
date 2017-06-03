@@ -79,9 +79,6 @@ class XdgKeyring(Keyring):
                                stdout=subprocess.PIPE) as proc:
             return proc.stdout.read().rstrip(b"\n")
 
-    def _search_stdout(self, attrs):
-        return subprocess.call(["secret-tool", "search"] + attrs) == 0
-
     def clear(self, attrs):
         return subprocess.call(["secret-tool", "clear"] + attrs) == 0
 
