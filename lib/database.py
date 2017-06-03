@@ -17,6 +17,7 @@ class Database(object):
         self.count = 0
         self.path = None
         self.sec = SecureStorage()
+        self.keyring = None
         self.header = OrderedDict()
         self.uuid = None
         self.modeline = "; vim: ft=accdb:"
@@ -30,9 +31,10 @@ class Database(object):
     # Import
 
     @classmethod
-    def from_file(self, path):
+    def from_file(self, path, keyring=None):
         db = self()
         db.path = path
+        db.keyring = keyring
         with open(path, "r", encoding="utf-8") as fh:
             db.parseinto(fh)
         return db
