@@ -328,8 +328,7 @@ class Cmd(object):
         changes = Changeset(args, key_alias=attr_names)
         num = 0
         for entry in Filter.cli_search_str(db, query):
-            changes.apply_to(entry.attributes, transform_cb=entry.expand_attr_cb)
-            entry.sync_names()
+            entry.apply_changeset(changes)
             num += 1
             self._show_entry(entry)
 
@@ -354,8 +353,7 @@ class Cmd(object):
                 attrs.append(arg)
 
         changes = Changeset(attrs, key_alias=attr_names)
-        changes.apply_to(entry.attributes, transform_cb=entry.expand_attr_cb)
-        entry.sync_names()
+        entry.apply_changeset(changes)
 
         db.add(entry)
         self._show_entry(entry, conceal=False)

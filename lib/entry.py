@@ -354,15 +354,16 @@ class Entry(object):
                    for k, vs in self.attributes.items()
                    if attr_is_reflink(k))
 
-    def sync_names(self, export=False):
-        if export:
-            self.attributes["@name"] = [self.name]
-        else:
-            if "@name" in self.attributes:
-                self.name = self.attributes["@name"][0]
-                del self.attributes["@name"]
-
     def expand_attr_cb(self, attr, value):
         return self.db.expand_attr_cb(attr, value)
+
+    def apply_changeset(self, changes):
+        self.attributes["@name"] = [self.name]
+
+        changes.apply_to(self.attributes, transform_cb=self.expand_attr_cb)
+
+        if "@name" in self.attributes:
+            self.name = self.attributes["@name"][0]
+            del self.attributes["@name"]
 
 # }}}
