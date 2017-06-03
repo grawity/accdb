@@ -56,6 +56,7 @@ class Entry(object):
         # lineno is passed here for use in syntax error messages
         self.lineno = lineno
         self.db = database
+        last_key = None
 
         for line in data.splitlines():
             line = line.lstrip()
@@ -89,6 +90,13 @@ class Entry(object):
             elif line.startswith("-- "):
                 # per-attribute comments
                 pass
+            elif line.startswith("| "):
+                if last_key:
+                    self.attributes[last_key][-1] += "\n" + line[2:]
+                else:
+                    Core.err("line %d: continuation before first attribute" % lineno)
+                    self.comment += line + "\n"
+                    continue
             else:
                 try:
                     key, val = re.split(self.RE_KEYVAL, line, 1)
@@ -121,6 +129,7 @@ class Entry(object):
                     self.attributes[key].append(val)
                 else:
                     self.attributes[key] = [val]
+                last_key = key
 
             lineno += 1
 
@@ -231,7 +240,9 @@ class Entry(object):
 
                         if val_is_unsafe(value):
                             if storage:
-                                value = "<base64> %s" % b64_encode(value)
+                                #value = "<base64> %s" % b64_encode(value)
+                                value = value.replace("\n",
+                                                      "\n\t| ")
                             else:
                                 value = value.replace("\n",
                                                       "\n\t" + " " * len(key) + "  ")
