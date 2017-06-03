@@ -548,17 +548,6 @@ def db_git_backup(db, summary="snapshot", body=""):
         if "autopush" in db.options:
             call_git(db, "push", "-q")
 
-def db_gpg_backup(db, backup_path):
-    if backup_path == db.path:
-        return
-
-    with open(backup_path, "wb") as backup_fh:
-        with subprocess.Popen(["gpg", "--encrypt", "--no-encrypt-to"],
-                              stdin=subprocess.PIPE,
-                              stdout=backup_fh) as proc:
-            with TextIOWrapper(proc.stdin, "utf-8") as backup_in:
-                db.dump(backup_in)
-
 # }}}
 
 def main():
@@ -570,8 +559,6 @@ def main():
                     Env.xdg_data_home(),
                     "nullroute.eu.org",
                     "accounts.db.txt"))
-
-    db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
     keyring = default_keyring()
 
@@ -597,14 +584,12 @@ def main():
             if "git" in db.options:
                 db_git_backup(db, summary="accdb %s" % str_join_qwords(sys.argv[1:]))
             if "backup" in db.options:
-                db_gpg_backup(db, db_backup_path)
+                Core.warn("option 'backup' is no longer supported")
         else:
             Core.notice("discarding changes made in debug mode")
             Core.debug("skipping db.flush()")
             if "git" in db.options:
                 Core.debug("skipping Git commit")
-            if "backup" in db.options:
-                Core.debug("skipping GPG backup")
 
     Core.exit()
 
