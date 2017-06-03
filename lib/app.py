@@ -515,64 +515,71 @@ class Cmd(object):
     do_s        = do_show
     do_chpw     = do_change_password
 
-def call_git(db, *args, **kwargs):
-    return subprocess.call(["git", "-C", os.path.dirname(db.path), *args], **kwargs)
+class AccdbApplication():
+    def __init__(self):
+        self.db = None
 
-def db_git_backup(db, summary="snapshot", body=""):
-    db_dir = os.path.dirname(db.path)
-    repo_dir = os.path.join(db_dir, ".git")
+    def db_path(self):
+        return os.environ.get("ACCDB",
+                              os.path.join(Env.xdg_data_home(),
+                                           "nullroute.eu.org",
+                                           "accdb",
+                                           "accounts.txt"))
 
-    if not os.path.exists(repo_dir):
-        call_git(db, "init")
+    def load_db_from_file(self, db_path):
+        Core.debug("loading database from %r" % db_path)
+        db = Database()
+        db.path = db_path
+        db.keyring = default_keyring()
+        try:
+            fh = open(db_path)
+        except FileNotFoundError:
+            if sys.stderr.isatty():
+                Core.warn("database is empty")
+        else:
+            db.parseinto(fh)
+            fh.close()
+        self.db = db
+        return db
 
-    call_git(db, "commit", "-m", summary, "-m", body, db.path,
-             stdout=subprocess.DEVNULL)
+    def call_git(self, *args, **kwargs):
+        return subprocess.call(["git", "-C", os.path.dirname(self.db.path), *args], **kwargs)
 
-    if "autopush" in db.options:
-        call_git(db, "push", "-q")
+    def git_backup(self, summary="snapshot"):
+        db_dir = os.path.dirname(self.db.path)
+        repo_dir = os.path.join(db_dir, ".git")
 
-def db_load(db_path):
-    Core.debug("loading database from %r" % db_path)
-    db = Database()
-    db.path = db_path
-    db.keyring = default_keyring()
-    try:
-        fh = open(db_path)
-    except FileNotFoundError:
-        if sys.stderr.isatty():
-            Core.warn("database is empty")
-    else:
-        db.parseinto(fh)
-        fh.close()
-    return db
+        if not os.path.exists(repo_dir):
+            self.call_git("init")
+
+        self.call_git("commit", "-m", summary, db.path,
+                      stdout=subprocess.DEVNULL)
+
+        if "autopush" in db.options:
+            self.call_git("push", "-q")
+
+    def run(self, argv):
+        global db
+
+        db = self.load_db_from_file(self.db_path())
+
+        interp = Cmd()
+        interp.call(argv)
+
+        if db.modified:
+            if not os.environ.get("DRYRUN"):
+                db.flush()
+                if "git" in db.options:
+                    self.git_backup(summary="accdb %s" % str_join_qwords(argv))
+            else:
+                Core.notice("discarding changes made in debug mode")
+                Core.debug("skipping db.flush()")
+                if "git" in db.options:
+                    Core.debug("skipping Git commit")
 
 def main():
-    global db
-
-    db_path = os.environ.get("ACCDB",
-                             os.path.join(Env.xdg_data_home(),
-                                          "nullroute.eu.org",
-                                          "accdb",
-                                          "accounts.txt"))
-
-    db = db_load(db_path)
-
-    interp = Cmd()
-    interp.call(sys.argv[1:])
-
-    if db.modified:
-        if not os.environ.get("DRYRUN"):
-            db.flush()
-            if "git" in db.options:
-                db_git_backup(db, summary="accdb %s" % str_join_qwords(sys.argv[1:]))
-            if "backup" in db.options:
-                Core.warn("option 'backup' is no longer supported")
-        else:
-            Core.notice("discarding changes made in debug mode")
-            Core.debug("skipping db.flush()")
-            if "git" in db.options:
-                Core.debug("skipping Git commit")
-
+    app = AccdbApplication()
+    app.run(sys.argv[1:])
     Core.exit()
 
 if __name__ == "__main__":
