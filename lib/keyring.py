@@ -31,8 +31,7 @@ class Keyring(object):
         pass
 
     def clear_kek(self, uuid):
-        if not self._clear_kek(str(uuid)):
-            raise Exception("failed to remove master key from keyring")
+        return self._clear_kek(str(uuid))
 
 class GitKeyring(Keyring):
     def __init__(self, helper="cache"):
