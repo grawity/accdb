@@ -372,22 +372,6 @@ class Cmd(object):
         """Create a duplicate of given entry, with different attributes"""
         return self._do_create(argv[0], argv[1:])
 
-    def do_comment(self, argv):
-        """Deprecated: Edit an entry's comment"""
-        query, *args = argv
-        num = 0
-
-        changes = TextChangeset(args)
-        for entry in Filter.cli_search_str(db, query):
-            entry.comment = changes.apply(entry.comment)
-            num += 1
-            self._show_entry(entry)
-
-        if sys.stdout.isatty():
-            print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
-
-        db.modified = True
-
     def do_rm(self, argv):
         """Delete an entry"""
         for entry in Filter.cli_search_argv(db, argv):
