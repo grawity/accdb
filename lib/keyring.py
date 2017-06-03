@@ -1,4 +1,5 @@
 import base64
+import io
 import subprocess
 
 class Keyring(object):
@@ -11,6 +12,55 @@ class Keyring(object):
         secret = base64.b64encode(kek).decode()
         if not self._store_kek(self, label, secret, str(uuid)):
             raise Exception("failed to store master key in keyring")
+
+class GitKeyring(Keyring):
+    def __init__(self, helper="cache"):
+        self.helper = helper
+
+    def lookup(self, attrs):
+        return self.search(attrs)["password"]
+
+    def search(self, attrs):
+        for a in ["host"]:
+            if a not in attrs:
+                raise ValueError("attribute %r is required" % a)
+        with subprocess.Popen(["git", "credential-%s" % self.helper, "get"],
+                              stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE) as proc:
+            with io.TextIOWrapper(proc.stdin) as stdin:
+                for k, v in attrs.items():
+                    stdin.write("%s=%s\n" % (k, v))
+            ret = {}
+            with io.TextIOWrapper(proc.stdout) as stdout:
+                for line in stdout:
+                    k, v = line.rstrip("\n").split("=", 1)
+                    ret[k] = v
+        return ret or None
+
+    def store(self, label, secret, attrs):
+        for a in ["host", "username"]:
+            if a not in attrs:
+                raise ValueError("attribute %r is required" % a)
+        attrs["label"] = label
+        attrs["password"] = secret
+        with subprocess.Popen(["git", "credential-%s" % self.helper, "store"],
+                              stdin=subprocess.PIPE) as proc:
+            with io.TextIOWrapper(proc.stdin) as stdin:
+                for k, v in attrs.items():
+                    stdin.write("%s=%s\n" % (k, v))
+
+    def _store_kek(self, label, secret, attrs):
+        attrs = {
+            "host": "accdb://%s" % uuid,
+            "username": uuid,
+        }
+        return self.store(label, secret, attrs)
+
+    def _get_kek(self, attrs):
+        attrs = {
+            "host": "accdb://%s" % uuid,
+        }
+        return self.lookup(attrs)
 
 class XdgKeyring(Keyring):
     def store(self, label, secret, attrs):
@@ -60,3 +110,14 @@ class PinentryPrompter(Prompter):
                 return out.decode().rstrip("\n")
             else:
                 return None
+
+class ShimKeyring(Keyring, PinentryPrompter):
+    def __init__(self):
+        self.store = XdgKeyring()
+        self.cache = GitKeyring("cache")
+
+    def get_kek(self, uuid):
+        return self.store.get_kek(uuid)
+
+    def store_kek(self, uuid, kek):
+        return self.store.store_kek(uuid, kek)
