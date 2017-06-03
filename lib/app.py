@@ -21,7 +21,11 @@ from .filter import Filter
 from .keyring import *
 from .string import *
 
-class Cmd(object):
+class Cmd():
+    def __init__(self, app, db):
+        self.app = app
+        self.db = db
+
     def call(self, argv):
         if argv:
             func = getattr(self, "do_%s" % argv[0].replace("-", "_"), None)
@@ -47,7 +51,7 @@ class Cmd(object):
             f = lambda arg, fmt: "\033[%sm%s\033[m" % (fmt, arg)
         else:
             f = lambda arg, fmt: arg
-        for entry in Filter.cli_search_argv(db, argv):
+        for entry in Filter.cli_search_argv(self.db, argv):
             name = entry.name
             user = entry.attributes.get("login",
                    entry.attributes.get("username",
@@ -78,7 +82,7 @@ class Cmd(object):
                 if attr_is_reflink(key):
                     for value in entry.attributes[key]:
                         try:
-                            sub_entry = db.find_by_uuid(value)
+                            sub_entry = self.db.find_by_uuid(value)
                             self._show_entry(sub_entry, indent=indent,
                                              depth=depth+1, **kwargs)
                         except KeyError:
@@ -86,28 +90,28 @@ class Cmd(object):
 
     def do_show(self, argv):
         """Display entries (safe)"""
-        for entry in Filter.cli_search_argv(db, argv):
+        for entry in Filter.cli_search_argv(self.db, argv):
             self._show_entry(entry)
 
     def do_rshow(self, argv):
         """Display entries (safe, recursive)"""
-        for entry in Filter.cli_search_argv(db, argv):
+        for entry in Filter.cli_search_argv(self.db, argv):
             self._show_entry(entry, recurse=True, indent=True)
 
     def do_reveal(self, argv):
         """Display entries (including sensitive information)"""
-        for entry in Filter.cli_search_argv(db, argv):
+        for entry in Filter.cli_search_argv(self.db, argv):
             self._show_entry(entry, conceal=False)
 
     def do_raw(self, argv):
         """Display entries for exporting"""
-        db.dump_header(sys.stdout)
-        for entry in Filter.cli_search_argv(db, argv):
+        self.db.dump_header(sys.stdout)
+        for entry in Filter.cli_search_argv(self.db, argv):
             self._show_entry(entry, storage=True, encrypt=False)
 
     def do_qr(self, argv):
         """Display the entry's OATH PSK as a Qr code"""
-        for entry in Filter.cli_search_argv(db, argv):
+        for entry in Filter.cli_search_argv(self.db, argv):
             self._show_entry(entry, show_contents=False)
             if entry.oath_params:
                 data = entry.oath_params.make_uri()
@@ -131,7 +135,7 @@ class Cmd(object):
     def do_get_pass(self, argv):
         """Display the 'pass' field of the first matching entry"""
         attr = argv.pop() if argv[-1].startswith("!") else "pass"
-        entry = Filter.cli_findfirst_argv(db, argv)
+        entry = Filter.cli_findfirst_argv(self.db, argv)
         secret = entry.attributes.get(attr)
         if secret:
             if len(secret) > 1:
@@ -144,7 +148,7 @@ class Cmd(object):
     def do_copy_pass(self, argv):
         """Copy password to clipboard"""
         attr = argv.pop() if argv[-1].startswith("!") else "pass"
-        entry = Filter.cli_findfirst_argv(db, argv)
+        entry = Filter.cli_findfirst_argv(self.db, argv)
         self._show_entry(entry)
         secret = entry.attributes.get(attr)
         if secret:
@@ -158,7 +162,7 @@ class Cmd(object):
 
     def do_get_totp(self, argv):
         """Generate an OATH TOTP response"""
-        entry = Filter.cli_findfirst_argv(db, argv, Entry.FILTER_OATH)
+        entry = Filter.cli_findfirst_argv(self.db, argv, Entry.FILTER_OATH)
         params = entry.oath_params
         if params:
             print(params.generate())
@@ -167,7 +171,7 @@ class Cmd(object):
 
     def do_copy_totp(self, argv):
         """Copy OATH TOTP response to clipboard"""
-        entry = Filter.cli_findfirst_argv(db, argv)
+        entry = Filter.cli_findfirst_argv(self.db, argv)
         self._show_entry(entry)
         params = entry.oath_params
         if params:
@@ -198,7 +202,7 @@ class Cmd(object):
 
         kr = XdgKeyring()
 
-        for entry in Filter.cli_search_argv(db, argv):
+        for entry in Filter.cli_search_argv(self.db, argv):
             self._show_entry(entry)
             kind = self._entry_kind(entry)
 
@@ -273,7 +277,7 @@ class Cmd(object):
             Core.die("no old tags specified")
 
         query = "OR " + " ".join(["+%s" % tag for tag in old_tags])
-        items = Filter.cli_search_str(db, query)
+        items = Filter.cli_search_str(self.db, query)
         num   = 0
 
         for entry in items:
@@ -285,7 +289,7 @@ class Cmd(object):
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
-        db.modified = True
+        self.db.modified = True
 
     def do_tag(self, argv):
         """Add or remove tags to an entry"""
@@ -301,7 +305,7 @@ class Cmd(object):
         if bad_args:
             Core.die("bad arguments: %r" % bad_args)
 
-        items = Filter.cli_search_str(db, query)
+        items = Filter.cli_search_str(self.db, query)
         tags  = set(tags)
         num   = 0
 
@@ -314,7 +318,7 @@ class Cmd(object):
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
-        db.modified = True
+        self.db.modified = True
 
     def do_set(self, argv):
         """Change attributes of an entry"""
@@ -325,7 +329,7 @@ class Cmd(object):
 
         changes = Changeset(args, key_alias=attr_names)
         num = 0
-        for entry in Filter.cli_search_str(db, query):
+        for entry in Filter.cli_search_str(self.db, query):
             entry.apply_changeset(changes)
             num += 1
             self._show_entry(entry)
@@ -333,14 +337,14 @@ class Cmd(object):
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
 
-        db.modified = True
+        self.db.modified = True
 
     def _do_create(self, basearg, args):
         if basearg:
-            entry = db.find_by_itemno(int(basearg)).clone()
+            entry = self.db.find_by_itemno(int(basearg)).clone()
             attrs = []
         else:
-            entry = Entry(database=db)
+            entry = Entry(database=self.db)
             entry.name = args.pop(0)
             attrs = ["date.signup=now"]
 
@@ -353,12 +357,12 @@ class Cmd(object):
         changes = Changeset(attrs, key_alias=attr_names)
         entry.apply_changeset(changes)
 
-        db.add(entry)
+        self.db.add(entry)
         self._show_entry(entry, conceal=False)
         if sys.stdout.isatty():
             print("(entry added)")
 
-        db.modified = True
+        self.db.modified = True
 
     def do_new(self, argv):
         """Create a new entry with given name and attributes"""
@@ -370,18 +374,18 @@ class Cmd(object):
 
     def do_rm(self, argv):
         """Delete an entry"""
-        for entry in Filter.cli_search_argv(db, argv):
+        for entry in Filter.cli_search_argv(self.db, argv):
             entry.deleted = True
             self._show_entry(entry)
 
-        db.modified = True
+        self.db.modified = True
 
     ### Database commands
 
     def do_dump(self, argv, db=None):
         """Dump the database to stdout (yaml, json, safe)"""
         if db is None:
-            db = globals()["db"]
+            db = self.db
 
         if not argv:
             db.dump()
@@ -414,17 +418,17 @@ class Cmd(object):
                 continue
 
             try:
-                entry = db.replace(newentry)
+                entry = self.db.replace(newentry)
             except KeyError:
-                entry = db.add(newentry)
+                entry = self.db.add(newentry)
             outdb.add(entry)
 
-        db.modified = True
+        self.db.modified = True
 
         self.do_dump("", outdb)
 
     def do_set_features(self, argv):
-        feat = set(db.features)
+        feat = set(self.db.features)
 
         for arg in argv:
             if len(arg) < 2 or arg[0] not in "+-":
@@ -434,17 +438,17 @@ class Cmd(object):
             elif arg.startswith("-"):
                 feat.discard(arg[1:])
 
-        r = feat - db.SUPPORTED_FEATURES
+        r = feat - self.db.SUPPORTED_FEATURES
         if r:
             Core.die("refusing to enable unsupported features %r" % r)
 
-        db.set_encryption("encrypted" in feat)
-        db.features = feat
-        db.modified = True
+        self.db.set_encryption("encrypted" in feat)
+        self.db.features = feat
+        self.db.modified = True
 
     def do_change_password(self, argv):
         """Set or change the master password (KEK) for database encryption"""
-
+        db = self.db
         if not argv:
             passwd = db.keyring.get_password("Input new master password:")
             if passwd:
@@ -474,38 +478,36 @@ class Cmd(object):
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
-        db.modified = True
+        self.db.modified = True
 
     def do_git(self, argv):
         """Invoke 'git' inside the database repository"""
-        call_git(db, *argv)
+        self.app.run_git(*argv)
 
     def do_undo(self, argv):
         """Revert the last commit to accounts.db"""
-        if db.modified:
+        if self.db.modified:
             Core.die("cannot revert unsaved database")
-        call_git(db, "revert", "--no-edit", "HEAD")
+        self.app.run_git("revert", "--no-edit", "HEAD")
 
     def do_commit(self, argv):
         """Commit all external changes to accounts.db"""
-        if db.modified:
-            Core.die("cannot commit unsaved database")
-        call_git(db, "add", "--all")
-        call_git(db, "commit", *argv)
+        self.app.run_git("add", "--all")
+        self.app.run_git("commit", *argv)
 
     def do_sort(self, argv):
         """Sort and rewrite the database"""
-        db.sort()
-        db.modified = True
+        self.db.sort()
+        self.db.modified = True
 
     def do_tags(self, argv):
         """List all tags used by the database's entries"""
-        for tag in sorted(db.tags()):
+        for tag in sorted(self.db.tags()):
             print(tag)
 
     def do_parse_filter(self, argv):
         """Parse a filter and dump it as text"""
-        print(Filter.cli_compile_argv(db, argv))
+        print(Filter.cli_compile_argv(self.db, argv))
 
     do_g        = do_show
     do_grep     = do_show
@@ -542,7 +544,7 @@ class AccdbApplication():
         self.db = db
         return db
 
-    def call_git(self, *args, **kwargs):
+    def run_git(self, *args, **kwargs):
         return subprocess.call(["git", "-C", os.path.dirname(self.db.path), *args], **kwargs)
 
     def git_backup(self, summary="snapshot"):
@@ -550,20 +552,18 @@ class AccdbApplication():
         repo_dir = os.path.join(db_dir, ".git")
 
         if not os.path.exists(repo_dir):
-            self.call_git("init")
+            self.run_git("init")
 
-        self.call_git("commit", "-m", summary, db.path,
+        self.run_git("commit", "-m", summary, db.path,
                       stdout=subprocess.DEVNULL)
 
         if "autopush" in db.options:
-            self.call_git("push", "-q")
+            self.run_git("push", "-q")
 
     def run(self, argv):
-        global db
-
         db = self.load_db_from_file(self.db_path())
 
-        interp = Cmd()
+        interp = Cmd(self, db)
         interp.call(argv)
 
         if db.modified:
