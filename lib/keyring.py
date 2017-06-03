@@ -12,23 +12,6 @@ class Keyring(object):
         if not self._store_kek(self, label, secret, str(uuid)):
             raise Exception("failed to store master key in keyring")
 
-class Prompter(object):
-    def get_password(self, desc, **kwargs):
-        raise NotImplementedError()
-
-class PinentryPrompter(Prompter):
-    def get_password(self, desc, **kwargs):
-        with subprocess.Popen(["askpin",
-                               "-t", "accdb",
-                               "-d", desc,
-                               "-p", "Password:"],
-                              stdout=subprocess.PIPE) as proc:
-            (out, err) = proc.communicate()
-            if proc.wait() == 0:
-                return out.decode().rstrip("\n")
-            else:
-                return None
-
 class XdgKeyring(Keyring):
     def store(self, label, secret, attrs):
         with subprocess.Popen(["secret-tool", "store", "--label", label] + attrs,
@@ -60,3 +43,20 @@ class XdgKeyring(Keyring):
             "uuid", uuid,
         ]
         return xdg_secret_lookup_secret(attrs)
+
+class Prompter(object):
+    def get_password(self, desc, **kwargs):
+        raise NotImplementedError()
+
+class PinentryPrompter(Prompter):
+    def get_password(self, desc, **kwargs):
+        with subprocess.Popen(["askpin",
+                               "-t", "accdb",
+                               "-d", desc,
+                               "-p", "Password:"],
+                              stdout=subprocess.PIPE) as proc:
+            (out, err) = proc.communicate()
+            if proc.wait() == 0:
+                return out.decode().rstrip("\n")
+            else:
+                return None
