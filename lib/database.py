@@ -77,7 +77,7 @@ class Database(object):
                     Core.warn("line %d: header after data: %r" % (lineno, line))
             elif line.startswith("="):
                 if header:
-                    if ("encrypt" in self.features) and (not self.sec.dek_cipher):
+                    if (not self.sec.dek_cipher) and ("encrypt" in self.features):
                         Core.die("database encrypted but DEK not found in header")
                     header = False
                 if data:
@@ -92,6 +92,12 @@ class Database(object):
             entry = Entry.parse(data, lineno=lastno, database=self)
             if entry and not entry.deleted:
                 self.add(entry)
+
+        if (not self.sec.dek_cipher) and ("encrypt" in self.options):
+            Core.notice("generating data encryption key")
+            self.sec.generate_dek()
+            self.features.add("encrypt")
+            self.options.remove("encrypt")
 
         return self
 
