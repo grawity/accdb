@@ -79,10 +79,23 @@ class Database(object):
 
         return header
 
+    def set_encryption(self, enable):
+        if enable > ("encrypted" in self.features):
+            Core.notice("generating data encryption key")
+            self.sec.generate_dek()
+            self.features.add("encrypted")
+        elif enable < ("encrypted" in self.features):
+            self.sec.dek_cipher = None
+            self.features.discard("encrypted")
+
     def change_password(self, passwd):
         if passwd:
             kek = self.sec.kdf(passwd)
-            self.sec.change_raw_kek(kek)
+            if self.sec.kek_cipher:
+                self.sec.change_raw_kek(kek)
+            else:
+                self.sec.set_raw_kek(kek)
+                self.set_encryption(True)
             self.options.add("keyring")
             self.keyring.store_kek(self.uuid, kek)
             self.modified = True
@@ -145,17 +158,6 @@ class Database(object):
             entry = Entry.parse(data, lineno=lastno, database=self)
             if entry and not entry.deleted:
                 self.add(entry)
-
-        if (not self.sec.dek_cipher) and ("encrypt!" in self.options):
-            Core.notice("generating data encryption key")
-            self.sec.generate_dek()
-            self.features.add("encrypted")
-            self.options.discard("encrypt!")
-
-        if self.sec.dek_cipher and ("decrypt!" in self.options):
-            self.sec.dek_cipher = None
-            self.features.discard("encrypted")
-            self.options.discard("decrypt!")
 
         return self
 
