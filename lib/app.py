@@ -15,7 +15,6 @@ from nullroute.core import Core
 from .changeset import Changeset, TextChangeset
 from .clipboard import Clipboard
 from .database import Database
-from .encryption import SecureStorage
 from .entry import Entry
 from .entry_util import *
 from .filter import Filter
@@ -542,23 +541,12 @@ def main():
 
     db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
-    kek_path = os.path.expanduser("~/Private/accdb.key")
-
-    ss = SecureStorage()
-    try:
-        with open(kek_path, "rb") as fh:
-            kek = fh.read()
-        ss.set_raw_kek(kek)
-    except FileNotFoundError:
-        ss.set_null_kek()
-
     Core.debug("loading database from %r" % db_path)
     try:
-        db = Database.from_file(db_path, sec=ss)
+        db = Database.from_file(db_path)
     except FileNotFoundError:
         db = Database()
         db.path = db_path
-        db.sec = ss
         if sys.stderr.isatty():
             Core.warn("database is empty")
 

@@ -3,6 +3,7 @@ import sys
 import uuid
 
 from .entry import *
+from .encryption import SecureStorage
 
 # 'Database' {{{
 
@@ -15,7 +16,7 @@ class Database(object):
     def __init__(self):
         self.count = 0
         self.path = None
-        self.sec = None
+        self.sec = SecureStorage()
         self.header = OrderedDict()
         self.uuid = None
         self.modeline = "; vim: ft=accdb:"
@@ -29,10 +30,9 @@ class Database(object):
     # Import
 
     @classmethod
-    def from_file(self, path, sec):
+    def from_file(self, path):
         db = self()
         db.path = path
-        db.sec = sec
         with open(path, "r", encoding="utf-8") as fh:
             db.parseinto(fh)
         return db
@@ -47,6 +47,8 @@ class Database(object):
             self.uuid = uuid.uuid4()
 
         if "encrypted" in self.features:
+            self.sec.set_null_kek()
+
             if "dek" in header:
                 self.sec.set_wrapped_dek(header["dek"])
                 del header["dek"]
