@@ -21,8 +21,6 @@ from .filter import Filter
 from .keyring import *
 from .string import *
 
-# 'Cmd' {{{
-
 class Cmd(object):
     def call(self, argv):
         if argv:
@@ -517,8 +515,6 @@ class Cmd(object):
     do_s        = do_show
     do_chpw     = do_change_password
 
-# }}}
-
 def call_git(db, *args, **kwargs):
     return subprocess.call(["git", "-C", os.path.dirname(db.path), *args], **kwargs)
 
@@ -535,30 +531,31 @@ def db_git_backup(db, summary="snapshot", body=""):
     if "autopush" in db.options:
         call_git(db, "push", "-q")
 
-def main():
-    global db
-
-    db_path = os.environ.get("ACCDB",
-                os.path.join(
-                    Env.xdg_data_home(),
-                    "nullroute.eu.org",
-                    "accdb",
-                    "accounts.txt"))
-
-    keyring = default_keyring()
-
+def db_load(db_path):
     Core.debug("loading database from %r" % db_path)
     db = Database()
     db.path = db_path
-    db.keyring = keyring
+    db.keyring = default_keyring()
     try:
-        fh = open(db.path)
+        fh = open(db_path)
     except FileNotFoundError:
         if sys.stderr.isatty():
             Core.warn("database is empty")
     else:
         db.parseinto(fh)
         fh.close()
+    return db
+
+def main():
+    global db
+
+    db_path = os.environ.get("ACCDB",
+                             os.path.join(Env.xdg_data_home(),
+                                          "nullroute.eu.org",
+                                          "accdb",
+                                          "accounts.txt"))
+
+    db = db_load(db_path)
 
     interp = Cmd()
     interp.call(sys.argv[1:])
