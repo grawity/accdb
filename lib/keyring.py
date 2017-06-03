@@ -38,39 +38,48 @@ class GitKeyring(Keyring):
     def __init__(self, helper="cache"):
         self.helper = helper
 
-    def store(self, label, secret, attrs):
+    def _talk(self, action, attrs):
         for a in ["host", "username"]:
             if a not in attrs:
                 raise ValueError("attribute %r is required" % a)
+
+        if action == "get":
+            stdout = subprocess.PIPE
+        else:
+            stdout = subprocess.DEVNULL
+
+        with subprocess.Popen(["git", "credential-%s" % self.helper, action],
+                              stdin=subprocess.PIPE,
+                              stdout=stdout) as proc:
+
+            with io.TextIOWrapper(proc.stdin) as stdin:
+                for k, v in attrs.items():
+                    stdin.write("%s=%s\n" % (k, v))
+
+            if proc.stdout:
+                ret = {}
+                with io.TextIOWrapper(proc.stdout) as stdout:
+                    for line in stdout:
+                        k, v = line.rstrip("\n").split("=", 1)
+                        ret[k] = v
+                return ret or None
+            else:
+                return proc.wait() == 0
+
+    def store(self, label, secret, attrs):
         attrs["label"] = label
         attrs["password"] = secret
-        with subprocess.Popen(["git", "credential-%s" % self.helper, "store"],
-                              stdin=subprocess.PIPE) as proc:
-            with io.TextIOWrapper(proc.stdin) as stdin:
-                for k, v in attrs.items():
-                    stdin.write("%s=%s\n" % (k, v))
-            return proc.wait() == 0
+        return self._talk("store", attrs)
 
     def search(self, attrs):
-        for a in ["host"]:
-            if a not in attrs:
-                raise ValueError("attribute %r is required" % a)
-        with subprocess.Popen(["git", "credential-%s" % self.helper, "get"],
-                              stdin=subprocess.PIPE,
-                              stdout=subprocess.PIPE) as proc:
-            with io.TextIOWrapper(proc.stdin) as stdin:
-                for k, v in attrs.items():
-                    stdin.write("%s=%s\n" % (k, v))
-            ret = {}
-            with io.TextIOWrapper(proc.stdout) as stdout:
-                for line in stdout:
-                    k, v = line.rstrip("\n").split("=", 1)
-                    ret[k] = v
-            return ret or None
+        return self._talk("get", attrs)
 
     def lookup(self, attrs):
         ret = self.search(attrs)
         return ret["password"] if ret else None
+
+    def clear(self, attrs):
+        return self._talk("erase", attrs)
 
     def _make_attrs(self, uuid):
         return {
