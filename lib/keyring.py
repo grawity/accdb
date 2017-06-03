@@ -95,17 +95,23 @@ class XdgKeyring(Keyring):
                                stderr=subprocess.DEVNULL) == 0
 
     def store(self, label, secret, attrs):
+        if not self.available:
+            return False
         with subprocess.Popen(["secret-tool", "store", "--label", label] + attrs,
                                stdin=subprocess.PIPE) as proc:
             proc.communicate(secret.encode())
             return proc.wait() == 0
 
     def lookup(self, attrs):
+        if not self.available:
+            return None
         with subprocess.Popen(["secret-tool", "lookup"] + attrs,
                                stdout=subprocess.PIPE) as proc:
             return proc.stdout.read().rstrip(b"\n")
 
     def clear(self, attrs):
+        if not self.available:
+            return False
         return subprocess.call(["secret-tool", "clear"] + attrs) == 0
 
     def _make_attrs(self, uuid):
