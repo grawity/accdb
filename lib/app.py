@@ -239,7 +239,7 @@ class Cmd(object):
                 Core.debug("store entry %r" % label)
                 Core.debug("set attrs %r" % set_attrs)
                 Core.debug("get attrs %r" % get_attrs)
-                if kr.store(label, secret, get_attrs+set_attrs):
+                if kr.store(label, secret, [*get_attrs, *set_attrs]):
                     Core.info("stored %s secret in keyring" % kind)
                 else:
                     Core.err("secret-tool %s failed for %r" % (action, get_attrs))
@@ -521,18 +521,16 @@ class Cmd(object):
 
     do_g        = do_show
     do_grep     = do_show
-    do_re       = do_reveal
+    do_r        = do_reveal
+    do_re       = do_show
     do_rgrep    = do_reveal
     do_s        = do_show
+    do_chpw     = do_change_password
 
 # }}}
 
-# site-specific backup functions {{{
-
 def call_git(db, *args, **kwargs):
-    db_dir = os.path.dirname(db.path)
-
-    subprocess.call(["git", "-C", db_dir] + list(args), **kwargs)
+    return subprocess.call(["git", "-C", os.path.dirname(db.path), *args], **kwargs)
 
 def db_git_backup(db, summary="snapshot", body=""):
     db_dir = os.path.dirname(db.path)
@@ -541,14 +539,11 @@ def db_git_backup(db, summary="snapshot", body=""):
     if not os.path.exists(repo_dir):
         call_git(db, "init")
 
-    with open("/dev/null", "r+b") as null_fh:
-        call_git(db, "commit", "-m", summary, "-m", body, db.path,
-                 stdout=null_fh)
+    call_git(db, "commit", "-m", summary, "-m", body, db.path,
+             stdout=subprocess.DEVNULL)
 
-        if "autopush" in db.options:
-            call_git(db, "push", "-q")
-
-# }}}
+    if "autopush" in db.options:
+        call_git(db, "push", "-q")
 
 def main():
     global db_path
