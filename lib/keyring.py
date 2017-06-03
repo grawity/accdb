@@ -41,7 +41,7 @@ class GitKeyring(Keyring):
                 for line in stdout:
                     k, v = line.rstrip("\n").split("=", 1)
                     ret[k] = v
-        return ret or None
+            return ret or None
 
     def store(self, label, secret, attrs):
         for a in ["host", "username"]:
