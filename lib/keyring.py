@@ -88,10 +88,16 @@ class GitKeyring(Keyring):
         }
 
 class XdgKeyring(Keyring):
+    @property
+    def available(self):
+        return subprocess.call(["secret-tool", "search", "", ""],
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL) == 0
+
     def store(self, label, secret, attrs):
         with subprocess.Popen(["secret-tool", "store", "--label", label] + attrs,
                                stdin=subprocess.PIPE) as proc:
-            proc.communicate(secret.encode("utf-8"))
+            proc.communicate(secret.encode())
             return proc.wait() == 0
 
     def lookup(self, attrs):
