@@ -5,8 +5,17 @@ import subprocess
 class Keyring(object):
     KEK_SCHEMA = "org.eu.nullroute.Accdb.MasterKey"
 
+    def _make_attrs(self, uuid):
+        raise NotImplementedError()
+
+    def _store_kek(self, label, secret, uuid):
+        return self.store(label, secret, self._make_attrs(uuid))
+
+    def _lookup_kek(self, uuid):
+        return self.lookup(self._make_attrs(uuid))
+
     def get_kek(self, uuid):
-        secret = self._get_kek(str(uuid))
+        secret = self._lookup_kek(str(uuid))
         return base64.b64decode(secret) if secret else None
 
     def store_kek(self, uuid, kek):
@@ -63,12 +72,6 @@ class GitKeyring(Keyring):
             "username": uuid,
         }
 
-    def _store_kek(self, label, secret, uuid):
-        return self.store(label, secret, self._make_attrs(uuid))
-
-    def _get_kek(self, uuid):
-        return self.lookup(self._make_attrs(uuid))
-
 class XdgKeyring(Keyring):
     def store(self, label, secret, attrs):
         with subprocess.Popen(["secret-tool", "store", "--label", label] + attrs,
@@ -89,12 +92,6 @@ class XdgKeyring(Keyring):
             "xdg:schema", Keyring.KEK_SCHEMA,
             "uuid", uuid,
         ]
-
-    def _store_kek(self, label, secret, uuid):
-        return self.store(label, secret, self._make_attrs(uuid))
-
-    def _get_kek(self, uuid):
-        return self.lookup(self._make_attrs(uuid))
 
 class Prompter(object):
     def get_password(self, desc, **kwargs):
