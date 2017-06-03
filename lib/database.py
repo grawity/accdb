@@ -8,7 +8,7 @@ from .entry import *
 class Database(object):
     SUPPORTED_FEATURES = {
         "b64value",
-        "encrypt",
+        "encrypted",
     }
 
     def __init__(self):
@@ -77,7 +77,7 @@ class Database(object):
                     Core.warn("line %d: header after data: %r" % (lineno, line))
             elif line.startswith("="):
                 if header:
-                    if (not self.sec.dek_cipher) and ("encrypt" in self.features):
+                    if (not self.sec.dek_cipher) and ("encrypted" in self.features):
                         Core.die("database encrypted but DEK not found in header")
                     header = False
                 if data:
@@ -96,7 +96,7 @@ class Database(object):
         if (not self.sec.dek_cipher) and ("encrypt" in self.options):
             Core.notice("generating data encryption key")
             self.sec.generate_dek()
-            self.features.add("encrypt")
+            self.features.add("encrypted")
             self.options.remove("encrypt")
 
         return self
