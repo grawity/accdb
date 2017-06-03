@@ -30,15 +30,6 @@ class Database(object):
 
     # Import
 
-    @classmethod
-    def from_file(self, path, keyring=None):
-        db = self()
-        db.path = path
-        db.keyring = keyring
-        with open(path, "r", encoding="utf-8") as fh:
-            db.parseinto(fh)
-        return db
-
     def _process_header(self):
         header = self.header
 
