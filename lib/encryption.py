@@ -5,9 +5,9 @@ class UnknownAlgorithmError(Exception):
     pass
 
 class Cipher(object):
-    def __init__(self, key, algo="aes-128-cfb"):
+    def __init__(self, key, algo=None):
         self.key = key
-        self.algo = algo
+        self.algo = algo or ("aes-128-cfb" if key else "none")
 
     def _generate_key(self, nbits) -> "bytes":
         if nbits % 8:
@@ -93,12 +93,6 @@ class SecureStorage(object):
             raise Exception("KEK already set")
         else:
             self.kek_cipher = Cipher(kek)
-
-    def set_null_kek(self):
-        if self.kek_cipher:
-            raise Exception("KEK already set")
-        else:
-            self.kek_cipher = Cipher(None, "none")
 
     def change_raw_kek(self, new_kek):
         if not self.kek_cipher:
