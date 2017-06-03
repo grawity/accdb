@@ -40,12 +40,20 @@ class Database(object):
         return self().parseinto(*args, **kwargs)
 
     def _process_header(self):
+        header = self.header
         if "encrypted" in self.features:
             if "dek" in header:
                 self.sec.set_wrapped_dek(header["dek"])
                 del header["dek"]
             else:
                 Core.die("database encrypted but DEK not found in header")
+
+    def _get_header(self):
+        header = self.header.copy()
+        if "encrypted" in self.features:
+            if self.sec.dek_cipher:
+                header["dek"] = self.sec.get_wrapped_dek()
+        return header
 
     def parseinto(self, fh):
         data = ""
@@ -208,12 +216,6 @@ class Database(object):
     def __iter__(self):
         for uuid in self.order:
             yield self.entries[uuid]
-
-    def _get_header(self):
-        header = self.header.copy()
-        if self.sec.dek_cipher:
-            header["dek"] = self.sec.get_wrapped_dek()
-        return header
 
     def dump_header(self, fh):
         tty = getattr(fh, "isatty", lambda: True)()
