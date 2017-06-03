@@ -132,19 +132,21 @@ class Entry(object):
 
     # Export
 
-    def dump(self, storage=False, conceal=True, show_contents=True,
-             color=False, itemno=None):
+    def dump(self, storage=False, encrypt=True, conceal=True,
+             show_contents=True, color=False, show_itemno=None):
         """
         storage:
             output private data
             output metadata (UUIDs, etc.)
             do not output line numbers
+        encrypt
+            encrypt private data
         conceal
             do not display private data
         """
 
-        if itemno is None:
-            itemno = not storage
+        if show_itemno is None:
+            show_itemno = not storage
 
         if storage:
             conceal = False
@@ -161,7 +163,7 @@ class Entry(object):
 
         data = ""
 
-        if itemno and self.itemno:
+        if show_itemno and self.itemno:
             if self.deleted:
                 data += "%s\n" % f("(deleted item %s)" % self.itemno, paren_del_fmt)
             else:
@@ -194,7 +196,7 @@ class Entry(object):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
                         if storage:
-                            if "encrypted" in self.db.features:
+                            if encrypt and ("encrypted" in self.db.features):
                                 value = self.db.sec.wrap_data(value)
                                 value = "<wrapped> %s" % value
                             elif val_is_unsafe(value):

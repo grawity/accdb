@@ -105,13 +105,12 @@ class Cmd(object):
         """Display entries for exporting"""
         db.dump_header(sys.stdout)
         for entry in Filter.cli_search_argv(db, argv):
-            # TODO: remove conceal=False when wrap_secret is defined
-            self._show_entry(entry, storage=True)
+            self._show_entry(entry, storage=True, encrypt=False)
 
     def do_qr(self, argv):
         """Display the entry's OATH PSK as a Qr code"""
         for entry in Filter.cli_search_argv(db, argv):
-            self._show_entry(entry)
+            self._show_entry(entry, show_contents=False)
             if entry.oath_params:
                 data = entry.oath_params.make_uri()
             elif entry.wpa_params:
@@ -283,7 +282,7 @@ class Cmd(object):
             entry.tags -= old_tags
             entry.tags |= new_tags
             num += 1
-            self._show_entry(entry, itemno=False, show_contents=False)
+            self._show_entry(entry, show_itemno=False, show_contents=False)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
@@ -312,7 +311,7 @@ class Cmd(object):
             entry.tags |= add_tags
             entry.tags -= rem_tags
             num += 1
-            self._show_entry(entry, itemno=False, show_contents=False)
+            self._show_entry(entry, show_itemno=False, show_contents=False)
 
         if sys.stdout.isatty():
             print("(%d %s updated)" % (num, ("entry" if num == 1 else "entries")))
