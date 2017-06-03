@@ -123,9 +123,6 @@ class Database(object):
             lineno += 1
             if line.startswith("; vim:"):
                 self.modeline = line.strip()
-            elif line.startswith("; dbflags:"):
-                key, val = line[2:].strip().split(": ", 1)
-                self.options = split_tags(val)
             elif line.strip() == ";; end":
                 pass
             elif line.startswith(";; "):
@@ -135,7 +132,7 @@ class Database(object):
                     except ValueError:
                         Core.err("line %d: malformed header: %r" % (lineno, line))
                         continue
-                    if key in {"options", "dbflags"}:
+                    if key == "options":
                         self.options = split_tags(val)
                     elif key == "features":
                         self.features = split_tags(val)
