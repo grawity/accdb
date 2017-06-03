@@ -87,12 +87,23 @@ class SecureStorage(object):
         else:
             self.kek_cipher = Cipher(kek)
 
+    def change_raw_kek(self, new_kek):
+        if not self.kek_cipher:
+            raise Exception("KEK not yet set")
+        elif not self.dek_cipher:
+            raise Exception("DEK not yet set")
+        else:
+            self.kek_cipher = Cipher(new_kek)
+
     def kdf(self, passwd):
         from Crypto.Protocol import KDF
         return KDF.PBKDF2(passwd, self.kdf_salt)
 
     def set_password(self, passwd):
         return self.set_raw_kek(self.kdf(passwd))
+
+    def change_password(self, passwd):
+        return self.change_raw_kek(self.kdf(passwd))
 
     # DEK
 
