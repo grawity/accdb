@@ -38,9 +38,18 @@ class GitKeyring(Keyring):
     def __init__(self, helper="cache"):
         self.helper = helper
 
-    def lookup(self, attrs):
-        ret = self.search(attrs)
-        return ret["password"] if ret else None
+    def store(self, label, secret, attrs):
+        for a in ["host", "username"]:
+            if a not in attrs:
+                raise ValueError("attribute %r is required" % a)
+        attrs["label"] = label
+        attrs["password"] = secret
+        with subprocess.Popen(["git", "credential-%s" % self.helper, "store"],
+                              stdin=subprocess.PIPE) as proc:
+            with io.TextIOWrapper(proc.stdin) as stdin:
+                for k, v in attrs.items():
+                    stdin.write("%s=%s\n" % (k, v))
+            return proc.wait() == 0
 
     def search(self, attrs):
         for a in ["host"]:
@@ -59,18 +68,9 @@ class GitKeyring(Keyring):
                     ret[k] = v
             return ret or None
 
-    def store(self, label, secret, attrs):
-        for a in ["host", "username"]:
-            if a not in attrs:
-                raise ValueError("attribute %r is required" % a)
-        attrs["label"] = label
-        attrs["password"] = secret
-        with subprocess.Popen(["git", "credential-%s" % self.helper, "store"],
-                              stdin=subprocess.PIPE) as proc:
-            with io.TextIOWrapper(proc.stdin) as stdin:
-                for k, v in attrs.items():
-                    stdin.write("%s=%s\n" % (k, v))
-            return proc.wait() == 0
+    def lookup(self, attrs):
+        ret = self.search(attrs)
+        return ret["password"] if ret else None
 
     def _make_attrs(self, uuid):
         return {
