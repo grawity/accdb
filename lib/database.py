@@ -68,6 +68,7 @@ class Database(object):
                     Core.die("database encrypted but password not provided")
                 kek = self.sec.kdf(passwd)
             self.sec.set_raw_kek(kek)
+            self.keyring.cache_kek(self.uuid, kek)
 
             if "dek" in header:
                 self.sec.set_wrapped_dek(header["dek"])

@@ -583,7 +583,7 @@ def main():
 
     db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
-    keyring = XdgKeyring()
+    keyring = default_keyring()
 
     Core.debug("loading database from %r" % db_path)
     db = Database()

@@ -13,6 +13,9 @@ class Keyring(object):
         if not self._store_kek(self, label, secret, str(uuid)):
             raise Exception("failed to store master key in keyring")
 
+    def cache_kek(self, uuid, kek):
+        pass
+
 class GitKeyring(Keyring):
     def __init__(self, helper="cache"):
         self.helper = helper
@@ -117,7 +120,13 @@ class ShimKeyring(Keyring, PinentryPrompter):
         self.cache = GitKeyring("cache")
 
     def get_kek(self, uuid):
-        return self.store.get_kek(uuid)
+        return self.cache.get_kek(uuid) or self.store.get_kek(uuid)
 
     def store_kek(self, uuid, kek):
         return self.store.store_kek(uuid, kek)
+
+    def cache_kek(self, uuid, kek):
+        return self.cache.store_kek(uuid, kek)
+
+def default_keyring():
+    return ShimKeyring()
