@@ -527,7 +527,6 @@ def db_git_backup(db, summary="snapshot", body=""):
         call_git(db, "push", "-q")
 
 def main():
-    global db_path
     global db
 
     db_path = os.environ.get("ACCDB",
@@ -543,7 +542,7 @@ def main():
     db.path = db_path
     db.keyring = keyring
     try:
-        fh = open(db_path)
+        fh = open(db.path)
     except FileNotFoundError:
         if sys.stderr.isatty():
             Core.warn("database is empty")
