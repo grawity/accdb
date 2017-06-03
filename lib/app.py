@@ -454,6 +454,9 @@ class Cmd(object):
                 Core.info("master password changed, database is encrypted")
             else:
                 Core.warn("password change cancelled")
+        elif argv[0] == "--store":
+            db.keyring.store_kek(db.uuid, db.sec.kek_cipher.key)
+            Core.info("master password stored in keyring")
         elif argv[0] == "--forget":
             db.keyring.clear_kek(db.uuid)
             Core.info("master password cleared from keyring")

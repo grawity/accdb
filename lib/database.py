@@ -100,13 +100,12 @@ class Database(object):
             else:
                 self.sec.set_raw_kek(kek)
                 self.set_encryption(True)
-            self.options.add("keyring")
-            self.keyring.store_kek(self.uuid, kek)
-            self.modified = True
         else:
             self.sec.change_raw_kek(None)
-            self.options.discard("keyring")
-            self.modified = True
+
+        self.options.discard("keyring")
+        self.keyring.clear_kek(self.uuid)
+        self.modified = True
 
     @classmethod
     def parse(self, *args, **kwargs):
