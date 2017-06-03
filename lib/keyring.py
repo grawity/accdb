@@ -56,21 +56,18 @@ class GitKeyring(Keyring):
                     stdin.write("%s=%s\n" % (k, v))
             return proc.wait() == 0
 
-    def _store_kek(self, label, secret, uuid):
-        attrs = {
+    def _make_attrs(self, uuid):
+        return {
             "host": "accdb://%s" % uuid,
             "protocol": Keyring.KEK_SCHEMA,
             "username": uuid,
         }
-        return self.store(label, secret, attrs)
+
+    def _store_kek(self, label, secret, uuid):
+        return self.store(label, secret, self._make_attrs(uuid))
 
     def _get_kek(self, uuid):
-        attrs = {
-            "host": "accdb://%s" % uuid,
-            "protocol": Keyring.KEK_SCHEMA,
-            "username": uuid,
-        }
-        return self.lookup(attrs)
+        return self.lookup(self._make_attrs(uuid))
 
 class XdgKeyring(Keyring):
     def store(self, label, secret, attrs):
@@ -87,19 +84,17 @@ class XdgKeyring(Keyring):
     def clear(self, attrs):
         return subprocess.call(["secret-tool", "clear"] + attrs) == 0
 
-    def _store_kek(self, label, secret, uuid):
-        attrs = [
+    def _make_attrs(self, uuid):
+        return [
             "xdg:schema", Keyring.KEK_SCHEMA,
             "uuid", uuid,
         ]
-        return self.store(label, secret, attrs)
+
+    def _store_kek(self, label, secret, uuid):
+        return self.store(label, secret, self._make_attrs(uuid))
 
     def _get_kek(self, uuid):
-        attrs = [
-            "xdg:schema", Keyring.KEK_SCHEMA,
-            "uuid", uuid,
-        ]
-        return self.lookup(attrs)
+        return self.lookup(self._make_attrs(uuid))
 
 class Prompter(object):
     def get_password(self, desc, **kwargs):
