@@ -91,6 +91,9 @@ class SecureStorage(object):
         from Crypto.Protocol import KDF
         return KDF.PBKDF2(passwd, self.kdf_salt)
 
+    def set_password(self, passwd):
+        return self.set_raw_kek(self.kdf(passwd))
+
     # DEK
 
     def generate_dek(self):
@@ -130,9 +133,3 @@ class SecureStorage(object):
             raise Exception("DEK not yet set")
         else:
             return self.dek_cipher.unwrap_str(data)
-
-def default_enc(keyring):
-    enc = SecureStorage()
-    kek = enc.kdf("TEST PASSWORD") # XXX
-    enc.set_raw_kek(kek)
-    return enc
