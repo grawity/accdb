@@ -40,7 +40,7 @@ class XdgKeyring(Keyring, PinentryPrompter):
             return None
 
     def store_kek(self, uuid, kek):
-        label = "accdb master key for %s" % uuid
+        label = "accdb master key for {%s}" % uuid
         secret = base64.b64encode(kek).decode()
         attrs = [
             "xdg:schema", "lt.nullroute.Accdb.Kek",
