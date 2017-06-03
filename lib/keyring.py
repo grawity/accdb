@@ -14,15 +14,15 @@ class Keyring(object):
     def _lookup_kek(self, uuid):
         return self.lookup(self._make_attrs(uuid))
 
-    def get_kek(self, uuid):
-        secret = self._lookup_kek(str(uuid))
-        return base64.b64decode(secret) if secret else None
-
     def store_kek(self, uuid, kek):
         label = "accdb master key for {%s}" % uuid
         secret = base64.b64encode(kek).decode()
         if not self._store_kek(label, secret, str(uuid)):
             raise Exception("failed to store master key in keyring")
+
+    def lookup_kek(self, uuid):
+        secret = self._lookup_kek(str(uuid))
+        return base64.b64decode(secret) if secret else None
 
     def cache_kek(self, uuid, kek):
         pass
@@ -115,14 +115,14 @@ class ShimKeyring(Keyring, PinentryPrompter):
         self.store = XdgKeyring()
         self.cache = GitKeyring("cache")
 
-    def get_kek(self, uuid):
-        return self.cache.get_kek(uuid) or self.store.get_kek(uuid)
-
     def store_kek(self, uuid, kek):
         return self.store.store_kek(uuid, kek)
 
     def cache_kek(self, uuid, kek):
         return self.cache.store_kek(uuid, kek)
+
+    def lookup_kek(self, uuid):
+        return self.cache.lookup_kek(uuid) or self.store.lookup_kek(uuid)
 
 def default_keyring():
     return ShimKeyring()

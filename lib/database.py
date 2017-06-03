@@ -44,7 +44,7 @@ class Database(object):
             if not kek:
                 Core.debug("retrieving KEK for {%s} from keyring", self.uuid)
                 try:
-                    kek = self.keyring.get_kek(self.uuid)
+                    kek = self.keyring.lookup_kek(self.uuid)
                 except FileNotFoundError:
                     kek = None
                 if not kek:
