@@ -21,7 +21,8 @@ class GitKeyring(Keyring):
         self.helper = helper
 
     def lookup(self, attrs):
-        return self.search(attrs)["password"]
+        ret = self.search(attrs)
+        return ret["password"] if ret else None
 
     def search(self, attrs):
         for a in ["host"]:
