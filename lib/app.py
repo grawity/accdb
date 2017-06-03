@@ -20,7 +20,6 @@ from .entry_util import *
 from .filter import Filter
 from .keyring import *
 from .string import *
-from .xdg_secret import *
 
 # 'Cmd' {{{
 
@@ -200,6 +199,8 @@ class Cmd(object):
         if action not in {"clear", "search", "lookup", "store"}:
             raise ValueError("unknown keyring action %r" % action)
 
+        kr = XdgKeyring()
+
         for entry in Filter.cli_search_argv(db, argv):
             self._show_entry(entry)
             kind = self._entry_kind(entry)
@@ -238,19 +239,19 @@ class Cmd(object):
                 Core.debug("store entry %r" % label)
                 Core.debug("set attrs %r" % set_attrs)
                 Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_store(label, secret, get_attrs+set_attrs):
+                if kr.store(label, secret, get_attrs+set_attrs):
                     Core.info("stored %s secret in keyring" % kind)
                 else:
                     Core.err("secret-tool %s failed for %r" % (action, get_attrs))
             elif action == "search":
                 Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_search_stdout(get_attrs):
+                if kr._search_stdout(get_attrs):
                     pass
                 else:
                     Core.warn("secret-tool %s failed for %r" % (action, get_attrs))
             elif action == "clear":
                 Core.debug("get attrs %r" % get_attrs)
-                if xdg_secret_clear(get_attrs):
+                if kr.clear(get_attrs):
                     Core.info("removed matching %s secrets from keyring" % kind)
                 else:
                     Core.err("secret-tool %s failed for %r" % (action, get_attrs))
@@ -582,7 +583,7 @@ def main():
 
     db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
-    keyring = XdgKeyring()
+    keyring = default_keyring()
 
     Core.debug("loading database from %r" % db_path)
     db = Database()
