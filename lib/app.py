@@ -505,6 +505,17 @@ class Cmd():
         for tag in sorted(self.db.tags()):
             print(tag)
 
+    def do_info(self, argv):
+        from pprint import pprint
+        print("UUID:", self.db.uuid)
+        print("Items:", len(self.db.entries))
+        print("Encryption:", bool(self.db.sec.dek_cipher.key))
+        print("Master pwd:", bool(self.db.sec.kek_cipher.key))
+        print("Compatible options:", " ".join(sorted(self.db.options)))
+        print("Incompatible options:", " ".join(sorted(self.db.features)))
+        print("Header:")
+        self.db.dump_header(sys.stdout)
+
     def do_parse_filter(self, argv):
         """Parse a filter and dump it as text"""
         print(Filter.cli_compile_argv(self.db, argv))
