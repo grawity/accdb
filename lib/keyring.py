@@ -14,6 +14,9 @@ class Keyring(object):
     def _lookup_kek(self, uuid):
         return self.lookup(self._make_attrs(uuid))
 
+    def _clear_kek(self, uuid):
+        return self.clear(self._make_attrs(uuid))
+
     def store_kek(self, uuid, kek):
         label = "accdb master key for {%s}" % uuid
         secret = base64.b64encode(kek).decode()
@@ -26,6 +29,10 @@ class Keyring(object):
 
     def cache_kek(self, uuid, kek):
         pass
+
+    def clear_kek(self, uuid):
+        if not self._clear_kek(str(uuid)):
+            raise Exception("failed to remove master key from keyring")
 
 class GitKeyring(Keyring):
     def __init__(self, helper="cache"):
@@ -123,6 +130,11 @@ class ShimKeyring(Keyring, PinentryPrompter):
 
     def lookup_kek(self, uuid):
         return self.cache.lookup_kek(uuid) or self.store.lookup_kek(uuid)
+
+    def clear_kek(self, uuid):
+        sr = self.store.clear_kek(uuid)
+        cr = self.cache.clear_kek(uuid)
+        return sr
 
 def default_keyring():
     return ShimKeyring()
