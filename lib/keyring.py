@@ -101,7 +101,8 @@ class XdgKeyring(Keyring):
             return None
         with subprocess.Popen(["secret-tool", "lookup"] + attrs,
                                stdout=subprocess.PIPE) as proc:
-            return proc.stdout.read().rstrip(b"\n")
+            out, err = proc.communicate()
+            return out.decode().rstrip("\n")
 
     def clear(self, attrs):
         if not self.available:
