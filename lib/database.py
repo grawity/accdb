@@ -40,32 +40,35 @@ class Database(object):
             self.uuid = uuid.uuid4()
 
         if "encrypted" in self.features:
-            kek = None
-            if not kek:
-                Core.debug("retrieving KEK for {%s} from keyring", self.uuid)
-                try:
-                    kek = self.keyring.lookup_kek(self.uuid)
-                except FileNotFoundError:
-                    kek = None
-                if not kek:
-                    Core.warn("database encrypted but KEK not found in keyring")
-            if not kek:
-                Core.debug("prompting for password for {%s}", self.uuid)
-                try:
-                    passwd = self.keyring.get_password("Input master database password:")
-                except FileNotFoundError:
-                    passwd = None
-                if not passwd:
-                    Core.die("database encrypted but password not provided")
-                kek = self.sec.kdf(passwd)
-            self.sec.set_raw_kek(kek)
-            self.keyring.cache_kek(self.uuid, kek)
-
             if "dek" in header:
-                self.sec.set_wrapped_dek(header["dek"])
+                dek = header["dek"]
                 del header["dek"]
+
+            if dek.startswith("none;"):
+                self.sec.set_raw_kek(None)
             else:
-                Core.die("database encrypted but DEK not found in header")
+                kek = None
+                if not kek:
+                    Core.debug("retrieving KEK for {%s} from keyring", self.uuid)
+                    try:
+                        kek = self.keyring.lookup_kek(self.uuid)
+                    except FileNotFoundError:
+                        kek = None
+                    if not kek:
+                        Core.warn("database encrypted but KEK not found in keyring")
+                if not kek:
+                    Core.debug("prompting for password for {%s}", self.uuid)
+                    try:
+                        passwd = self.keyring.get_password("Input master database password:")
+                    except FileNotFoundError:
+                        passwd = None
+                    if not passwd:
+                        Core.die("database encrypted but password not provided")
+                    kek = self.sec.kdf(passwd)
+                self.sec.set_raw_kek(kek)
+                self.keyring.cache_kek(self.uuid, kek)
+
+            self.sec.set_wrapped_dek(dek)
 
     def _get_header(self):
         header = self.header.copy()

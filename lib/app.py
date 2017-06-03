@@ -455,8 +455,11 @@ class Cmd(object):
             else:
                 Core.warn("password change cancelled")
         elif argv[0] == "--store":
-            db.keyring.store_kek(db.uuid, db.sec.kek_cipher.key)
-            Core.info("master password stored in keyring")
+            if db.sec.kek_cipher.key:
+                db.keyring.store_kek(db.uuid, db.sec.kek_cipher.key)
+                Core.info("master password stored in keyring")
+            else:
+                Core.err("master password is not enabled for this database")
         elif argv[0] == "--forget":
             db.keyring.clear_kek(db.uuid)
             Core.info("master password cleared from keyring")
@@ -467,7 +470,7 @@ class Cmd(object):
                 db.set_encryption(False)
                 db.modified = True
             if "encrypted" in db.features:
-                Core.info("master password removed (database remains encrypted)")
+                Core.info("master password disabled (database remains encrypted)")
             else:
                 Core.info("database fully decrypted")
 
