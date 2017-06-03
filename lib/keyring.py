@@ -52,12 +52,12 @@ class GitKeyring(Keyring):
                               stdout=stdout) as proc:
             buf = "".join(["%s=%s\n" % (k, v) for k, v in attrs.items()])
             out, err = proc.communicate(buf.encode())
-            if out:
+            if out is None:
+                return proc.wait() == 0
+            else:
                 ret = [l.split("=", 1) for l in out.decode().splitlines()]
                 ret = {i[0]: i[1] for i in ret}
                 return ret or None
-            else:
-                return proc.wait() == 0
 
     def store(self, label, secret, attrs):
         attrs["label"] = label
