@@ -1,4 +1,5 @@
 import base64
+import subprocess
 
 from .xdg_secret import *
 
@@ -9,8 +10,24 @@ class Keyring(object):
     def store_kek(self, uuid, kek):
         raise NotImplementedError()
 
+class Prompter(object):
+    def get_password(self, desc, **kwargs):
+        raise NotImplementedError()
 
-class XdgKeyring(Keyring):
+class PinentryPrompter(Prompter):
+    def get_password(self, desc, **kwargs):
+        with subprocess.Popen(["askpin",
+                               "-t", "accdb",
+                               "-d", desc,
+                               "-p", "Password:"],
+                              stdout=subprocess.PIPE) as proc:
+            (out, err) = proc.communicate()
+            if proc.wait() == 0:
+                return out.decode().rstrip("\n")
+            else:
+                return None
+
+class XdgKeyring(Keyring, PinentryPrompter):
     def get_kek(self, uuid):
         attrs = [
             "xdg:schema", "lt.nullroute.Accdb.Kek",
