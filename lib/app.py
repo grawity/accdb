@@ -542,7 +542,8 @@ def main():
                 os.path.join(
                     Env.xdg_data_home(),
                     "nullroute.eu.org",
-                    "accounts.db.txt"))
+                    "accdb",
+                    "accounts.txt"))
 
     keyring = default_keyring()
 
