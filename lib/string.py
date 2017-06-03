@@ -134,18 +134,23 @@ def date_parse(s):
     elif s.startswith("now+"):
         days = int(s[len("now+"):])
         return datetime.datetime.now() + datetime.timedelta(days)
-    elif "T" in s:
-        s = s.split("T")[0]
-    elif " " in s:
+
+    if " " in s:
         s = s.split(" ")[0]
+    if "T" in s:
+        s = s.split("T")[0]
+
     try:
         return datetime.datetime.strptime(s, "%Y-%m-%d")
     except ValueError:
         try:
             return datetime.datetime.strptime(s, "%Y-%m")
         except ValueError:
-            Core.err("failed to parse %r as date" % s)
-            return datetime.datetime.fromordinal(1)
+            try:
+                return datetime.datetime.strptime(s, "%Y")
+            except ValueError:
+                Core.err("failed to parse %r as date" % s)
+                return datetime.datetime.fromordinal(1)
 
 def date_cmp(a, b):
     ax = date_parse(a).date()
