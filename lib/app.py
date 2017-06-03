@@ -15,7 +15,7 @@ from nullroute.core import Core
 from .changeset import Changeset, TextChangeset
 from .clipboard import Clipboard
 from .database import Database
-from .enc import *
+from .encryption import SecureStorage
 from .entry import Entry
 from .entry_util import *
 from .filter import Filter
