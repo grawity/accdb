@@ -22,6 +22,13 @@ class Cipher(object):
             raise ValueError("key too short (%d < %d)" % (len(self.key), nbytes))
         return self.key[:nbits // 8]
 
+    def _deterministic_iv(self, clear: "bytes", nbytes) -> "bytes":
+        from Crypto.Hash import HMAC, SHA256
+        mac = HMAC.new(self.key, clear, SHA256).digest()
+        if len(mac) < nbytes:
+            raise ValueError("resulting mac too short (%d < %d)" % (len(mac), nbytes))
+        return mac[:nbytes]
+
     def _encrypt_data(self, clear: "bytes", algo: "str") -> "bytes":
         algo = algo.split("-")
         if algo[0] == "none":
@@ -32,7 +39,7 @@ class Cipher(object):
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
                 if algo[2] == "cfb":
-                    iv = os.urandom(AES.block_size)
+                    iv = self._deterministic_iv(clear, AES.block_size)
                     cipher = AES.new(key, AES.MODE_CFB, iv)
                     return iv + cipher.encrypt(clear)
         else:
