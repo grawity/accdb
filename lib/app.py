@@ -18,107 +18,9 @@ from .database import Database
 from .entry import Entry
 from .entry_util import *
 from .filter import Filter
+from .keyring import *
 from .string import *
 from .xdg_secret import *
-
-# 'SecretStore' {{{
-
-# todo:
-#
-#   class SecureKeyring - retrieve arbitrary keys from GNOME Keyring or files
-#
-#   class SecureStorage -
-#       obtain key from SecureKeyring or prompt for PBKDF2
-#       wrap/unwrap
-
-class UnknownAlgorithmError(Exception):
-    pass
-
-class SecretStore(object):
-    default_algo = "aes-128-cfb"
-
-    def __init__(self, key):
-        self.key = key
-
-    def get_key(self, nbits) -> "bytes":
-        nbytes = int(nbits >> 3)
-        return self.key[:nbytes]
-
-    def wrap(self, clear: "bytes", algo: "str") -> "bytes":
-        algo = algo.split("-")
-
-        if algo == "none":
-            return clear
-
-        elif algo[0] == "aes":
-            from Crypto.Cipher import AES
-
-            if algo[1] in {"128", "192", "256"}:
-                nbits = int(algo[1])
-                key = self.get_key(nbits)
-
-                if algo[2] == "cfb":
-                    iv = os.urandom(AES.block_size)
-                    cipher = AES.new(key, AES.MODE_CFB, iv)
-                    return iv + cipher.encrypt(clear)
-
-        raise UnknownAlgorithmError()
-
-    def unwrap(self, wrapped: "bytes", algo: "str") -> "bytes":
-        algo = algo.split("-")
-
-        if algo == "none":
-            return wrapped
-
-        elif algo[0] == "aes":
-            from Crypto.Cipher import AES
-
-            if algo[1] in {"128", "192", "256"}:
-                nbits = int(algo[1])
-                key = self.get_key(nbits)
-
-                if algo[2] == "cfb":
-                    iv = wrapped[:AES.block_size]
-                    buf = wrapped[AES.block_size:]
-                    cipher = AES.new(key, AES.MODE_CFB, iv)
-                    return cipher.decrypt(buf)
-
-        raise UnknownAlgorithmError()
-
-# @clear: (string) plain data
-# -> (base64-encoded string) encrypted data
-
-def wrap_secret(clear: "str") -> "base64: str":
-    global ss
-
-    if ss:
-        algo = ss.default_algo
-        clear = clear.encode("utf-8")
-        wrapped = ss.wrap(clear, algo)
-        wrapped = base64.b64encode(wrapped)
-        wrapped = wrapped.decode("utf-8")
-        wrapped = "%s;%s" % (algo, wrapped)
-        return wrapped
-    else:
-        Core.die("encryption not available")
-
-# @wrapped: (base64-encoded string) encrypted data
-# -> (string) plain data
-
-def unwrap_secret(wrapped):
-    global ss
-
-    if ss:
-        algo, wrapped = wrapped.split(";", 1)
-        wrapped = wrapped.encode("utf-8")
-        wrapped = base64.b64decode(wrapped)
-        clear = ss.unwrap(wrapped, algo)
-        clear = clear.decode("utf-8")
-        return clear
-    else:
-        return wrapped
-
-# }}}
 
 # 'Cmd' {{{
 
@@ -551,6 +453,50 @@ class Cmd(object):
 
         self.do_dump("", outdb)
 
+    def do_set_features(self, argv):
+        feat = set(db.features)
+
+        for arg in argv:
+            if len(arg) < 2 or arg[0] not in "+-":
+                Core.err("invalid parameter %r" % arg)
+            elif arg.startswith("+"):
+                feat.add(arg[1:])
+            elif arg.startswith("-"):
+                feat.discard(arg[1:])
+
+        r = feat - db.SUPPORTED_FEATURES
+        if r:
+            Core.die("refusing to enable unsupported features %r" % r)
+
+        db.set_encryption("encrypted" in feat)
+        db.features = feat
+        db.modified = True
+
+    def do_change_password(self, argv):
+        """Set or change the master password (KEK) for database encryption"""
+
+        passwd = db.keyring.get_password("Input new master password:")
+        if passwd:
+            db.change_password(passwd)
+            Core.info("master password changed, database is encrypted")
+        else:
+            Core.warn("password change cancelled")
+
+    def do_remove_password(self, argv):
+        """Remove the master password (KEK) and optionally decrypt the database"""
+
+        if "encrypted" in db.features:
+            db.change_password(None)
+
+        if "--full" in argv:
+            db.set_encryption(False)
+            db.modified = True
+
+        if "encrypted" in db.features:
+            Core.info("master password removed (database remains encrypted)")
+        else:
+            Core.info("database fully decrypted")
+
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
         db.modified = True
@@ -640,17 +586,15 @@ def main():
 
     db_backup_path = os.path.expanduser("~/Dropbox/Notes/Personal/accounts.gpg")
 
-    try:
-        ss = SecretStore(key=open("/mnt/keycard/grawity/accdb.key", "rb").read())
-    except FileNotFoundError:
-        ss = None
+    keyring = XdgKeyring()
 
     Core.debug("loading database from %r" % db_path)
     try:
-        db = Database.from_file(db_path)
+        db = Database.from_file(db_path, keyring)
     except FileNotFoundError:
         db = Database()
         db.path = db_path
+        db.keyring = keyring
         if sys.stderr.isatty():
             Core.warn("database is empty")
 

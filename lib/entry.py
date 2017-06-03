@@ -108,13 +108,14 @@ class Entry(object):
                     except UnicodeDecodeError:
                         pass
                 elif val.startswith("<wrapped> "):
-                    nval = val[len("<wrapped> "):]
-                    try:
-                        nval = unwrap_secret(nval)
-                        val = nval
-                        #val = nval.decode("utf-8")
-                    except UnicodeDecodeError:
-                        pass
+                    if self.db:
+                        nval = val[len("<wrapped> "):]
+                        try:
+                            nval = self.db.sec.unwrap_data(nval)
+                        except UnicodeDecodeError:
+                            pass
+                        else:
+                            val = nval
 
                 key = translate_attr(key)
                 if key in self.attributes:
@@ -193,8 +194,8 @@ class Entry(object):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
                         if storage:
-                            if "encrypt" in self.db.options:
-                                value = wrap_secret(value)
+                            if "encrypted" in self.db.features:
+                                value = self.db.sec.wrap_data(value)
                                 value = "<wrapped> %s" % value
                             elif val_is_unsafe(value):
                                 value = "<base64> %s" % b64_encode(value)

@@ -1,17 +1,25 @@
-import sys
 from collections import OrderedDict
+import sys
+import uuid
 
 from .entry import *
+from .encryption import SecureStorage
 
 # 'Database' {{{
 
 class Database(object):
-    SUPPORTED_FEATURES = {"b64value"}
+    SUPPORTED_FEATURES = {
+        "b64value",
+        "encrypted",
+    }
 
     def __init__(self):
         self.count = 0
         self.path = None
+        self.sec = SecureStorage()
+        self.keyring = None
         self.header = OrderedDict()
+        self.uuid = None
         self.modeline = "; vim: ft=accdb:"
         self.entries = dict()
         self.order = list()
@@ -23,12 +31,82 @@ class Database(object):
     # Import
 
     @classmethod
-    def from_file(self, path):
+    def from_file(self, path, keyring=None):
         db = self()
         db.path = path
+        db.keyring = keyring
         with open(path, "r", encoding="utf-8") as fh:
             db.parseinto(fh)
         return db
+
+    def _process_header(self):
+        header = self.header
+
+        if "uuid" in header:
+            self.uuid = uuid.UUID(header["uuid"])
+            del header["uuid"]
+        else:
+            self.uuid = uuid.uuid4()
+
+        if "encrypted" in self.features:
+            kek = None
+            if not kek:
+                kek = self.keyring.get_kek(self.uuid)
+                if not kek:
+                    Core.warn("database encrypted but KEK not found in keyring")
+            if not kek:
+                passwd = self.keyring.get_password("Input master password for unlocking:")
+                if not passwd:
+                    Core.die("database encrypted but password not provided")
+                kek = self.sec.kdf(passwd)
+            self.sec.set_raw_kek(kek)
+
+            if "dek" in header:
+                self.sec.set_wrapped_dek(header["dek"])
+                del header["dek"]
+            else:
+                Core.die("database encrypted but DEK not found in header")
+
+    def _get_header(self):
+        header = self.header.copy()
+
+        if self.uuid:
+            header["uuid"] = str(self.uuid)
+
+        if "encrypted" in self.features:
+            if self.sec.dek_cipher:
+                header["dek"] = self.sec.get_wrapped_dek()
+
+        return header
+
+    def set_encryption(self, enable):
+        if enable > ("encrypted" in self.features):
+            if not self.sec.kek_cipher:
+                self.sec.set_raw_kek(None)
+            self.sec.generate_dek()
+            self.features.add("encrypted")
+            self.options.discard("keyring")
+        elif enable < ("encrypted" in self.features):
+            self.sec.dek_cipher = None
+            self.features.discard("encrypted")
+            self.options.discard("keyring")
+
+    def change_password(self, passwd):
+        """Enable database encryption and set the KEK from original password"""
+        if passwd:
+            kek = self.sec.kdf(passwd)
+            if self.sec.kek_cipher:
+                self.sec.change_raw_kek(kek)
+            else:
+                self.sec.set_raw_kek(kek)
+                self.set_encryption(True)
+            self.options.add("keyring")
+            self.keyring.store_kek(self.uuid, kek)
+            self.modified = True
+        else:
+            self.sec.change_raw_kek(None)
+            self.options.discard("keyring")
+            self.modified = True
 
     @classmethod
     def parse(self, *args, **kwargs):
@@ -39,6 +117,7 @@ class Database(object):
         lineno = 0
         lastno = 1
         entry = None
+        header = True
 
         for line in fh:
             lineno += 1
@@ -68,6 +147,9 @@ class Database(object):
                 else:
                     Core.warn("line %d: header after data: %r" % (lineno, line))
             elif line.startswith("="):
+                if header:
+                    self._process_header()
+                    header = False
                 if data:
                     entry = Entry.parse(data, lineno=lastno, database=self)
                     if entry and not entry.deleted:
@@ -191,7 +273,7 @@ class Database(object):
             print(";; options: %s" % ", ".join(sorted(self.options)), file=fh)
         if self.features:
             print(";; features: %s" % ", ".join(sorted(self.features)), file=fh)
-        for key, val in self.header.items():
+        for key, val in self._get_header().items():
             print(";; %s: %s" % (key, val), file=fh)
         if tty:
             fh.write("\033[m")
@@ -206,7 +288,7 @@ class Database(object):
 
     def to_structure(self):
         return {
-            "header": dict(self.header),
+            "header": dict(self._get_header()),
             "entries": [entry.to_structure() for entry in self],
         }
 

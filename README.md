@@ -12,8 +12,6 @@ Seriously.
 
 So yes, I have a `passwords.txt`.
 
-Of course, it has large downsides such as complete lack of encryption, and all passwords visible in my editor. So far, neither is a large problem to me – I have become fairly paranoid about the storage media it's on, and I usually avoid editing it in public. Who knows, maybe I'll add some scrambling later, or import it to KeePass, but so far this does the job for me.
-
 ## Syntax
 
     (metadata)
