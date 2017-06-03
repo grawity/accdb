@@ -194,7 +194,7 @@ class Entry(object):
                         key_fmt = "38;5;216"
                         value_fmt = "34"
                         if storage:
-                            if "encrypt" in self.db.options:
+                            if "encrypt" in self.db.features:
                                 value = self.db.sec.wrap_data(value)
                                 value = "<wrapped> %s" % value
                             elif val_is_unsafe(value):

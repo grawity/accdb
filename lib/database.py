@@ -6,7 +6,10 @@ from .entry import *
 # 'Database' {{{
 
 class Database(object):
-    SUPPORTED_FEATURES = {"b64value"}
+    SUPPORTED_FEATURES = {
+        "b64value",
+        "encrypt",
+    }
 
     def __init__(self):
         self.count = 0
@@ -41,6 +44,7 @@ class Database(object):
         lineno = 0
         lastno = 1
         entry = None
+        header = True
 
         for line in fh:
             lineno += 1
@@ -72,6 +76,10 @@ class Database(object):
                 else:
                     Core.warn("line %d: header after data: %r" % (lineno, line))
             elif line.startswith("="):
+                if header:
+                    if ("encrypt" in self.features) and (not self.sec.dek_cipher):
+                        Core.die("database encrypted but DEK not found in header")
+                    header = False
                 if data:
                     entry = Entry.parse(data, lineno=lastno, database=self)
                     if entry and not entry.deleted:
