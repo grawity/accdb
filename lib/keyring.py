@@ -50,17 +50,11 @@ class GitKeyring(Keyring):
         with subprocess.Popen(["git", "credential-%s" % self.helper, action],
                               stdin=subprocess.PIPE,
                               stdout=stdout) as proc:
-
-            with io.TextIOWrapper(proc.stdin) as stdin:
-                for k, v in attrs.items():
-                    stdin.write("%s=%s\n" % (k, v))
-
-            if proc.stdout:
-                ret = {}
-                with io.TextIOWrapper(proc.stdout) as stdout:
-                    for line in stdout:
-                        k, v = line.rstrip("\n").split("=", 1)
-                        ret[k] = v
+            buf = "".join(["%s=%s\n" % (k, v) for k, v in attrs.items()])
+            out, err = proc.communicate(buf.encode())
+            if out:
+                ret = [l.split("=", 1) for l in out.decode().splitlines()]
+                ret = {i[0]: i[1] for i in ret}
                 return ret or None
             else:
                 return proc.wait() == 0
