@@ -3,6 +3,8 @@ import io
 import subprocess
 
 class Keyring(object):
+    KEK_SCHEMA = "org.eu.nullroute.Accdb.MasterKey"
+
     def get_kek(self, uuid):
         secret = self._get_kek(str(uuid))
         return base64.b64decode(secret) if secret else None
@@ -57,6 +59,7 @@ class GitKeyring(Keyring):
     def _store_kek(self, label, secret, uuid):
         attrs = {
             "host": "accdb://%s" % uuid,
+            "protocol": Keyring.KEK_SCHEMA,
             "username": uuid,
         }
         return self.store(label, secret, attrs)
@@ -64,6 +67,8 @@ class GitKeyring(Keyring):
     def _get_kek(self, uuid):
         attrs = {
             "host": "accdb://%s" % uuid,
+            "protocol": Keyring.KEK_SCHEMA,
+            "username": uuid,
         }
         return self.lookup(attrs)
 
@@ -84,14 +89,14 @@ class XdgKeyring(Keyring):
 
     def _store_kek(self, label, secret, uuid):
         attrs = [
-            "xdg:schema", "lt.nullroute.Accdb.Kek",
+            "xdg:schema", Keyring.KEK_SCHEMA,
             "uuid", uuid,
         ]
         return self.store(label, secret, attrs)
 
     def _get_kek(self, uuid):
         attrs = [
-            "xdg:schema", "lt.nullroute.Accdb.Kek",
+            "xdg:schema", Keyring.KEK_SCHEMA,
             "uuid", uuid,
         ]
         return self.lookup(attrs)
