@@ -10,7 +10,7 @@ class Keyring(object):
     def store_kek(self, uuid, kek):
         label = "accdb master key for {%s}" % uuid
         secret = base64.b64encode(kek).decode()
-        if not self._store_kek(self, label, secret, str(uuid)):
+        if not self._store_kek(label, secret, str(uuid)):
             raise Exception("failed to store master key in keyring")
 
     def cache_kek(self, uuid, kek):
@@ -51,15 +51,16 @@ class GitKeyring(Keyring):
             with io.TextIOWrapper(proc.stdin) as stdin:
                 for k, v in attrs.items():
                     stdin.write("%s=%s\n" % (k, v))
+            return proc.wait() == 0
 
-    def _store_kek(self, label, secret, attrs):
+    def _store_kek(self, label, secret, uuid):
         attrs = {
             "host": "accdb://%s" % uuid,
             "username": uuid,
         }
         return self.store(label, secret, attrs)
 
-    def _get_kek(self, attrs):
+    def _get_kek(self, uuid):
         attrs = {
             "host": "accdb://%s" % uuid,
         }
@@ -83,19 +84,19 @@ class XdgKeyring(Keyring):
     def clear(self, attrs):
         return subprocess.call(["secret-tool", "clear"] + attrs) == 0
 
-    def _store_kek(self, label, secret, attrs):
+    def _store_kek(self, label, secret, uuid):
         attrs = [
             "xdg:schema", "lt.nullroute.Accdb.Kek",
             "uuid", uuid,
         ]
-        return xdg_secret_store(label, secret, attrs)
+        return self.store(label, secret, attrs)
 
     def _get_kek(self, uuid):
         attrs = [
             "xdg:schema", "lt.nullroute.Accdb.Kek",
             "uuid", uuid,
         ]
-        return xdg_secret_lookup_secret(attrs)
+        return self.lookup(attrs)
 
 class Prompter(object):
     def get_password(self, desc, **kwargs):
