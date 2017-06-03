@@ -51,11 +51,19 @@ class Database(object):
         if "encrypted" in self.features:
             kek = None
             if not kek:
-                kek = self.keyring.get_kek(self.uuid)
+                Core.debug("retrieving KEK for {%s} from keyring", self.uuid)
+                try:
+                    kek = self.keyring.get_kek(self.uuid)
+                except FileNotFoundError:
+                    kek = None
                 if not kek:
                     Core.warn("database encrypted but KEK not found in keyring")
             if not kek:
-                passwd = self.keyring.get_password("Input master password for unlocking:")
+                Core.debug("prompting for password for {%s}", self.uuid)
+                try:
+                    passwd = self.keyring.get_password("Input master database password:")
+                except FileNotFoundError:
+                    passwd = None
                 if not passwd:
                     Core.die("database encrypted but password not provided")
                 kek = self.sec.kdf(passwd)
