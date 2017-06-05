@@ -552,7 +552,6 @@ class AccdbApplication():
         else:
             db.parseinto(fh)
             fh.close()
-        self.db = db
         return db
 
     def run_git(self, *args, **kwargs):
@@ -573,7 +572,7 @@ class AccdbApplication():
             self.run_git("push", "-q")
 
     def run(self, argv):
-        db = self.load_db_from_file(self.db_path())
+        db = self.db = self.load_db_from_file(self.db_path())
 
         interp = Cmd(self, db)
         interp.call(argv)
