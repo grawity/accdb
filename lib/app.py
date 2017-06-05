@@ -556,7 +556,8 @@ class AccdbApplication():
         return db
 
     def run_git(self, *args, **kwargs):
-        return subprocess.call(["git", "-C", os.path.dirname(self.db.path), *args], **kwargs)
+        return subprocess.call(["git", "-C", os.path.dirname(self.db.path), *args],
+                               **kwargs)
 
     def git_backup(self, summary="snapshot"):
         db_dir = os.path.dirname(self.db.path)
@@ -565,10 +566,10 @@ class AccdbApplication():
         if not os.path.exists(repo_dir):
             self.run_git("init")
 
-        self.run_git("commit", "-m", summary, db.path,
-                      stdout=subprocess.DEVNULL)
+        self.run_git("commit", "-m", summary, self.db.path,
+                     stdout=subprocess.DEVNULL)
 
-        if "autopush" in db.options:
+        if "autopush" in self.db.options:
             self.run_git("push", "-q")
 
     def run(self, argv):
