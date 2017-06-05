@@ -216,17 +216,13 @@ class Cmd():
 
             try:
                 if kind == "luks":
-                    set_attrs = [
+                    attrs = [
                         "xdg:schema", "org.gnome.GVfs.Luks.Password",
-                    ]
-                    get_attrs = [
                         "gvfs-luks-uuid", entry.attributes["uuid"][0],
                     ]
                 elif kind == "pgp":
-                    set_attrs = [
+                    attrs = [
                         "xdg:schema", "org.gnupg.Passphrase",
-                    ]
-                    get_attrs = [
                         "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
                     ]
                 else:
@@ -238,18 +234,17 @@ class Cmd():
 
             if action == "store":
                 Core.debug("store entry %r" % label)
-                Core.debug("set attrs %r" % set_attrs)
-                Core.debug("get attrs %r" % get_attrs)
-                if kr.store(label, secret, [*get_attrs, *set_attrs]):
+                Core.debug("attrs %r" % attrs)
+                if kr.store(label, secret, attrs):
                     Core.info("stored %s secret in keyring" % kind)
                 else:
-                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
+                    Core.err("secret-tool %s failed for %r" % (action, attrs))
             elif action == "clear":
-                Core.debug("get attrs %r" % get_attrs)
-                if kr.clear(get_attrs):
+                Core.debug("attrs %r" % attrs)
+                if kr.clear(attrs):
                     Core.info("removed matching %s secrets from keyring" % kind)
                 else:
-                    Core.err("secret-tool %s failed for %r" % (action, get_attrs))
+                    Core.err("secret-tool %s failed for %r" % (action, attrs))
             else:
                 raise ValueError("BUG: unhandled keyring action %r" % action)
 
