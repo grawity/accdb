@@ -572,20 +572,20 @@ class AccdbApplication():
             self.run_git("push", "-q")
 
     def run(self, argv):
-        db = self.db = self.load_db_from_file(self.db_path())
+        self.db = self.load_db_from_file(self.db_path())
 
-        interp = Cmd(self, db)
+        interp = Cmd(self, self.db)
         interp.call(argv)
 
-        if db.modified:
+        if self.db.modified:
             if not os.environ.get("DRYRUN"):
-                db.flush()
-                if "git" in db.options:
+                self.db.flush()
+                if "git" in self.db.options:
                     self.git_backup(summary="accdb %s" % str_join_qwords(argv))
             else:
                 Core.notice("discarding changes made in debug mode")
                 Core.debug("skipping db.flush()")
-                if "git" in db.options:
+                if "git" in self.db.options:
                     Core.debug("skipping Git commit")
 
 def main():
