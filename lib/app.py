@@ -475,6 +475,8 @@ class Cmd():
                 Core.info("master password disabled (database remains encrypted)")
             else:
                 Core.info("database fully decrypted")
+        else:
+            Core.die("unrecognized args %r" % argv[0])
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
