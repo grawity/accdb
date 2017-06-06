@@ -92,7 +92,7 @@ class Cipher(object):
 
 class SecureStorage(object):
     def __init__(self):
-        self.kdf_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
+        self.kdf_salt = None
         self.kek_cipher = None
         self.dek_cipher = None
 
@@ -118,6 +118,8 @@ class SecureStorage(object):
 
     def kdf(self, passwd):
         from Crypto.Protocol import KDF
+        if not self.kdf_salt:
+            raise Exception("KDF salt not yet set")
         return KDF.PBKDF2(passwd, self.kdf_salt)
 
     def set_password(self, passwd):

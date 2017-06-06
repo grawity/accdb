@@ -40,6 +40,10 @@ class Database(object):
         else:
             self.uuid = uuid.uuid4()
 
+        if "salt" in header:
+            self.sec.kdf_salt = b64decode(header["salt"])
+            del header["salt"]
+
         if "encrypted" in self.features:
             if "dek" in header:
                 dek = header["dek"]
@@ -57,6 +61,8 @@ class Database(object):
                         kek = None
                 if not kek:
                     Core.debug("didn't find KEK in keyring; prompting for password")
+                    if not self.sec.kdf_salt:
+                        Core.die("database encrypted but salt not present in header")
                     try:
                         passwd = self.keyring.get_password("Input master database password:")
                     except FileNotFoundError:
