@@ -3,7 +3,7 @@ import sys
 import uuid
 
 from .entry import *
-from .encryption import SecureStorage
+from .encryption import SecureStorage, MessageAuthenticationError
 
 # 'Database' {{{
 
@@ -64,9 +64,13 @@ class Database(object):
                         Core.die("database encrypted but password not provided")
                     kek = self.sec.kdf(passwd)
                 self.sec.set_raw_kek(kek)
-                self.keyring.cache_kek(self.uuid, kek)
 
-            self.sec.set_wrapped_dek(dek)
+            try:
+                self.sec.set_wrapped_dek(dek)
+            except MessageAuthenticationError:
+                Core.die("master password incorrect")
+            else:
+                self.keyring.cache_kek(self.uuid, kek)
 
     def _get_header(self):
         header = self.header.copy()
