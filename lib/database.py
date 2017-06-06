@@ -69,7 +69,10 @@ class Database(object):
                 self.sec.set_wrapped_dek(dek)
             except MessageAuthenticationError:
                 Core.die("master password incorrect")
+                Core.debug("trying to clear invalid KEK in keyring")
+                self.keyring.clear_kek(self.uuid, kek)
             else:
+                Core.debug("trying to cache verified KEK in keyring")
                 self.keyring.cache_kek(self.uuid, kek)
 
     def _get_header(self):
