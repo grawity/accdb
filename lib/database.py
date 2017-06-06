@@ -1,3 +1,4 @@
+from base64 import b64encode, b64decode
 from collections import OrderedDict
 import sys
 import uuid
@@ -77,14 +78,13 @@ class Database(object):
 
     def _get_header(self):
         header = self.header.copy()
-
         if self.uuid:
             header["uuid"] = str(self.uuid)
-
         if "encrypted" in self.features:
+            if self.sec.kek_cipher and self.sec.kdf_salt:
+                header["salt"] = b64encode(self.sec.kdf_salt).decode()
             if self.sec.dek_cipher:
                 header["dek"] = self.sec.get_wrapped_dek()
-
         return header
 
     def set_encryption(self, enable):
