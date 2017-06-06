@@ -452,7 +452,7 @@ class Cmd():
             else:
                 Core.warn("password change cancelled")
         elif argv[0] == "--store":
-            if db.sec.kek_cipher.key:
+            if db.sec.has_kek:
                 db.keyring.store_kek(db.uuid, db.sec.kek_cipher.key)
                 Core.info("master password stored in keyring")
             else:
@@ -460,7 +460,17 @@ class Cmd():
         elif argv[0] == "--forget":
             db.keyring.clear_kek(db.uuid)
             Core.info("master password cleared from keyring")
+        elif argv[0] == "--encrypt":
+            if db.sec.has_kek:
+                Core.notice("database is already encrypted with master password")
+            elif db.sec.has_dek:
+                Core.notice("database is already encrypted without master password")
+            else:
+                db.set_encryption(True)
+                db.modified = True
+                Core.info("database encrypted without master password")
         elif argv[0] in {"--remove", "--decrypt"}:
+            # XXX: use .has_kek, .has_dek
             if "encrypted" in db.features:
                 db.change_password(None)
             if "--decrypt" in argv:
