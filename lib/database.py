@@ -45,6 +45,10 @@ class Database(object):
             del header["salt"]
 
         if "encrypted" in self.features:
+            # for compatibility with older databases:
+            if not self.sec.kdf_salt:
+                self.sec.kdf_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
+
             if "dek" in header:
                 dek = header["dek"]
                 del header["dek"]
@@ -61,8 +65,6 @@ class Database(object):
                         kek = None
                 if not kek:
                     Core.debug("didn't find KEK in keyring; prompting for password")
-                    if not self.sec.kdf_salt:
-                        Core.die("database encrypted but salt not present in header")
                     try:
                         passwd = self.keyring.get_password("Input master database password:")
                     except FileNotFoundError:
@@ -106,6 +108,7 @@ class Database(object):
     def change_password(self, passwd):
         """Enable database encryption and set the KEK from original password"""
         if passwd:
+            # TODO: generate a new salt here
             kek = self.sec.kdf(passwd)
             if self.sec.kek_cipher:
                 self.sec.change_raw_kek(kek)
