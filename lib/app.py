@@ -422,25 +422,6 @@ class Cmd():
 
         self.do_dump("", outdb)
 
-    def do_set_features(self, argv):
-        feat = set(self.db.features)
-
-        for arg in argv:
-            if len(arg) < 2 or arg[0] not in "+-":
-                Core.err("invalid parameter %r" % arg)
-            elif arg.startswith("+"):
-                feat.add(arg[1:])
-            elif arg.startswith("-"):
-                feat.discard(arg[1:])
-
-        r = feat - self.db.SUPPORTED_FEATURES
-        if r:
-            Core.die("refusing to enable unsupported features %r" % r)
-
-        self.db.set_encryption("encrypted" in feat)
-        self.db.features = feat
-        self.db.modified = True
-
     def do_change_password(self, argv):
         """Set or change the master password (KEK) for database encryption"""
         db = self.db
