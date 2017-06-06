@@ -98,6 +98,10 @@ class SecureStorage(object):
 
     # KEK
 
+    @property
+    def has_kek(self):
+        return bool(self.kek_cipher and self.kek_cipher.key)
+
     def set_raw_kek(self, kek):
         if self.kek_cipher:
             raise Exception("KEK already set")
@@ -123,6 +127,10 @@ class SecureStorage(object):
         return self.change_raw_kek(self.kdf(passwd))
 
     # DEK
+
+    @property
+    def has_dek(self):
+        return bool(self.dek_cipher and self.dek_cipher.key)
 
     def generate_dek(self):
         if self.dek_cipher:
