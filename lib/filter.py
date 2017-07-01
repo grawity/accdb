@@ -284,14 +284,17 @@ class ItemNameFilter(Filter):
         self.value = value
 
         if mode in {":exact", "="}:
+            self.mode = ":exact"
             value = value.casefold()
             self.test = lambda entry: any(v.casefold() == value for v in entry.names)
             Core.trace("compiled to [name = %r]", value)
         elif mode in {":glob", "?"}:
+            self.mode = ":glob"
             regex = re_compile_glob(value)
             self.test = lambda entry: any(regex.fullmatch(v) for v in entry.names)
             Core.trace("compiled to [name ~ %r]", regex)
         elif mode in {":regex", "~"}:
+            self.mode = ":regex"
             regex = re.compile(value, re.I)
             self.test = lambda entry: any(regex.search(v) for v in entry.names)
             Core.trace("compiled to [name ~ %r]", regex)
