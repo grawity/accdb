@@ -202,12 +202,10 @@ class Filter(object):
         return items[0]
 
 def AnyFilter(*args):
-    return DisjunctionFilter(
-        ItemNameFilter(*args),
-        AttributeFilter(*args),
-        AttributeFilter("*", *args),
-        TagFilter(*args),
-    )
+    return DisjunctionFilter(ItemNameFilter(*args),
+                             AttributeFilter(*args),
+                             AttributeFilter("*", *args),
+                             TagFilter(*args))
 
 # Kitchen sink filter (PATTERN) {{{
 
@@ -329,8 +327,8 @@ class AttributeFilter(Filter):
                 self.test = lambda entry: attr in entry.attributes
                 Core.trace("compiled to [key %r present]" % attr)
             elif mode in {":glob", "?"}:
-                regex = re_compile_glob(attr)
                 self.mode = ":glob"
+                regex = re_compile_glob(attr)
                 self.test = lambda entry: any(regex.fullmatch(k) for k in entry.attributes)
                 Core.trace("compiled to [keys ~ %r]" % regex)
             elif mode in {":regex", "~"}:
