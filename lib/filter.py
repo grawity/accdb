@@ -215,8 +215,7 @@ class PatternFilter(Filter):
         self.func = PatternFilter.compile(db, self.pattern)
 
     def test(self, entry):
-        if self.func:
-            return self.func(entry)
+        return self.func(entry)
 
     def __str__(self):
         if isinstance(self.func, Filter):
