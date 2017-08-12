@@ -3,17 +3,18 @@ from nullroute.core import *
 # 'Changeset' {{{
 
 class Changeset(list):
+    _ops = {
+        ":": "set",
+        "?": "tryset",
+        "+": "add",
+        "-": "rem",
+        "«": "copy",
+        "<": "move",
+        "|": "merge",
+    }
+
     def __init__(self, args, key_alias=None):
         self._key_alias = key_alias
-        _ops = {
-            ":": "set",
-            "?": "tryset",
-            "+": "add",
-            "-": "rem",
-            "«": "copy",
-            "<": "move",
-            "|": "merge",
-        }
         dwim = set()
         Core.debug("parsing %r", args)
         for a in args:
@@ -27,8 +28,8 @@ class Changeset(list):
                 self.append(("del", k, None))
             elif "=" in a:
                 k, v = a.split("=", 1)
-                if k and k[-1] in _ops:
-                    op = _ops[k[-1]]
+                if k and k[-1] in self._ops:
+                    op = self._ops[k[-1]]
                     k = k[:-1]
                     Core.debug("  %s: %r = %r", op, k, v)
                 else:
