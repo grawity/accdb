@@ -21,6 +21,17 @@ from .filter import Filter
 from .keyring import *
 from .string import *
 
+def str_join_qwords_safe(argv):
+    def safe_attr(arg):
+        if "=" in arg:
+            k, v = arg.split("=", 1)
+            _k = k[:-1] if k[-1] in Changeset._ops else k
+            if attr_is_private(_k):
+                v = "***"
+            return f"{k}={v}"
+        return arg
+    return str_join_qwords([safe_attr(a) for a in argv])
+
 class Cmd():
     def __init__(self, app, db):
         self.app = app
@@ -569,7 +580,7 @@ class AccdbApplication():
             if not os.environ.get("DRYRUN"):
                 self.db.flush()
                 if "git" in self.db.options:
-                    self.git_backup(summary="accdb %s" % str_join_qwords(argv))
+                    self.git_backup(summary="accdb %s" % str_join_qwords_safe(argv))
             else:
                 Core.notice("discarding changes made in debug mode")
                 Core.debug("skipping db.flush()")
