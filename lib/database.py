@@ -35,14 +35,12 @@ class Database(object):
 
         if "uuid" in header:
             self.uuid = uuid.UUID(header["uuid"])
-            del header["uuid"]
         else:
             self.uuid = uuid.uuid4()
 
         if "encrypted" in self.features:
             if "dek" in header:
                 dek = header["dek"]
-                del header["dek"]
 
             if dek.startswith("none;"):
                 self.sec.set_raw_kek(None)
