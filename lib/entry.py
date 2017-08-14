@@ -219,8 +219,9 @@ class Entry(object):
                             except ValueError:
                                 value_fmt = "33"
                             else:
-                                desc = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
-                                if conceal:
+                                if not storage:
+                                    desc = "#%d (%s)" % (sub_entry.itemno, sub_entry.name)
+                                if desc and conceal:
                                     value, desc = desc, None
                         elif attr_is_metadata(key):
                             key_fmt = "38;5;244"
