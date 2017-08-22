@@ -360,11 +360,21 @@ class Entry(object):
 
     def apply_changeset(self, changes):
         self.attributes["@name"] = [self.name]
+        self.attributes["@comment"] = self.comment.split("\n")
 
         changes.apply_to(self.attributes, transform_cb=self.expand_attr_cb)
 
         if "@name" in self.attributes:
             self.name = self.attributes["@name"][0]
             del self.attributes["@name"]
+
+        # TODO: instead of this, make @comment a real attribute that's merely
+        # formatted differently
+
+        if "@comment" in self.attributes:
+            self.comment = "\n".join(self.attributes["@comment"])
+            del self.attributes["@comment"]
+        else:
+            self.comment = ""
 
 # }}}
