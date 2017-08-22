@@ -11,6 +11,7 @@ class Changeset(list):
         "«": "copy",
         "<": "move",
         "|": "merge",
+        "~": "edit",
     }
 
     def __init__(self, args, key_alias=None):
@@ -122,6 +123,14 @@ class Changeset(list):
                 # delete k1 entirely
                 if k in target:
                     del target[k]
+            elif op == "edit":
+                # apply sed-like substitution
+                if k in target:
+                    import re
+                    _, from_regex, to_replace, *rest = v.split("/")
+                    from_regex = re.compile(from_regex)
+                    target[k] = [re.sub(from_regex, to_replace, val)
+                                 for val in target[k]]
             else:
                 Core.die("BUG: unknown changeset operation %r" % op)
         return target
