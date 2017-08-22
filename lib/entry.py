@@ -16,7 +16,7 @@ def split_tags(string):
 
 class Entry(object):
     RE_TAGS = re.compile(r'\s*,\s*|\s+')
-    RE_KEYVAL = re.compile(r'=|: ')
+    RE_KEYVAL = re.compile(r' = |: ')
 
     RE_COLL = re.compile(r'\w.*$')
 
