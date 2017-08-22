@@ -12,7 +12,7 @@ from collections import OrderedDict
 from io import TextIOWrapper
 from nullroute.core import Core
 
-from .changeset import Changeset, TextChangeset
+from .changeset import Changeset
 from .clipboard import Clipboard
 from .database import Database
 from .entry import Entry
