@@ -68,6 +68,8 @@ class Entry(object):
                 self.name = line[1:].strip()
             elif line.startswith("+"):
                 self.tags |= split_tags(line[1:])
+            elif line.startswith("; "):
+                self.comment += line[2:] + "\n"
             elif line.startswith(";"):
                 self.comment += line[1:] + "\n"
             elif line.startswith("(") and line.endswith(")"):
@@ -173,7 +175,7 @@ class Entry(object):
 
         if show_contents:
             for line in self.comment.splitlines():
-                data += "%s%s\n" % (f(";", uuid_fmt), f(line, comment_fmt))
+                data += "%s %s\n" % (f(";", uuid_fmt), f(line, comment_fmt))
 
             if self.uuid:
                 data += "\t%s\n" % f("{%s}" % self.uuid, uuid_fmt)
@@ -369,7 +371,7 @@ class Entry(object):
             del self.attributes["@name"]
 
         # TODO: instead of this, make @comment a real attribute that's merely
-        # formatted differently
+        # formatted differently – this would allow search without a new filter
 
         if "@comment" in self.attributes:
             self.comment = "\n".join(self.attributes["@comment"])
