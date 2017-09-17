@@ -416,6 +416,7 @@ class Cmd():
         """Read entries from stdin and dump to stdout"""
 
         newdb = Database()
+        newdb.keyring = default_keyring()
         newdb.parseinto(sys.stdin)
         self.do_dump(argv, newdb)
 
