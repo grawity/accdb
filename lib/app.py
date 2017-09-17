@@ -520,6 +520,7 @@ class Cmd():
         print(Filter.cli_compile_argv(self.db, argv))
 
     do_g        = do_show
+    do_get      = do_show
     do_grep     = do_show
     do_r        = do_reveal
     do_re       = do_reveal
