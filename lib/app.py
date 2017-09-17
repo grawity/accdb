@@ -191,7 +191,7 @@ class Cmd():
         else:
             Core.err("entry has no OATH PSK")
 
-    do_get      = do_get_pass
+    do_pass     = do_get_pass
     do_totp     = do_get_totp
     do_c        = do_copy_pass
     do_t        = do_copy_totp
