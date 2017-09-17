@@ -403,6 +403,8 @@ class Cmd():
 
         if not argv:
             db.dump()
+        elif argv[0] == "decrypted":
+            db.dump(encrypt=False)
         elif argv[0] == "yaml":
             db.dump_yaml()
         elif argv[0] == "json":

@@ -277,11 +277,11 @@ class Database(object):
             fh.write("\033[m")
         print(file=fh)
 
-    def dump(self, fh=sys.stdout):
+    def dump(self, fh=sys.stdout, encrypt=True):
         self.dump_header(fh)
         for entry in self:
             if not entry.deleted:
-                print(entry.dump(storage=True), file=fh)
+                print(entry.dump(storage=True, encrypt=encrypt), file=fh)
         print(";; end", file=fh)
 
     def to_structure(self):
