@@ -145,6 +145,8 @@ class Cmd():
 
     def do_get_pass(self, argv):
         """Display the 'pass' field of the first matching entry"""
+        if not argv:
+            return Core.err("no target specified")
         attr = argv.pop() if argv[-1].startswith("!") else "pass"
         entry = Filter.cli_findfirst_argv(self.db, argv)
         secret = entry.attributes.get(attr)
@@ -158,6 +160,8 @@ class Cmd():
 
     def do_copy_pass(self, argv):
         """Copy password to clipboard"""
+        if not argv:
+            return Core.err("no target specified")
         attr = argv.pop() if argv[-1].startswith("!") else "pass"
         entry = Filter.cli_findfirst_argv(self.db, argv)
         self._show_entry(entry)
@@ -173,6 +177,8 @@ class Cmd():
 
     def do_get_totp(self, argv):
         """Generate an OATH TOTP response"""
+        if not argv:
+            return Core.err("no target specified")
         entry = Filter.cli_findfirst_argv(self.db, argv, Entry.FILTER_OATH)
         params = entry.oath_params
         if params:
@@ -182,6 +188,8 @@ class Cmd():
 
     def do_copy_totp(self, argv):
         """Copy OATH TOTP response to clipboard"""
+        if not argv:
+            return Core.err("no target specified")
         entry = Filter.cli_findfirst_argv(self.db, argv)
         self._show_entry(entry)
         params = entry.oath_params
