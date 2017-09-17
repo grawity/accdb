@@ -145,9 +145,9 @@ class Cmd():
 
     def do_get_pass(self, argv):
         """Display the 'pass' field of the first matching entry"""
+        attr = argv.pop() if (argv and argv[-1].startswith("!")) else "pass"
         if not argv:
             return Core.err("no target specified")
-        attr = argv.pop() if argv[-1].startswith("!") else "pass"
         entry = Filter.cli_findfirst_argv(self.db, argv)
         secret = entry.attributes.get(attr)
         if secret:
@@ -160,9 +160,9 @@ class Cmd():
 
     def do_copy_pass(self, argv):
         """Copy password to clipboard"""
+        attr = argv.pop() if (argv and argv[-1].startswith("!")) else "pass"
         if not argv:
             return Core.err("no target specified")
-        attr = argv.pop() if argv[-1].startswith("!") else "pass"
         entry = Filter.cli_findfirst_argv(self.db, argv)
         self._show_entry(entry)
         secret = entry.attributes.get(attr)
