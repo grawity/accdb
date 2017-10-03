@@ -23,7 +23,7 @@ from .string import *
 
 def str_join_qwords_safe(argv):
     def safe_attr(arg):
-        if "=" in arg:
+        if arg and "=" in arg[1:]:
             k, v = arg.split("=", 1)
             _k = k[:-1] if k[-1] in Changeset._ops else k
             if attr_is_private(_k):
