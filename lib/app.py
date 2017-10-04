@@ -28,7 +28,7 @@ def str_join_qwords_safe(argv):
             _k = k[:-1] if k[-1] in Changeset._ops else k
             if attr_is_private(_k):
                 v = "***"
-            return f"{k}={v}"
+            return "%s=%s" % (k, v)
         return arg
     return str_join_qwords([safe_attr(a) for a in argv])
 
