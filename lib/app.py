@@ -424,25 +424,14 @@ class Cmd():
         """Read entries from stdin and merge to main database"""
 
         newdb = Database()
-        outdb = Database()
-
         newdb.parseinto(sys.stdin)
-
         for newentry in newdb:
-            if newentry._broken:
-                Core.warn("skipped broken entry")
-                print(newentry.dump(storage=True), file=sys.stderr)
-                continue
-
             try:
                 entry = self.db.replace(newentry)
             except KeyError:
                 entry = self.db.add(newentry)
-            outdb.add(entry)
-
+            self._show_entry(entry, conceal=False)
         self.db.modified = True
-
-        self.do_dump("", outdb)
 
     def do_change_password(self, argv):
         """Set or change the master password (KEK) for database encryption"""
