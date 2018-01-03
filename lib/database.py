@@ -170,6 +170,8 @@ class Database(object):
             raise KeyError("Duplicate UUID %s" % entry.uuid)
 
         entry.itemno = self.count + 1
+        entry.db = self
+        # XXX: either clone the entry, or show a warning about overwriting these values
 
         self.count += 1
 
@@ -189,6 +191,8 @@ class Database(object):
 
         entry.itemno = oldentry.itemno
         entry.lineno = oldentry.lineno
+        entry.db = self
+        # XXX: either clone the entry, or show a warning about overwriting these values
 
         self.entries[entry.uuid] = entry
 
