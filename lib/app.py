@@ -424,6 +424,7 @@ class Cmd():
         """Read entries from stdin and merge to main database"""
 
         newdb = Database()
+        newdb.keyring = self.db.keyring
         newdb.parseinto(sys.stdin)
         for newentry in newdb:
             try:
