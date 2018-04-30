@@ -147,7 +147,7 @@ class Cmd():
                         print("\t" + line.decode("utf-8"), end="")
                 print()
             else:
-                Core.err("cannot generate Qr code: entry has no WPA PSK (!wifi.psk)")
+                Core.err("cannot generate Qr code: entry has no PSK (!2fa.oath.psk or !wifi.psk)")
 
     ### Lookup commands (single-target)
 
