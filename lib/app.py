@@ -250,7 +250,7 @@ class Cmd():
                 elif kind == "pgp":
                     attrs = [
                         "xdg:schema", "org.gnupg.Passphrase",
-                        "keygrip", "n/%s" % entry.attributes["fingerprint"][0],
+                        "keygrip", "n/%s" % entry.attributes["keygrip"][0],
                     ]
                 else:
                     Core.err("couldn't determine entry schema (unknown kind %r)" % kind)
