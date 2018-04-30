@@ -32,6 +32,14 @@ def str_join_qwords_safe(argv):
         return arg
     return str_join_qwords([safe_attr(a) for a in argv])
 
+def maybe_pop_attr(argv: "mutable"):
+    if argv and argv[-1].startswith(":"):
+        return argv.pop()[1:]
+    elif argv and argv[-1].startswith("!"):
+        return argv.pop()
+    else:
+        return "pass"
+
 class Cmd():
     def __init__(self, app, db):
         self.app = app
@@ -145,7 +153,7 @@ class Cmd():
 
     def do_get_pass(self, argv):
         """Display the 'pass' field of the first matching entry"""
-        attr = argv.pop() if (argv and argv[-1].startswith("!")) else "pass"
+        attr = maybe_pop_attr(argv)
         if not argv:
             return Core.err("no target specified")
         entry = Filter.cli_findfirst_argv(self.db, argv)
@@ -160,7 +168,7 @@ class Cmd():
 
     def do_copy_pass(self, argv):
         """Copy password to clipboard"""
-        attr = argv.pop() if (argv and argv[-1].startswith("!")) else "pass"
+        attr = maybe_pop_attr(argv)
         if not argv:
             return Core.err("no target specified")
         entry = Filter.cli_findfirst_argv(self.db, argv)
