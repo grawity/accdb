@@ -159,10 +159,8 @@ class Cmd():
         entry = Filter.cli_findfirst_argv(self.db, argv)
         secret = entry.attributes.get(attr)
         if secret:
-            if len(secret) > 1:
-                Core.notice("entry has %d values for %r, using first" \
-                            % (len(secret), attr))
-            print(secret[0])
+            for val in secret:
+                print(val)
         else:
             Core.err("entry has no %r attribute" % attr)
 
