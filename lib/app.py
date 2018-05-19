@@ -222,8 +222,10 @@ class Cmd():
         kr = XdgKeyring()
 
         for entry in Filter.cli_search_argv(self.db, argv):
-            self._show_entry(entry)
             kind = self._entry_kind(entry)
+
+            if action != "lookup":
+                self._show_entry(entry)
 
             if action == "store":
                 try:
@@ -264,8 +266,24 @@ class Cmd():
                     Core.info("removed matching %s secrets from keyring" % kind)
                 else:
                     Core.err("secret-tool %s failed for %r" % (action, attrs))
+            elif action == "lookup":
+                if "pass" in entry.attributes:
+                    Core.err("refusing to overwrite password for %r", entry.name)
+                    continue
+                Core.debug("attrs %r", attrs)
+                res = kr.lookup(attrs)
+                Core.debug("result %r", res)
+                if res:
+                    entry.attributes["pass"] = [res]
+                    entry.db.modified = True
+                    Core.info("imported %s secret from keyring" % kind)
+                else:
+                    Core.err("secret-tool %s failed for %r" % (action, attrs))
             else:
                 raise ValueError("BUG: unhandled keyring action %r" % action)
+
+            if action == "lookup":
+                self._show_entry(entry)
 
     def do_keyring_store(self, argv):
         """Store an entry's password to system keyring"""
@@ -274,6 +292,10 @@ class Cmd():
     def do_keyring_forget(self, argv):
         """Remove all secrets matching an entry from system keyring"""
         return self._do_keyring_query(argv, "clear")
+
+    def do_keyring_import(self, argv):
+        """Lookup secrets in keyring and store as entry's password"""
+        return self._do_keyring_query(argv, "lookup")
 
     ### Entry modification commands
 
