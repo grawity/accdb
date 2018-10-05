@@ -8,15 +8,25 @@ Everybody tells me "use `pass`", "use LastPass", "use KeePass". I've tried all o
   - I don't want to be annoyed with strict syntax requirements.
   - I want it to be searchable from command line, conveniently.
 
+Eight years later:
+
+  - I can edit my password list anywhere I go, by typing tiny letters into a SSH client on my smartphone.
+  - I never edit it with Vim or Notepad2 anyway, not that I can when it's encrypted.
+  - Three different field names for the same thing.
+  - It literally started its life as a reformatter to enforce standard syntx.
+  - Well, `accdb grep` works just fine I guess.
+
 ## Dependencies
 
-"What's a package manager?"
+<i>"What's a package manager?"</i>
+
+You'll need:
 
  1. [This thing](https://github.com/grawity/code/tree/master/lib/python/nullroute), in the great tradition of everyone writing their own "util" libraries.
  2. PyCryptodome (the artist previously known as PyCrypto), if you want encryption of secrets.
  3. PyWin32, if you want `accdb copy` to work on Windows.
- 4. Git, for automatic commits after changes.
- 4. `secret-tool`, for storage of the master key.
+ 4. Git, if you want automatic commits after changes.
+ 5. `secret-tool`, for storage of the master key.
 
 ## Database syntax
 
