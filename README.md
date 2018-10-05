@@ -8,16 +8,25 @@ Everybody tells me "use `pass`", "use LastPass", "use KeePass". I've tried all o
   - I don't want to be annoyed with strict syntax requirements.
   - I want it to be searchable from command line, conveniently.
 
-## Syntax
+## Dependencies
 
-    (metadata)
+"What's a package manager?"
+
+ 1. [This thing](https://github.com/grawity/code/tree/master/lib/python/nullroute), in the great tradition of everyone writing their own "util" libraries.
+ 2. PyCryptodome (the artist previously known as PyCrypto), if you want encryption of secrets.
+ 3. PyWin32, if you want `accdb copy` to work on Windows.
+ 4. Git, for automatic commits after changes.
+ 4. `secret-tool`, for storage of the master key.
+
+## Database syntax
+
+    (transient metadata)
     = Title
     ; Comment.
         {entry-uuid}
         field: value
         field: value
         !field: secretvalue
-        !field: <base64> c2VjcmV0dmFsdWU=
         ref.field: {other-entry-uuid}
         + tag, tag, tag
 

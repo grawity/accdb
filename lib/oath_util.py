@@ -1,6 +1,6 @@
 import base64
 from collections import OrderedDict
-from nullroute.core import *
+from nullroute.core import Core
 import nullroute.oath as oath
 import urllib.parse
 

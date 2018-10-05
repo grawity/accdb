@@ -1,4 +1,4 @@
-from nullroute.core import *
+from nullroute.core import Core
 import uuid
 
 from .entry_util import *

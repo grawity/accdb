@@ -10,7 +10,7 @@ import time
 import uuid
 from collections import OrderedDict
 from io import TextIOWrapper
-from nullroute.core import Core
+from nullroute.core import Core, Env
 
 from .changeset import Changeset
 from .clipboard import Clipboard

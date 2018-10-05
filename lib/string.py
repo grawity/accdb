@@ -3,7 +3,7 @@ import datetime
 import fnmatch
 import re
 import shlex
-from nullroute.core import *
+from nullroute.core import Core
 
 def b64_encode(buf):
     if hasattr(buf, "encode"):
