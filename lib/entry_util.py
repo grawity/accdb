@@ -37,6 +37,10 @@ def attr_is_private(name):
 def attr_is_reflink(name):
     return name.startswith("ref.")
 
+def attr_is_sortable(name):
+    base = name.split(".")[0]
+    return any([base in group for group in attr_groups.values()])
+
 def translate_attr(name):
     return attr_names.get(name, name)
 

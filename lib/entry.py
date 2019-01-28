@@ -188,6 +188,8 @@ class Entry(object):
             n_hidden = 0
 
             for key in sort_attrs(self):
+                if attr_is_sortable(key):
+                    self.attributes[key].sort()
                 for value in self.attributes[key]:
                     key = translate_attr(key)
                     desc = None
