@@ -3,7 +3,7 @@ import sys
 import uuid
 
 from .entry import *
-from .encryption import SecureStorage, MessageAuthenticationError
+from .encryption import Cipher, SecureStorage, MessageAuthenticationError
 
 # 'Database' {{{
 
@@ -265,7 +265,7 @@ class Database(object):
         for uuid in self.order:
             yield self.entries[uuid]
 
-    def dump_header(self, fh):
+    def dump_header(self, fh, encrypt=True):
         tty = getattr(fh, "isatty", lambda: True)()
         if tty:
             fh.write("\033[38;5;244m")
@@ -276,13 +276,17 @@ class Database(object):
         if self.features:
             print(";; features: %s" % ", ".join(sorted(self.features)), file=fh)
         for key, val in self._get_header().items():
+            if key == "dek" and encrypt == False:
+                kek = self.keyring.lookup_kek(self.uuid)
+                if kek:
+                    val = Cipher(None).wrap_bytes(Cipher(kek).unwrap_bytes(val))
             print(";; %s: %s" % (key, val), file=fh)
         if tty:
             fh.write("\033[m")
         print(file=fh)
 
     def dump(self, fh=sys.stdout, encrypt=True):
-        self.dump_header(fh)
+        self.dump_header(fh, encrypt=encrypt)
         for entry in self:
             if not entry.deleted:
                 print(entry.dump(storage=True, encrypt=encrypt), file=fh)
