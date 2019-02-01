@@ -35,17 +35,20 @@ class Database(object):
 
         if "uuid" in header:
             self.uuid = uuid.UUID(header["uuid"])
+            Core.debug("database has UUID {%s}", self.uuid)
         else:
             self.uuid = uuid.uuid4()
+            Core.debug("database doesn't have an UUID; assigned {%s}", self.uuid)
 
         if "encrypted" in self.features:
+            kek = None
             if "dek" in header:
                 dek = header["dek"]
 
             if dek.startswith("none;"):
+                Core.debug("found plaintext DEK; setting null KEK")
                 self.sec.set_raw_kek(None)
             else:
-                kek = None
                 if not kek:
                     Core.debug("retrieving KEK for {%s} from keyring", self.uuid)
                     try:
@@ -66,12 +69,15 @@ class Database(object):
             try:
                 self.sec.set_wrapped_dek(dek)
             except MessageAuthenticationError:
+                Core.debug("DEK unwrap failed; clearing invalid KEK from keyring")
+                self.keyring.clear_kek(self.uuid)
                 Core.die("master password incorrect")
-                Core.debug("trying to clear invalid KEK in keyring")
-                self.keyring.clear_kek(self.uuid, kek)
             else:
-                Core.debug("trying to cache verified KEK in keyring")
-                self.keyring.cache_kek(self.uuid, kek)
+                if kek:
+                    Core.debug("DEK unwrapped; caching verified KEK in keyring")
+                    self.keyring.cache_kek(self.uuid, kek)
+                else:
+                    Core.debug("DEK not wrapped; we don't have any KEK to cache")
 
     def _get_header(self):
         header = self.header.copy()
