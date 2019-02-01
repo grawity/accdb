@@ -276,10 +276,12 @@ class Database(object):
         if self.features:
             print(";; features: %s" % ", ".join(sorted(self.features)), file=fh)
         for key, val in self._get_header().items():
-            if key == "dek" and encrypt == False:
-                kek = self.keyring.lookup_kek(self.uuid)
-                if kek:
+            if encrypt == False:
+                if key == "dek":
+                    kek = self.keyring.lookup_kek(self.uuid)
                     val = Cipher(None).wrap_bytes(Cipher(kek).unwrap_bytes(val))
+                elif key in {"uuid", "salt"}:
+                    continue
             print(";; %s: %s" % (key, val), file=fh)
         if tty:
             fh.write("\033[m")
