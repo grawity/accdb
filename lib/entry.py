@@ -364,7 +364,7 @@ class Entry(object):
 
     def apply_changeset(self, changes):
         self.attributes["@name"] = [self.name]
-        self.attributes["@comment"] = self.comment.split("\n")
+        self.attributes["@comment"] = self.comment.rstrip("\n").split("\n")
 
         changes.apply_to(self.attributes, transform_cb=self.expand_attr_cb)
 
