@@ -31,6 +31,8 @@ class Filter(object):
                         tokens.append(token)
                     start = pos + 1
                     token = ""
+                else:
+                    token += char
                 Core.trace("    found opening paren; incr depth=%r", depth)
                 depth += 1
             elif char == ")" and not esc:
@@ -41,6 +43,8 @@ class Filter(object):
                     tokens.append(token)
                     start = -1
                     token = ""
+                else:
+                    token += char
             elif char in " \t\r\n" and not esc:
                 if depth == 0 and start >= 0:
                     Core.trace("    tokens += word %r" % token)
