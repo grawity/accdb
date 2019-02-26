@@ -16,12 +16,13 @@ class Filter(object):
         tokens = []
         depth = 0
         start = -1
+        esc = False
         Core.trace("parse input: %r" % text)
         for pos, char in enumerate(text):
             if Core._log_level >= Core.LOG_TRACE:
                 Core.trace("  [%s] char=%r, pos=%d, start=%r",
                            colour_repr(text, start, pos), char, pos, start)
-            if char == "(":
+            if char == "(" and not esc:
                 if depth == 0:
                     if start >= 0:
                         # don't lose the initial "foo" in "foo(bar"
@@ -30,23 +31,27 @@ class Filter(object):
                     start = pos + 1
                 Core.trace("    found opening paren; incr depth=%r", depth)
                 depth += 1
-            elif char == ")":
+            elif char == ")" and not esc:
                 Core.trace("    found closing paren; decr depth=%r", depth)
                 depth -= 1
                 if depth == 0 and start >= 0:
                     Core.trace("    tokens += grouped %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
-            elif char in " \t\r\n":
+            elif char in " \t\r\n" and not esc:
                 if depth == 0 and start >= 0:
                     Core.trace("    tokens += word %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
                     Core.trace("    found whitespace at d>0; unset start")
+            elif char == "\\" and not esc:
+                esc = True
+                continue
             else:
                 if start < 0:
                     start = pos
                     Core.trace("    found normal char; set start=%r", pos)
+                esc = False
         if depth > 0:
             raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
         elif depth < 0:
