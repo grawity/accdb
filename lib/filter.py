@@ -18,36 +18,42 @@ class Filter(object):
         start = -1
         Core.trace("parse input: %r" % text)
         for pos, char in enumerate(text):
-            #Core.trace("char %r, pos %d, esc %r" % (char, pos, esc))
+            if Core._log_level >= Core.LOG_TRACE:
+                Core.trace("  [%s] char=%r, pos=%d, start=%r",
+                           colour_repr(text, start, pos), char, pos, start)
             if char == "(":
                 if depth == 0:
                     if start >= 0:
-                        # handle "AND(foo)" when there's no whitespace
-                        Core.trace("tokens += prefix-word %r" % text[start:pos])
+                        # don't lose the initial "foo" in "foo(bar"
+                        Core.trace("    tokens += prefix-word %r" % text[start:pos])
                         tokens.append(text[start:pos])
-                    start = pos+1
+                    start = pos + 1
+                Core.trace("    found opening paren; incr depth=%r", depth)
                 depth += 1
             elif char == ")":
+                Core.trace("    found closing paren; decr depth=%r", depth)
                 depth -= 1
                 if depth == 0 and start >= 0:
-                    Core.trace("tokens += grouped %r" % text[start:pos])
+                    Core.trace("    tokens += grouped %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
             elif char in " \t\r\n":
                 if depth == 0 and start >= 0:
-                    Core.trace("tokens += word %r" % text[start:pos])
+                    Core.trace("    tokens += word %r" % text[start:pos])
                     tokens.append(text[start:pos])
                     start = -1
+                    Core.trace("    found whitespace at d>0; unset start")
             else:
                 if start < 0:
                     start = pos
+                    Core.trace("    found normal char; set start=%r", pos)
         if depth > 0:
             raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
         elif depth < 0:
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
         else:
             if start >= 0 and start <= pos:
-                Core.trace("tokens += final %r" % text[start:])
+                Core.trace("    tokens += final %r" % text[start:])
                 tokens.append(text[start:])
             Core.trace("parse output: %r" % tokens)
             return tokens

@@ -204,3 +204,26 @@ def relative_date(s):
         return "in %s" % round_days(d.days)
     else:
         return "today"
+
+def colour_repr(string, start, pos):
+    GRAY = "\033[38;5;242m%s\033[m"
+    BLUE = "\033[38;5;21m%s\033[m"
+    RED  = "\033[38;5;160m%s\033[m"
+    if start >= 0:
+        pref = string[:start]
+        lead = string[start:pos]
+        mid = string[pos]
+        suff = string[pos+1:]
+    else:
+        pref = string[:pos]
+        lead = ""
+        mid = string[pos]
+        suff = string[pos+1:]
+    pref = (GRAY % pref)
+    suff = (GRAY % suff)
+    if start >= 0:
+        lead = (RED % "‹") + lead
+        mid = mid + (RED % "›")
+    else:
+        mid = (BLUE % "‹") + mid + (BLUE % "›")
+    return pref + lead + mid + suff
