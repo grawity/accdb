@@ -87,6 +87,7 @@ class Filter(object):
         if not tokens:
             return ConstantFilter(False)
         op, *args = tokens
+        Core.trace("  parsed to op=%r args=%r", op, args)
         if len(args) > 0:
             # boolean operators
             if op in {"AND", "and", "&"}:
@@ -145,7 +146,7 @@ class Filter(object):
                 return ItemNameFilter(":exact", pattern[1:])
             elif "=" in op or "~" in op:
                 Core.debug("unknown operator %r in (%s), trying attribute match" % (op, pattern))
-                return AttributeFilter.compile(db, pattern)
+                return AttributeFilter.compile(db, pattern[1:])
             else:
                 Core.debug("unknown operator %r in (%s), assuming AND" % (op, pattern))
                 filters = [Filter.compile(db, x) for x in tokens]
