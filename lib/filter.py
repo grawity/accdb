@@ -13,6 +13,7 @@ class Filter(object):
 
     @staticmethod
     def parse(text):
+        token = ""
         tokens = []
         depth = 0
         start = -1
@@ -20,29 +21,32 @@ class Filter(object):
         Core.trace("parse input: %r" % text)
         for pos, char in enumerate(text):
             if Core._log_level >= Core.LOG_TRACE:
-                Core.trace("  [%s] char=%r, pos=%d, start=%r",
-                           colour_repr(text, start, pos), char, pos, start)
+                Core.trace("  [%s] char=%r, pos=%d, start=%r, token=%r",
+                           colour_repr(text, start, pos), char, pos, start, token)
             if char == "(" and not esc:
                 if depth == 0:
                     if start >= 0:
                         # don't lose the initial "foo" in "foo(bar"
-                        Core.trace("    tokens += prefix-word %r" % text[start:pos])
-                        tokens.append(text[start:pos])
+                        Core.trace("    tokens += prefix-word %r" % token)
+                        tokens.append(token)
                     start = pos + 1
+                    token = ""
                 Core.trace("    found opening paren; incr depth=%r", depth)
                 depth += 1
             elif char == ")" and not esc:
                 Core.trace("    found closing paren; decr depth=%r", depth)
                 depth -= 1
                 if depth == 0 and start >= 0:
-                    Core.trace("    tokens += grouped %r" % text[start:pos])
-                    tokens.append(text[start:pos])
+                    Core.trace("    tokens += grouped %r" % token)
+                    tokens.append(token)
                     start = -1
+                    token = ""
             elif char in " \t\r\n" and not esc:
                 if depth == 0 and start >= 0:
-                    Core.trace("    tokens += word %r" % text[start:pos])
-                    tokens.append(text[start:pos])
+                    Core.trace("    tokens += word %r" % token)
+                    tokens.append(token)
                     start = -1
+                    token = ""
                     Core.trace("    found whitespace at d>0; unset start")
             elif char == "\\" and not esc:
                 esc = True
@@ -50,7 +54,9 @@ class Filter(object):
             else:
                 if start < 0:
                     start = pos
+                    token = ""
                     Core.trace("    found normal char; set start=%r", pos)
+                token += char
                 esc = False
         if depth > 0:
             raise FilterSyntaxError("unclosed '(' (depth %d)" % depth)
@@ -58,8 +64,8 @@ class Filter(object):
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
         else:
             if start >= 0 and start <= pos:
-                Core.trace("    tokens += final %r" % text[start:])
-                tokens.append(text[start:])
+                Core.trace("    tokens += final %r" % token)
+                tokens.append(token)
             Core.trace("parse output: %r" % tokens)
             return tokens
 
