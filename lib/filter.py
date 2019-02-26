@@ -50,7 +50,6 @@ class Filter(object):
                     Core.trace("    found whitespace at d>0; unset start")
             elif char == "\\" and not esc:
                 esc = True
-                continue
             else:
                 if start < 0:
                     start = pos
@@ -72,7 +71,7 @@ class Filter(object):
     @staticmethod
     def quote(token):
         if "(" in token or ")" in token:
-            return "\"%s\"" % token
+            return "(%s)" % token.replace("(", "\\(").replace(")", "\\)")
         elif " " in token:
             return "(%s)" % token
         elif token:
