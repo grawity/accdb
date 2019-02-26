@@ -48,6 +48,8 @@ class Filter(object):
                     start = -1
                     token = ""
                     Core.trace("    found whitespace at d>0; unset start")
+                else:
+                    token += char
             elif char == "\\" and not esc:
                 esc = True
             else:
