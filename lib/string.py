@@ -34,19 +34,6 @@ def split_ranges(string):
             else:
                 yield int(j), int(j)+1
 
-def str_unslash(string):
-    esc = False
-    out = ""
-    for char in string:
-        if esc:
-            esc = False
-            out += char
-        elif char == "\\":
-            esc = True
-        else:
-            out += char
-    return out
-
 def str_split_escaped(string, sep, max=0):
     state = 0
     out = []
