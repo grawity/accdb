@@ -213,12 +213,14 @@ class Database(object):
         return self.entries[key]
 
     def find_by_itemno(self, itemno):
+        Core.debug("searching item number %r", itemno)
         uuid = self.order[itemno-1]
         entry = self.entries[uuid]
         assert entry.itemno == itemno
         return entry
 
     def find_by_uuid(self, uuid_str):
+        Core.debug("searching UUID %r", uuid_str)
         uuid_parsed = uuid.UUID(uuid_str)
         return self[uuid_parsed]
 
@@ -230,6 +232,7 @@ class Database(object):
             return False
 
     def find(self, filter):
+        Core.debug("searching filter %s", filter)
         for entry in self:
             if filter(entry):
                 yield entry
