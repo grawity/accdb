@@ -118,7 +118,7 @@ class SecureStorage(object):
 
     def kdf(self, passwd):
         from Crypto.Protocol import KDF
-        return KDF.PBKDF2(passwd, self.kdf_salt)
+        return KDF.PBKDF2(passwd.encode("utf-8"), self.kdf_salt)
 
     def set_password(self, passwd):
         return self.set_raw_kek(self.kdf(passwd))
