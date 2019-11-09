@@ -19,6 +19,7 @@ from .entry import Entry
 from .entry_util import *
 from .filter import Filter
 from .keyring import *
+from .qrcode import qr_encode
 from .string import *
 
 def str_join_qwords_safe(argv):
@@ -141,11 +142,8 @@ class Cmd():
 
             if data:
                 Core.debug("Qr code for %r", data)
-                with subprocess.Popen(["qrencode", "-tUTF8", data],
-                                      stdout=subprocess.PIPE) as proc:
-                    for line in proc.stdout:
-                        print("\t" + line.decode("utf-8"), end="")
-                print()
+                for line in qr_encode(data):
+                    print("\t" + line)
             else:
                 Core.err("cannot generate Qr code: entry has no PSK (!2fa.oath.psk or !wifi.psk)")
 
