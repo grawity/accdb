@@ -10,7 +10,7 @@ class UnknownAlgorithmError(Exception):
 class MessageAuthenticationError(Exception):
     pass
 
-class CipherInstance(object):
+class CipherInstance():
     def __init__(self, key, algo=None):
         self.key = key
         self.algo = algo or ("aes-128-cfb-siv" if key else "none")
@@ -90,7 +90,7 @@ class CipherInstance(object):
     def unwrap_str(self, wrapped: "str") -> "str":
         return self.unwrap_bytes(wrapped).decode("utf-8")
 
-class SecureStorage(object):
+class SecureStorage():
     def __init__(self):
         self.kdf_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
         self.kek_cipher = None

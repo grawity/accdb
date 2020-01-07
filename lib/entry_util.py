@@ -64,7 +64,7 @@ def val_is_unsafe(value):
            or value.startswith("<base64> ") \
            or value.startswith("<wrapped> ")
 
-class WiFiParameters(object):
+class WiFiParameters():
     # https://github.com/zxing/zxing/wiki/Barcode-Contents
 
     def __init__(self, essid, psk, sectype=None, hidden=False):

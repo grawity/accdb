@@ -7,7 +7,7 @@ from .string import *
 class FilterSyntaxError(Exception):
     pass
 
-class Filter(object):
+class Filter():
     def __call__(self, entry):
         return bool(self.test(entry))
 

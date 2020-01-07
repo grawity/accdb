@@ -12,7 +12,7 @@ def split_tags(string):
     items = re.split(Entry.RE_TAGS, string)
     return set(items)
 
-class Entry(object):
+class Entry():
     RE_TAGS = re.compile(r'\s*,\s*|\s+')
     RE_KEYVAL = re.compile(r' = |: ')
 

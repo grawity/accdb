@@ -6,7 +6,7 @@ import urllib.parse
 
 from .string import encode_psk
 
-class OATHParameters(object):
+class OATHParameters():
     """
     A collection of OATH parameters for a single site.
     """

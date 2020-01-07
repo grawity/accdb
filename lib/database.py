@@ -5,7 +5,7 @@ import uuid
 from .entry import *
 from .encryption import CipherInstance, SecureStorage, MessageAuthenticationError
 
-class Database(object):
+class Database():
     SUPPORTED_FEATURES = {
         "b64value",
         "encrypted",

@@ -2,7 +2,7 @@ import base64
 import io
 import subprocess
 
-class Keyring(object):
+class Keyring():
     KEK_SCHEMA = "org.eu.nullroute.Accdb.MasterKey"
 
     def _make_attrs(self, uuid):
@@ -115,7 +115,7 @@ class XdgKeyring(Keyring):
             "uuid", uuid,
         ]
 
-class Prompter(object):
+class Prompter():
     def get_password(self, desc, **kwargs):
         raise NotImplementedError()
 
