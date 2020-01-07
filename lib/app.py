@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # accdb - account database using human-editable flat files as storage
 
-from __future__ import print_function
 import os
 import re
 import subprocess
