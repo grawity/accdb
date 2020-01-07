@@ -95,3 +95,20 @@ class WiFiParameters():
         if self.hidden:
             data += ["H:true"]
         return "WIFI:" + ";".join(data) + ";"
+
+class SecureStr():
+    def __init__(self, value, sec):
+        self.raw = value
+        self.clear = None
+        self.sec = sec
+
+    def __str__(self):
+        if self.clear is None:
+            self.clear = self.sec.unwrap_data(self.raw)
+        return self.clear
+
+    def __repr__(self):
+        return "SecureStr(%r)" % self.clear
+
+    def __lt__(self, other):
+        return str(self) < str(other)

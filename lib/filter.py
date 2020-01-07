@@ -308,12 +308,12 @@ class ItemNameFilter(Filter):
         elif mode in {":glob", "?"}:
             self.mode = ":glob"
             regex = re_compile_glob(value)
-            self.test = lambda entry: any(regex.fullmatch(v) for v in entry.names)
+            self.test = lambda entry: any(regex.fullmatch(str(v)) for v in entry.names)
             Core.trace("compiled to [name ~ %r]", regex)
         elif mode in {":regex", "~"}:
             self.mode = ":regex"
             regex = re.compile(value, re.I)
-            self.test = lambda entry: any(regex.search(v) for v in entry.names)
+            self.test = lambda entry: any(regex.search(str(v)) for v in entry.names)
             Core.trace("compiled to [name ~ %r]", regex)
         else:
             raise FilterSyntaxError("unknown mode %r for %r" % (mode, "NAME"))
@@ -369,13 +369,13 @@ class AttributeFilter(Filter):
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
-                self.test = lambda entry: any(any(regex.fullmatch(v) for v in vs)
+                self.test = lambda entry: any(any(regex.fullmatch(str(v)) for v in vs)
                                               for vs in entry.attributes.values())
                 Core.trace("compiled to [values ~ %r]" % regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
-                self.test = lambda entry: any(any(regex.search(v) for v in vs)
+                self.test = lambda entry: any(any(regex.search(str(v)) for v in vs)
                                               for vs in entry.attributes.values())
                 Core.trace("compiled to [values ~ %r]" % regex)
             else:
@@ -388,13 +388,13 @@ class AttributeFilter(Filter):
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
-                self.test = lambda entry: any(regex.fullmatch(v)
+                self.test = lambda entry: any(regex.fullmatch(str(v))
                                               for v in entry.attributes.get(attr, []))
                 Core.trace("compiled to [%r ~ %r]" % (attr, regex))
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
-                self.test = lambda entry: any(regex.search(v)
+                self.test = lambda entry: any(regex.search(str(v))
                                               for v in entry.attributes.get(attr, []))
                 Core.trace("compiled to [%r ~ %r]" % (attr, regex))
             elif mode in {":lt", "<"}:
@@ -501,7 +501,7 @@ class TagFilter(Filter):
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
-                self.test = lambda entry: any(regex.search(t) for t in entry.tags)
+                self.test = lambda entry: any(regex.search(str(t)) for t in entry.tags)
             else:
                 raise FilterSyntaxError("unknown mode %r for %r" % (mode, "TAG"))
 

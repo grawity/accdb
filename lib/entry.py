@@ -110,12 +110,7 @@ class Entry():
                 elif val.startswith("<wrapped> "):
                     if self.db:
                         nval = val[len("<wrapped> "):]
-                        try:
-                            nval = self.db.sec.unwrap_data(nval)
-                        except UnicodeDecodeError:
-                            pass
-                        else:
-                            val = nval
+                        val = SecureStr(nval, self.db.sec)
 
                 key = translate_attr(key)
                 if key in self.attributes:
@@ -199,17 +194,20 @@ class Entry():
                         value_fmt = "34"
                         if storage:
                             if encrypt and ("encrypted" in self.db.features):
-                                value = self.db.sec.wrap_data(value)
+                                if isinstance(value, SecureStr):
+                                    value = value.raw
+                                else:
+                                    value = self.db.sec.wrap_data(value)
                                 value = "<wrapped> %s" % value
-                            elif val_is_unsafe(value):
+                            elif val_is_unsafe(str(value)):
                                 value = "<base64> %s" % b64_encode(value)
                             else:
                                 pass
                         elif conceal:
                             value = "<private>"
                         else:
-                            value = value.replace("\n",
-                                                  "\n\t" + " " * len(key) + "  ")
+                            value = str(value).replace("\n",
+                                                       "\n\t" + " " * len(key) + "  ")
                     else:
                         if attr_is_reflink(key):
                             key_fmt = "38;5;250"
@@ -267,8 +265,8 @@ class Entry():
         dis = dict()
         dis["_name"] = self.name
         dis["comment"] = self.comment
-        dis["data"] = {key: list(val for val in self.attributes[key])
-                for key in sort_attrs(self)}
+        dis["data"] = {key: [str(val) for val in self.attributes[key]]
+                       for key in sort_attrs(self)}
         dis["lineno"] = self.lineno
         dis["tags"] = list(self.tags)
         dis["uuid"] = str(self.uuid)
