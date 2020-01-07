@@ -3,7 +3,6 @@ import os
 
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC, SHA256
-from Crypto.Protocol import KDF
 
 class UnknownAlgorithmError(Exception):
     pass
@@ -118,6 +117,7 @@ class SecureStorage(object):
             self.kek_cipher = Cipher(new_kek)
 
     def kdf(self, passwd):
+        from Crypto.Protocol import KDF
         return KDF.PBKDF2(passwd.encode("utf-8"), self.kdf_salt)
 
     def set_password(self, passwd):
