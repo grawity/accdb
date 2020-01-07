@@ -10,7 +10,7 @@ class UnknownAlgorithmError(Exception):
 class MessageAuthenticationError(Exception):
     pass
 
-class Cipher(object):
+class CipherInstance(object):
     def __init__(self, key, algo=None):
         self.key = key
         self.algo = algo or ("aes-128-cfb-siv" if key else "none")
@@ -106,7 +106,7 @@ class SecureStorage(object):
         if self.kek_cipher:
             raise Exception("KEK already set")
         else:
-            self.kek_cipher = Cipher(kek)
+            self.kek_cipher = CipherInstance(kek)
 
     def change_raw_kek(self, new_kek):
         if not self.kek_cipher:
@@ -114,7 +114,7 @@ class SecureStorage(object):
         elif not self.dek_cipher:
             raise Exception("DEK not yet set")
         else:
-            self.kek_cipher = Cipher(new_kek)
+            self.kek_cipher = CipherInstance(new_kek)
 
     def kdf(self, passwd):
         from Crypto.Protocol import KDF
@@ -139,7 +139,7 @@ class SecureStorage(object):
             raise Exception("KEK not yet set")
         else:
             dek = os.urandom(32)
-            self.dek_cipher = Cipher(dek)
+            self.dek_cipher = CipherInstance(dek)
 
     def set_wrapped_dek(self, wrapped_dek):
         if self.dek_cipher:
@@ -148,7 +148,7 @@ class SecureStorage(object):
             raise Exception("KEK not yet set, cannot decrypt DEK")
         else:
             dek = self.kek_cipher.unwrap_bytes(wrapped_dek)
-            self.dek_cipher = Cipher(dek)
+            self.dek_cipher = CipherInstance(dek)
 
     def get_wrapped_dek(self):
         if not self.dek_cipher:

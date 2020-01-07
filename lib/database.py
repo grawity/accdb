@@ -3,7 +3,7 @@ import sys
 import uuid
 
 from .entry import *
-from .encryption import Cipher, SecureStorage, MessageAuthenticationError
+from .encryption import CipherInstance, SecureStorage, MessageAuthenticationError
 
 # 'Database' {{{
 
@@ -288,7 +288,8 @@ class Database(object):
             if encrypt == False:
                 if key == "dek":
                     kek = self.keyring.lookup_kek(self.uuid)
-                    val = Cipher(None).wrap_bytes(Cipher(kek).unwrap_bytes(val))
+                    val = CipherInstance(kek).unwrap_bytes(val)
+                    val = CipherInstance(None).wrap_bytes(val)
                 elif key in {"uuid", "salt"}:
                     continue
             print(";; %s: %s" % (key, val), file=fh)
