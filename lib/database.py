@@ -5,8 +5,6 @@ import uuid
 from .entry import *
 from .encryption import CipherInstance, SecureStorage, MessageAuthenticationError
 
-# 'Database' {{{
-
 class Database(object):
     SUPPORTED_FEATURES = {
         "b64value",
@@ -336,5 +334,3 @@ class Database(object):
             return
         self.to_file(self.path)
         self.modified = False
-
-# }}}

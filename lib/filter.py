@@ -230,8 +230,6 @@ def AnyFilter(*args):
                              AttributeFilter("*", *args),
                              TagFilter(*args))
 
-# Kitchen sink filter (PATTERN) {{{
-
 class PatternFilter(Filter):
     def __init__(self, db, pattern):
         self.pattern = pattern
@@ -286,9 +284,6 @@ class PatternFilter(Filter):
             return ItemUuidFilter(arg)
         else:
             return ItemNameFilter(":glob", arg)
-
-# }}}
-# String match filters (NAME, ATTR, TAG) {{{
 
 class ItemNameFilter(Filter):
     def __init__(self, *args):
@@ -520,9 +515,6 @@ class TagFilter(Filter):
         else:
             return "(TAG %s %s)" % (self.mode, Filter.quote(self.value))
 
-# }}}
-# Metadata filters (ITEM, UUID) {{{
-
 class ItemNumberFilter(Filter):
     def __init__(self, pattern):
         try:
@@ -559,9 +551,6 @@ class ItemUuidFilter(Filter):
 
     def __str__(self):
         return "(UUID %s)" % self.value
-
-# }}}
-# Basic boolean filters (AND, OR, NOT, TRUE, FALSE) {{{
 
 class ConjunctionFilter(Filter):
     def __init__(self, *filters):
@@ -602,5 +591,3 @@ class ConstantFilter(Filter):
 
     def __str__(self):
         return "(TRUE)" if self.result else "(FALSE)"
-
-# }}}

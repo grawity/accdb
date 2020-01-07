@@ -1,8 +1,6 @@
 import sys
 import subprocess
 
-# 'Clipboard' {{{
-
 class Clipboard():
     @classmethod
     def get(self):
@@ -33,5 +31,3 @@ class Clipboard():
             proc.wait()
         else:
             raise RuntimeError("Unsupported platform")
-
-# }}}

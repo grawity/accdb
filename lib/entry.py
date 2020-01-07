@@ -12,8 +12,6 @@ def split_tags(string):
     items = re.split(Entry.RE_TAGS, string)
     return set(items)
 
-# 'Entry' {{{
-
 class Entry(object):
     RE_TAGS = re.compile(r'\s*,\s*|\s+')
     RE_KEYVAL = re.compile(r' = |: ')
@@ -380,5 +378,3 @@ class Entry(object):
             del self.attributes["@comment"]
         else:
             self.comment = ""
-
-# }}}
