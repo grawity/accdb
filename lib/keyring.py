@@ -125,7 +125,28 @@ class BasicPrompter(Prompter):
         import getpass
         return getpass.getpass("\033[1;33m%s\033[m " % desc)
 
-class ShimKeyring(Keyring, BasicPrompter):
+class PinentryPrompter(Prompter):
+    def get_password(self, desc, **kwargs):
+        with subprocess.Popen(["askpin",
+                               "-t", "accdb",
+                               "-d", desc,
+                               "-p", "Password:"],
+                              stdout=subprocess.PIPE) as proc:
+            (out, err) = proc.communicate()
+            if proc.wait() == 0:
+                return out.decode().rstrip("\n")
+            else:
+                return None
+
+class ShimPrompter(Prompter):
+    def get_password(self, desc, **kwargs):
+        if os.environ.get("DISPLAY"):
+            p = PinentryPrompter()
+        else:
+            p = BasicPrompter()
+        return p.get_password(desc, **kwargs)
+
+class ShimKeyring(Keyring, ShimPrompter):
     def __init__(self):
         self.store = XdgKeyring()
         self.cache = GitKeyring("cache")
