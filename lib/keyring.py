@@ -1,6 +1,7 @@
 import base64
 import io
 import os
+import sys
 import subprocess
 
 class Keyring():
