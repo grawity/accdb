@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 import subprocess
 
 class Keyring():
@@ -119,6 +120,11 @@ class Prompter():
     def get_password(self, desc, **kwargs):
         raise NotImplementedError()
 
+class BasicPrompter(Prompter):
+    def get_password(self, desc, **kwargs):
+        import getpass
+        return getpass.getpass("\033[1;33m%s\033[m " % desc)
+
 class PinentryPrompter(Prompter):
     def get_password(self, desc, **kwargs):
         with subprocess.Popen(["askpin",
@@ -132,7 +138,15 @@ class PinentryPrompter(Prompter):
             else:
                 return None
 
-class ShimKeyring(Keyring, PinentryPrompter):
+class ShimPrompter(Prompter):
+    def get_password(self, desc, **kwargs):
+        if os.environ.get("DISPLAY"):
+            p = PinentryPrompter()
+        else:
+            p = BasicPrompter()
+        return p.get_password(desc, **kwargs)
+
+class ShimKeyring(Keyring, ShimPrompter):
     def __init__(self):
         self.store = XdgKeyring()
         self.cache = GitKeyring("cache")
