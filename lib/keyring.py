@@ -140,7 +140,7 @@ class PinentryPrompter(Prompter):
 
 class ShimPrompter(Prompter):
     def get_password(self, desc, **kwargs):
-        if os.environ.get("DISPLAY"):
+        if os.environ.get("DISPLAY") and not sys.stderr.isatty():
             p = PinentryPrompter()
         else:
             p = BasicPrompter()
