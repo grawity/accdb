@@ -1,6 +1,10 @@
 import base64
 import os
 
+from Crypto.Cipher import AES
+from Crypto.Hash import HMAC, SHA256
+from Crypto.Protocol import KDF
+
 class UnknownAlgorithmError(Exception):
     pass
 
@@ -26,7 +30,6 @@ class Cipher(object):
         return self.key[:nbits // 8]
 
     def _deterministic_iv(self, clear: "bytes", nbytes) -> "bytes":
-        from Crypto.Hash import HMAC, SHA256
         mac = HMAC.new(self.key, clear, SHA256).digest()
         if len(mac) < nbytes:
             raise ValueError("resulting mac too short (%d < %d)" % (len(mac), nbytes))
@@ -37,7 +40,6 @@ class Cipher(object):
         if algo[0] == "none":
             return clear
         elif algo[0] == "aes":
-            from Crypto.Cipher import AES
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
@@ -56,7 +58,6 @@ class Cipher(object):
         if algo[0] == "none":
             return wrapped
         elif algo[0] == "aes":
-            from Crypto.Cipher import AES
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
@@ -117,7 +118,6 @@ class SecureStorage(object):
             self.kek_cipher = Cipher(new_kek)
 
     def kdf(self, passwd):
-        from Crypto.Protocol import KDF
         return KDF.PBKDF2(passwd.encode("utf-8"), self.kdf_salt)
 
     def set_password(self, passwd):
