@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import sys
 import uuid
+import time
 
 from .entry import *
 from .encryption import CipherInstance, SecureStorage, MessageAuthenticationError
@@ -123,6 +124,7 @@ class Database():
         lastno = 1
         entry = None
         header = True
+        A = time.time()
 
         for line in fh:
             lineno += 1
@@ -165,6 +167,8 @@ class Database():
             if entry and not entry.deleted:
                 self.add(entry)
 
+        B = time.time()
+        Core.trace("processed %d lines in %.5fs", lineno, B-A)
         return self
 
     def add(self, entry, lineno=None):
