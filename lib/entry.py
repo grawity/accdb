@@ -296,7 +296,7 @@ class Entry():
         if not tmp:
             return None
 
-        psk = decode_psk(tmp[0])
+        psk = decode_psk(str(tmp[0]))
         p = OATHParameters(psk)
 
         tmp = self.attributes.get("@2fa.subject",
