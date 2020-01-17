@@ -173,7 +173,7 @@ class Cmd():
             if len(secret) > 1:
                 Core.notice("entry has %d values for %r, using first" \
                             % (len(secret), attr))
-            Clipboard.put(secret[0])
+            Clipboard.put(str(secret[0]))
             Core.info("%r attribute copied to clipboard" % attr)
         else:
             Core.err("entry has no %r attribute" % attr)
