@@ -233,7 +233,7 @@ class Cmd():
             if action == "store":
                 try:
                     label = entry.name
-                    secret = entry.attributes["pass"][0]
+                    secret = str(entry.attributes["pass"][0])
                 except KeyError as e:
                     Core.err("entry has no secret to store (no %s field)" % e)
                     continue
