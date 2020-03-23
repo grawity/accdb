@@ -90,7 +90,7 @@ class WiFiParameters():
         if self.sectype != "nopass":
             data += [
                 "T:" + self.sectype,
-                "P:" + self._escape(self.psk),
+                "P:" + self._escape(str(self.psk)),
             ]
         if self.hidden:
             data += ["H:true"]
