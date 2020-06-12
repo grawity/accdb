@@ -164,6 +164,9 @@ class Filter():
         elif " " in op or "(" in op or ")" in op:
             Core.debug("whitespace in operator %r in (%s), recursing" % (op, pattern))
             return Filter.compile(db, op)
+        elif op.startswith("!"):
+            Core.debug("operator with '!' prefix, recursing as (NOT %s)", op[1:])
+            return NegationFilter(Filter.compile(db, op[1:]))
         # maybe these *should* be part of PatternFilter
         elif op.startswith("#"):
             return ItemNumberFilter(op[1:])
