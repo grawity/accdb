@@ -170,7 +170,7 @@ class Entry():
             for line in self.comment.splitlines():
                 data += "%s %s\n" % (f(";", uuid_fmt), f(line, comment_fmt))
 
-            if self.uuid:
+            if self.uuid and storage:
                 data += "\t%s\n" % f("{%s}" % self.uuid, uuid_fmt)
 
             if conceal:
