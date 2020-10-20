@@ -204,6 +204,7 @@ class Cmd():
 
     do_pass     = do_get_pass
     do_totp     = do_get_totp
+    do_gp       = do_get_pass
     do_c        = do_copy_pass
     do_t        = do_copy_totp
 
