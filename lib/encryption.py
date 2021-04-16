@@ -2,7 +2,7 @@ import base64
 import os
 
 from Crypto.Cipher import AES
-from Crypto.Hash import HMAC, SHA256
+from Crypto.Hash import HMAC, SHA1, SHA256
 from Crypto.Protocol.KDF import PBKDF2
 
 class UnknownAlgorithmError(Exception):
@@ -118,7 +118,13 @@ class SecureStorage():
             self.kek_cipher = CipherInstance(new_kek)
 
     def kdf(self, passwd):
-        return PBKDF2(passwd.encode("utf-8"), self.kdf_salt)
+        # The defaults of Crypto.Protocol.KDF.PBKDF2() were iter=1000, hash=SHA1.
+        # TODO: Migration path to better parameters
+        return PBKDF2(passwd.encode("utf-8"),
+                      self.kdf_salt,
+                      dkLen=16,
+                      count=1000,
+                      hmac_hash_module=SHA1)
 
     def set_password(self, passwd):
         return self.set_raw_kek(self.kdf(passwd))
