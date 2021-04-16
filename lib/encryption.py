@@ -1,12 +1,56 @@
 import base64
 import os
 
-from cryptography.hazmat.primitives.ciphers import Cipher
-from cryptography.hazmat.primitives.ciphers.algorithms import AES
-from cryptography.hazmat.primitives.ciphers.modes import CFB8
-from cryptography.hazmat.primitives.hashes import SHA1, SHA256
-from cryptography.hazmat.primitives.hmac import HMAC
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+backend = os.environ.get("CRYPTO_BACKEND", "cryptography")
+
+if backend == "cryptodome":
+    from Crypto.Cipher import AES
+    from Crypto.Hash import HMAC, SHA1, SHA256
+    from Crypto.Protocol.KDF import PBKDF2
+
+    AES_BLOCK_BYTES = AES.block_size
+
+    def aes_cfb8_encrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CFB, iv).encrypt(data)
+
+    def aes_cfb8_decrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CFB, iv).decrypt(data)
+
+    def hmac_sha256(data, key):
+        return HMAC.new(key, data, SHA256).digest()
+
+    def pbkdf2_sha1(password, salt, iter, length):
+        return PBKDF2(password, salt, length, iter, hmac_hash_module=SHA1)
+
+elif backend == "cryptography":
+    from cryptography.hazmat.primitives.ciphers import Cipher
+    from cryptography.hazmat.primitives.ciphers.algorithms import AES
+    from cryptography.hazmat.primitives.ciphers.modes import CFB8
+    from cryptography.hazmat.primitives.hashes import SHA1, SHA256
+    from cryptography.hazmat.primitives.hmac import HMAC
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+    AES_BLOCK_BYTES = AES.block_size // 8
+
+    def aes_cfb8_encrypt(data, key, iv):
+        c = Cipher(AES(key), CFB8(iv)).encryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cfb8_decrypt(data, key, iv):
+        c = Cipher(AES(key), CFB8(iv)).decryptor()
+        return c.update(data) + c.finalize()
+
+    def hmac_sha256(data, key):
+        h = HMAC(key, SHA256())
+        h.update(data)
+        return h.finalize()
+
+    def pbkdf2_sha1(password, salt, iter, length):
+        k = PBKDF2HMAC(SHA1(), length, salt, iter)
+        return k.derive(password)
+
+else:
+    raise ValueError("unsupported backend %r" % backend)
 
 class UnknownAlgorithmError(Exception):
     pass
@@ -33,9 +77,7 @@ class CipherInstance():
         return self.key[:nbits // 8]
 
     def _deterministic_iv(self, clear: "bytes", nbytes) -> "bytes":
-        h = HMAC(self.key, SHA256())
-        h.update(clear)
-        mac = h.finalize()
+        mac = hmac_sha256(clear, self.key)
         if len(mac) < nbytes:
             raise ValueError("resulting mac too short (%d < %d)" % (len(mac), nbytes))
         return mac[:nbytes]
@@ -50,11 +92,10 @@ class CipherInstance():
                 key = self._get_key_bits(nbits)
                 if algo[2] == "cfb":
                     if "siv" in algo[3:]:
-                        iv = self._deterministic_iv(clear, AES.block_size // 8)
+                        iv = self._deterministic_iv(clear, AES_BLOCK_BYTES)
                     else:
-                        iv = os.urandom(AES.block_size // 8)
-                    cipher = Cipher(AES(key), CFB8(iv)).encryptor()
-                    return iv + cipher.update(clear) + cipher.finalize()
+                        iv = os.urandom(AES_BLOCK_BYTES)
+                    return iv + aes_cfb8_encrypt(clear, key, iv)
         else:
             raise UnknownAlgorithmError()
 
@@ -67,12 +108,11 @@ class CipherInstance():
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
                 if algo[2] == "cfb":
-                    iv = wrapped[:AES.block_size//8]
-                    buf = wrapped[AES.block_size//8:]
-                    cipher = Cipher(AES(key), CFB8(iv)).decryptor()
-                    clear = cipher.update(buf) + cipher.finalize()
+                    iv = wrapped[:AES_BLOCK_BYTES]
+                    buf = wrapped[AES_BLOCK_BYTES:]
+                    clear = aes_cfb8_decrypt(buf, key, iv)
                     if "siv" in algo[3:]:
-                        if iv != self._deterministic_iv(clear, AES.block_size//8):
+                        if iv != self._deterministic_iv(clear, AES_BLOCK_BYTES):
                             raise MessageAuthenticationError()
                     return clear
         else:
@@ -125,11 +165,10 @@ class SecureStorage():
     def kdf(self, passwd):
         # The defaults of Crypto.Protocol.KDF.PBKDF2() were iter=1000, hash=SHA1.
         # TODO: Migration path to better parameters
-        k = PBKDF2HMAC(algorithm=SHA1(),
-                       length=16,
-                       salt=self.kdf_salt,
-                       iterations=1000)
-        return k.derive(passwd.encode("utf-8"))
+        return pbkdf2_sha1(passwd.encode("utf-8"),
+                           self.kdf_salt,
+                           iter=1000,
+                           length=16)
 
     def set_password(self, passwd):
         return self.set_raw_kek(self.kdf(passwd))
