@@ -1,9 +1,12 @@
 import base64
 import os
 
-from Crypto.Cipher import AES
-from Crypto.Hash import HMAC, SHA1, SHA256
-from Crypto.Protocol.KDF import PBKDF2
+from cryptography.hazmat.primitives.ciphers import Cipher
+from cryptography.hazmat.primitives.ciphers.algorithms import AES
+from cryptography.hazmat.primitives.ciphers.modes import CFB8
+from cryptography.hazmat.primitives.hashes import SHA1, SHA256
+from cryptography.hazmat.primitives.hmac import HMAC
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 class UnknownAlgorithmError(Exception):
     pass
@@ -30,7 +33,9 @@ class CipherInstance():
         return self.key[:nbits // 8]
 
     def _deterministic_iv(self, clear: "bytes", nbytes) -> "bytes":
-        mac = HMAC.new(self.key, clear, SHA256).digest()
+        h = HMAC(self.key, SHA256())
+        h.update(clear)
+        mac = h.finalize()
         if len(mac) < nbytes:
             raise ValueError("resulting mac too short (%d < %d)" % (len(mac), nbytes))
         return mac[:nbytes]
@@ -45,11 +50,11 @@ class CipherInstance():
                 key = self._get_key_bits(nbits)
                 if algo[2] == "cfb":
                     if "siv" in algo[3:]:
-                        iv = self._deterministic_iv(clear, AES.block_size)
+                        iv = self._deterministic_iv(clear, AES.block_size // 8)
                     else:
-                        iv = os.urandom(AES.block_size)
-                    cipher = AES.new(key, AES.MODE_CFB, iv)
-                    return iv + cipher.encrypt(clear)
+                        iv = os.urandom(AES.block_size // 8)
+                    cipher = Cipher(AES(key), CFB8(iv)).encryptor()
+                    return iv + cipher.update(clear) + cipher.finalize()
         else:
             raise UnknownAlgorithmError()
 
@@ -62,12 +67,12 @@ class CipherInstance():
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
                 if algo[2] == "cfb":
-                    iv = wrapped[:AES.block_size]
-                    buf = wrapped[AES.block_size:]
-                    cipher = AES.new(key, AES.MODE_CFB, iv)
-                    clear = cipher.decrypt(buf)
+                    iv = wrapped[:AES.block_size//8]
+                    buf = wrapped[AES.block_size//8:]
+                    cipher = Cipher(AES(key), CFB8(iv)).decryptor()
+                    clear = cipher.update(buf) + cipher.finalize()
                     if "siv" in algo[3:]:
-                        if iv != self._deterministic_iv(clear, AES.block_size):
+                        if iv != self._deterministic_iv(clear, AES.block_size//8):
                             raise MessageAuthenticationError()
                     return clear
         else:
@@ -120,11 +125,11 @@ class SecureStorage():
     def kdf(self, passwd):
         # The defaults of Crypto.Protocol.KDF.PBKDF2() were iter=1000, hash=SHA1.
         # TODO: Migration path to better parameters
-        return PBKDF2(passwd.encode("utf-8"),
-                      self.kdf_salt,
-                      dkLen=16,
-                      count=1000,
-                      hmac_hash_module=SHA1)
+        k = PBKDF2HMAC(algorithm=SHA1(),
+                       length=16,
+                       salt=self.kdf_salt,
+                       iterations=1000)
+        return k.derive(passwd.encode("utf-8"))
 
     def set_password(self, passwd):
         return self.set_raw_kek(self.kdf(passwd))
