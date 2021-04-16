@@ -7,8 +7,15 @@ if backend == "cryptodome":
     from Crypto.Cipher import AES
     from Crypto.Hash import HMAC, SHA1, SHA256
     from Crypto.Protocol.KDF import PBKDF2
+    from Crypto.Util import Padding
 
     AES_BLOCK_BYTES = AES.block_size
+
+    def aes_cbc_pkcs7_encrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CBC, iv).encrypt(Padding.pad(data, AES.block_size))
+
+    def aes_cbc_pkcs7_decrypt(data, key, iv):
+        return Padding.unpad(AES.new(key, AES.MODE_CBC, iv).decrypt(data), AES.block_size)
 
     def aes_cfb8_encrypt(data, key, iv):
         return AES.new(key, AES.MODE_CFB, iv).encrypt(data)
@@ -25,12 +32,25 @@ if backend == "cryptodome":
 elif backend == "cryptography":
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
-    from cryptography.hazmat.primitives.ciphers.modes import CFB8
+    from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB8
     from cryptography.hazmat.primitives.hashes import SHA1, SHA256
     from cryptography.hazmat.primitives.hmac import HMAC
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from cryptography.hazmat.primitives.padding import PKCS7
 
     AES_BLOCK_BYTES = AES.block_size // 8
+
+    def aes_cbc_pkcs7_encrypt(data, key, iv):
+        p = PKCS7(AES.block_size).padder()
+        data = p.update(data) + p.finalize()
+        c = Cipher(AES(key), CBC(iv)).encryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cbc_pkcs7_decrypt(data, key, iv):
+        c = Cipher(AES(key), CBC(iv)).decryptor()
+        data = c.update(data) + c.finalize()
+        p = PKCS7(AES.block_size).unpadder()
+        return p.update(data) + p.finalize()
 
     def aes_cfb8_encrypt(data, key, iv):
         c = Cipher(AES(key), CFB8(iv)).encryptor()
@@ -90,12 +110,15 @@ class CipherInstance():
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
-                if algo[2] == "cfb":
+                if algo[2] in {"cbc", "cfb"}:
                     if "siv" in algo[3:]:
                         iv = self._deterministic_iv(clear, AES_BLOCK_BYTES)
                     else:
                         iv = os.urandom(AES_BLOCK_BYTES)
-                    return iv + aes_cfb8_encrypt(clear, key, iv)
+                    if algo[2] == "cbc":
+                        return iv + aes_cbc_pkcs7_encrypt(clear, key, iv)
+                    elif algo[2] == "cfb":
+                        return iv + aes_cfb8_encrypt(clear, key, iv)
         else:
             raise UnknownAlgorithmError()
 
@@ -107,10 +130,13 @@ class CipherInstance():
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
-                if algo[2] == "cfb":
+                if algo[2] in {"cbc", "cfb"}:
                     iv = wrapped[:AES_BLOCK_BYTES]
                     buf = wrapped[AES_BLOCK_BYTES:]
-                    clear = aes_cfb8_decrypt(buf, key, iv)
+                    if algo[2] == "cbc":
+                        clear = aes_cbc_pkcs7_decrypt(buf, key, iv)
+                    elif algo[2] == "cfb":
+                        clear = aes_cfb8_decrypt(buf, key, iv)
                     if "siv" in algo[3:]:
                         if iv != self._deterministic_iv(clear, AES_BLOCK_BYTES):
                             raise MessageAuthenticationError()
