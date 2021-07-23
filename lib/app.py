@@ -202,12 +202,6 @@ class Cmd():
         else:
             Core.err("entry has no OATH PSK")
 
-    do_pass     = do_get_pass
-    do_totp     = do_get_totp
-    do_gp       = do_get_pass
-    do_c        = do_copy_pass
-    do_t        = do_copy_totp
-
     ### Lookup commands (keyring)
 
     def _entry_kind(self, entry):
@@ -546,14 +540,20 @@ class Cmd():
         """Parse a filter and dump it as text"""
         print(Filter.cli_compile_argv(self.db, argv))
 
+    do_c        = do_copy_pass
+    do_chpw     = do_change_password
     do_g        = do_show
     do_get      = do_show
+    do_gp       = do_get_pass
     do_grep     = do_show
-    do_r        = do_reveal
+    do_pass     = do_get_pass
+    do_r        = do_rshow
     do_re       = do_reveal
     do_rgrep    = do_reveal
     do_s        = do_show
-    do_chpw     = do_change_password
+    do_sh       = do_show
+    do_t        = do_copy_totp
+    do_totp     = do_get_totp
 
 class AccdbApplication():
     def __init__(self):
