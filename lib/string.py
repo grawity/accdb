@@ -34,29 +34,6 @@ def split_ranges(string):
             else:
                 yield int(j), int(j)+1
 
-def str_split_escaped(string, sep, max=0):
-    state = 0
-    out = []
-    cur = ""
-    Core.debug("str_split: <- %r", string)
-    for char in string:
-        Core.debug("str_split:  char %r state %r", char, state)
-        if state == 0:
-            if char == "\\":
-                state = 1
-            elif char == sep:
-                out.append(cur)
-                cur = ""
-            else:
-                cur += char
-        elif state == 1:
-            cur += char
-            state = 0
-    if cur:
-        out.append(cur)
-    Core.debug("str_split: -> %r", out)
-    return out
-
 def str_join_qwords(args):
     out = []
     quote_rx = re.compile("['\"\\\\ ]")
