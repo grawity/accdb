@@ -33,7 +33,7 @@ class CipherInstance():
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
-                if algo[2] in {"cbc", "cfb", "cfb8", "cfb128"}:
+                if algo[2] in {"cbc", "cfb8", "cfb128"}:
                     if "siv" in algo[3:]:
                         iv = self._deterministic_iv(clear, AES_BLOCK_BYTES)
                     else:
@@ -41,7 +41,7 @@ class CipherInstance():
                         raise NotImplementedError("TODO: use an actual MAC here")
                     if algo[2] == "cbc":
                         return iv + aes_cbc_pkcs7_encrypt(clear, key, iv)
-                    elif algo[2] in {"cfb", "cfb8"}:
+                    elif algo[2] == "cfb8":
                         return iv + aes_cfb8_encrypt(clear, key, iv)
                     elif algo[2] == "cfb128":
                         return iv + aes_cfb128_encrypt(clear, key, iv)
@@ -54,7 +54,7 @@ class CipherInstance():
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
-                if algo[2] in {"cbc", "cfb", "cfb8", "cfb128"}:
+                if algo[2] in {"cbc", "cfb8", "cfb128"}:
                     iv = wrapped[:AES_BLOCK_BYTES]
                     buf = wrapped[AES_BLOCK_BYTES:]
                     if algo[2] == "cbc":
