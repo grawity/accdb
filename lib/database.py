@@ -99,16 +99,13 @@ class Database():
 
     def _get_header(self):
         header = self.header.copy()
-
         if self.uuid:
             header["uuid"] = str(self.uuid)
-
         if "encrypted" in self.features:
             if self.sec.dek_cipher:
                 header["dek"] = self.sec.get_wrapped_dek()
                 header["salt"] = base64.b64encode(self.sec.kdf_salt).decode()
                 header["iter"] = str(self.sec.kdf_iter)
-
         return header
 
     def set_encryption(self, enable):
