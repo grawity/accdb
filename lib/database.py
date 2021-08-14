@@ -1,3 +1,4 @@
+import base64
 from collections import OrderedDict
 import sys
 import uuid
@@ -56,13 +57,19 @@ class Database():
                         kek = None
                 if not kek:
                     Core.debug("didn't find KEK in keyring; prompting for password")
+                    legacy_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
+                    if "salt" in header:
+                        salt = base64.b64decode(header["salt"])
+                    else:
+                        salt = legacy_salt
+                        Core.warn("legacy KDF parameters are used; change password tp upgrade")
                     try:
                         passwd = self.keyring.get_password("Input master database password:")
                     except FileNotFoundError:
                         passwd = None
                     if not passwd:
                         Core.die("database encrypted but password not provided")
-                    kek = self.sec.kdf(passwd)
+                    kek = self.sec.kdf(passwd, salt)
                 self.sec.set_raw_kek(kek)
 
             try:
