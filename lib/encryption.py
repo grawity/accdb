@@ -13,7 +13,7 @@ class CipherInstance():
         self.key = key
         self.algo = algo or ("aes-128-cfb8-siv" if key else "none")
 
-    def _get_key_bits(self, nbits) -> "bytes":
+    def _get_key_bits(self, nbits):
         if nbits % 8:
             raise ValueError("nbits not divisible by 8")
         nbytes = nbits // 8
@@ -21,13 +21,13 @@ class CipherInstance():
             raise ValueError("key too short (%d < %d)" % (len(self.key), nbytes))
         return self.key[:nbits // 8]
 
-    def _deterministic_iv(self, clear: "bytes", nbytes) -> "bytes":
+    def _deterministic_iv(self, clear, nbytes):
         mac = hmac_sha256(clear, self.key)
         if len(mac) < nbytes:
             raise ValueError("resulting mac too short (%d < %d)" % (len(mac), nbytes))
         return mac[:nbytes]
 
-    def _encrypt_data(self, clear: "bytes", algo: "str") -> "bytes":
+    def _encrypt_data(self, clear, algo):
         algo = algo.split("-")
         if algo[0] == "aes":
             if algo[1] in {"128", "192", "256"}:
@@ -48,7 +48,7 @@ class CipherInstance():
         else:
             raise UnknownAlgorithmError()
 
-    def _decrypt_data(self, wrapped: "bytes", algo: "str") -> "bytes":
+    def _decrypt_data(self, wrapped, algo):
         algo = algo.split("-")
         if algo[0] == "aes":
             if algo[1] in {"128", "192", "256"}:
@@ -72,22 +72,22 @@ class CipherInstance():
         else:
             raise UnknownAlgorithmError()
 
-    def wrap_bytes(self, clear: "bytes") -> "str":
+    def wrap_bytes(self, clear):
         wrapped = self._encrypt_data(clear, self.algo)
         wrapped = base64.b64encode(wrapped).decode("utf-8")
         wrapped = "%s;%s" % (self.algo, wrapped)
         return wrapped
 
-    def unwrap_bytes(self, wrapped: "str") -> "str":
+    def unwrap_bytes(self, wrapped):
         algo, wrapped = wrapped.split(";", 1)
         wrapped = base64.b64decode(wrapped.encode("utf-8"))
         clear = self._decrypt_data(wrapped, algo)
         return clear
 
-    def wrap_str(self, clear: "str") -> "str":
+    def wrap_str(self, clear):
         return self.wrap_bytes(clear.encode("utf-8"))
 
-    def unwrap_str(self, wrapped: "str") -> "str":
+    def unwrap_str(self, wrapped):
         return self.unwrap_bytes(wrapped).decode("utf-8")
 
 class SecureStorage():
