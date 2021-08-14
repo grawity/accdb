@@ -40,6 +40,7 @@ class CipherInstance():
                         iv = self._deterministic_iv(clear, AES_BLOCK_BYTES)
                     else:
                         iv = random_bytes(AES_BLOCK_BYTES)
+                        raise NotImplementedError("TODO: use an actual MAC here")
                     if algo[2] == "cbc":
                         return iv + aes_cbc_pkcs7_encrypt(clear, key, iv)
                     elif algo[2] in {"cfb", "cfb8"}:
@@ -69,6 +70,8 @@ class CipherInstance():
                     if "siv" in algo[3:]:
                         if iv != self._deterministic_iv(clear, AES_BLOCK_BYTES):
                             raise MessageAuthenticationError()
+                    else:
+                        raise NotImplementedError("TODO: verify the MAC here")
                     return clear
         else:
             raise UnknownAlgorithmError()
