@@ -29,9 +29,7 @@ class CipherInstance():
 
     def _encrypt_data(self, clear: "bytes", algo: "str") -> "bytes":
         algo = algo.split("-")
-        if algo[0] == "none":
-            return clear
-        elif algo[0] == "aes":
+        if algo[0] == "aes":
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
@@ -52,9 +50,7 @@ class CipherInstance():
 
     def _decrypt_data(self, wrapped: "bytes", algo: "str") -> "bytes":
         algo = algo.split("-")
-        if algo[0] == "none":
-            return wrapped
-        elif algo[0] == "aes":
+        if algo[0] == "aes":
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
