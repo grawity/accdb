@@ -7,9 +7,6 @@ from .hotpie import TOTP
 from .string import encode_psk
 
 class OATHParameters():
-    """
-    A collection of OATH parameters for a single site.
-    """
     def __init__(self, raw_psk, digits=6, window=30,
                  login=None, issuer=None, image=None):
         self.raw_psk = raw_psk
@@ -33,7 +30,6 @@ class OATHParameters():
             label = self.login
 
         data = OrderedDict()
-
         data["secret"] = self.text_psk
         if issuer:
             data["issuer"] = issuer
@@ -44,7 +40,6 @@ class OATHParameters():
 
         uri = "otpauth://totp/%s?%s" % (urllib.parse.quote(label),
                                         urllib.parse.urlencode(data))
-
         return uri
 
     def generate(self):
