@@ -184,6 +184,8 @@ class SecureStorage():
     def __init__(self):
         self.kek_cipher = None
         self.dek_cipher = None
+        self.kdf_salt = None
+        self.kdf_iter = 4096
 
     # KEK
 
@@ -205,8 +207,14 @@ class SecureStorage():
         else:
             self.kek_cipher = CipherInstance(new_kek)
 
-    def kdf(self, passwd, salt, iter):
-        return pbkdf2_sha1(passwd.encode("utf-8"), salt, iter, length=16)
+    def kdf(self, passwd, salt=None, iter=None):
+        return pbkdf2_sha1(passwd.encode("utf-8"),
+                           salt or self.kdf_salt,
+                           iter or self.kdf_iter,
+                           length=16)
+
+    def generate_salt(self):
+        return os.urandom(16)
 
     # DEK
 

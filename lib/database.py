@@ -49,6 +49,24 @@ class Database():
                 Core.debug("found plaintext DEK; setting null KEK")
                 self.sec.set_raw_kek(None)
             else:
+                # Read KDF parameters before keyring lookup, so they'll be accessible to _get_header()
+                legacy_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
+                if "salt" in header:
+                    salt = base64.b64decode(header["salt"])
+                    if "iter" in header:
+                        iter = int(header["iter"])
+                    else:
+                        iter = 1000 if salt == legacy_salt else 4096
+                else:
+                    salt = legacy_salt
+                Core.debug("KDF parameters: salt length %d, iter count %d", len(salt), iter)
+                if not (8 <= len(salt) <= 64 and 1000 <= iter <= 65536):
+                    Core.die("invalid KDF parameters in database")
+                elif len(salt) < 16 or iter < 4096:
+                    Core.warn("legacy KDF parameters are used; change password to upgrade")
+                self.sec.kdf_salt = salt
+                self.sec.kdf_iter = iter
+
                 if not kek:
                     Core.debug("retrieving KEK for {%s} from keyring", self.uuid)
                     try:
@@ -57,27 +75,13 @@ class Database():
                         kek = None
                 if not kek:
                     Core.debug("didn't find KEK in keyring; prompting for password")
-                    legacy_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
-                    if "salt" in header:
-                        salt = base64.b64decode(header["salt"])
-                        if "iter" in header:
-                            iter = int(header["iter"])
-                        else:
-                            iter = 1000 if salt == legacy_salt else 4096
-                    else:
-                        salt = legacy_salt
-                    Core.debug("KDF parameters: salt length %d, iter count %d", len(salt), iter)
-                    if not (8 <= len(salt) <= 64 and 1000 <= iter <= 65536):
-                        Core.die("invalid KDF parameters in database")
-                    elif len(salt) < 16 or iter < 4096:
-                        Core.warn("legacy KDF parameters are used; change password to upgrade")
                     try:
                         passwd = self.keyring.get_password("Input master database password:")
                     except FileNotFoundError:
                         passwd = None
                     if not passwd:
                         Core.die("database encrypted but password not provided")
-                    kek = self.sec.kdf(passwd, salt, iter)
+                    kek = self.sec.kdf(passwd)
                 self.sec.set_raw_kek(kek)
 
             try:
@@ -102,6 +106,8 @@ class Database():
         if "encrypted" in self.features:
             if self.sec.dek_cipher:
                 header["dek"] = self.sec.get_wrapped_dek()
+                header["salt"] = base64.b64encode(self.sec.kdf_salt).decode()
+                header["iter"] = str(self.sec.kdf_iter)
 
         return header
 
@@ -118,6 +124,8 @@ class Database():
     def change_password(self, passwd):
         """Enable database encryption and set the KEK from original password"""
         if passwd:
+            self.sec.kdf_salt = self.sec.generate_salt()
+            self.sec.kdf_iter = 4096
             kek = self.sec.kdf(passwd)
             if self.sec.kek_cipher:
                 self.sec.change_raw_kek(kek)
