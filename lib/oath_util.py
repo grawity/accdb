@@ -43,7 +43,4 @@ class OATHParameters():
         return uri
 
     def generate(self):
-        Core.debug("generating TOTP from PSK: %r",
-                   base64.b32encode(self.raw_psk).decode("us-ascii"))
-
         return TOTP(self.raw_psk, digits=self.digits, window=self.window)
