@@ -182,7 +182,6 @@ class CipherInstance():
 
 class SecureStorage():
     def __init__(self):
-        self.kdf_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
         self.kek_cipher = None
         self.dek_cipher = None
 
@@ -206,12 +205,15 @@ class SecureStorage():
         else:
             self.kek_cipher = CipherInstance(new_kek)
 
-    def kdf(self, passwd):
-        # The defaults of Crypto.Protocol.KDF.PBKDF2() were iter=1000, hash=SHA1.
-        # TODO: Migration path to better parameters
+    def kdf(self, passwd, salt):
+        legacy_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
+        if salt and salt != legacy_salt:
+            iter = 4096
+        else:
+            iter = 1000
         return pbkdf2_sha1(passwd.encode("utf-8"),
-                           self.kdf_salt,
-                           iter=1000,
+                           salt,
+                           iter=iter,
                            length=16)
 
     # DEK
