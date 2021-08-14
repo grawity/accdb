@@ -216,6 +216,10 @@ class SecureStorage():
     def generate_salt(self):
         return os.urandom(16)
 
+    def reset_kdf_parameters(self):
+        self.kdf_salt = self.generate_salt()
+        self.kdf_iter = 4096
+
     # DEK
 
     @property

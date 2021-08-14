@@ -124,8 +124,7 @@ class Database():
     def change_password(self, passwd):
         """Enable database encryption and set the KEK from original password"""
         if passwd:
-            self.sec.kdf_salt = self.sec.generate_salt()
-            self.sec.kdf_iter = 4096
+            self.sec.reset_kdf_parameters()
             kek = self.sec.kdf(passwd)
             if self.sec.kek_cipher:
                 self.sec.change_raw_kek(kek)
