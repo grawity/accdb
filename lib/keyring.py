@@ -77,11 +77,9 @@ class GitKeyring(Keyring):
         return self._talk("erase", attrs)
 
     def _make_attrs(self, uuid):
-        return {
-            "host": "accdb://%s" % uuid,
-            "protocol": Keyring.KEK_SCHEMA,
-            "username": uuid,
-        }
+        return {"host": "accdb://%s" % uuid,
+                "protocol": Keyring.KEK_SCHEMA,
+                "username": uuid}
 
 class XdgKeyring(Keyring):
     @property
