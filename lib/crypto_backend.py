@@ -84,3 +84,8 @@ elif backend == "cryptography":
 
 else:
     raise ValueError("unsupported backend %r" % backend)
+
+# Functions common across all backends
+
+def random_bytes(length):
+    return os.urandom(length)

@@ -1,5 +1,4 @@
 import base64
-import os
 
 from .crypto_backend import *
 
@@ -17,7 +16,7 @@ class CipherInstance():
     def _generate_key(self, nbits) -> "bytes":
         if nbits % 8:
             raise ValueError("nbits not divisible by 8")
-        return os.urandom(nbits // 8)
+        return random_bytes(nbits // 8)
 
     def _get_key_bits(self, nbits) -> "bytes":
         if nbits % 8:
@@ -45,7 +44,7 @@ class CipherInstance():
                     if "siv" in algo[3:]:
                         iv = self._deterministic_iv(clear, AES_BLOCK_BYTES)
                     else:
-                        iv = os.urandom(AES_BLOCK_BYTES)
+                        iv = random_bytes(AES_BLOCK_BYTES)
                     if algo[2] == "cbc":
                         return iv + aes_cbc_pkcs7_encrypt(clear, key, iv)
                     elif algo[2] in {"cfb", "cfb8"}:
@@ -130,11 +129,8 @@ class SecureStorage():
                            iter or self.kdf_iter,
                            length=16)
 
-    def generate_salt(self):
-        return os.urandom(16)
-
     def reset_kdf_parameters(self):
-        self.kdf_salt = self.generate_salt()
+        self.kdf_salt = random_bytes(16)
         self.kdf_iter = 4096
 
     # DEK
@@ -149,7 +145,7 @@ class SecureStorage():
         elif not self.kek_cipher:
             raise Exception("KEK not yet set")
         else:
-            dek = os.urandom(32)
+            dek = random_bytes(16)
             self.dek_cipher = CipherInstance(dek)
 
     def set_wrapped_dek(self, wrapped_dek):
