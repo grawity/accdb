@@ -23,6 +23,12 @@ if backend == "cryptodome":
     def aes_cfb8_decrypt(data, key, iv):
         return AES.new(key, AES.MODE_CFB, iv).decrypt(data)
 
+    def aes_cfb128_encrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CFB, iv, segment_size=128).encrypt(data)
+
+    def aes_cfb128_decrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CFB, iv, segment_size=128).decrypt(data)
+
     def hmac_sha256(data, key):
         return HMAC.new(key, data, SHA256).digest()
 
@@ -32,7 +38,7 @@ if backend == "cryptodome":
 elif backend == "cryptography":
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
-    from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB8
+    from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB, CFB8
     from cryptography.hazmat.primitives.hashes import SHA1, SHA256
     from cryptography.hazmat.primitives.hmac import HMAC
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -60,6 +66,14 @@ elif backend == "cryptography":
         c = Cipher(AES(key), CFB8(iv)).decryptor()
         return c.update(data) + c.finalize()
 
+    def aes_cfb128_encrypt(data, key, iv):
+        c = Cipher(AES(key), CFB(iv)).encryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cfb128_decrypt(data, key, iv):
+        c = Cipher(AES(key), CFB(iv)).decryptor()
+        return c.update(data) + c.finalize()
+
     def hmac_sha256(data, key):
         h = HMAC(key, SHA256())
         h.update(data)
@@ -81,7 +95,7 @@ class MessageAuthenticationError(Exception):
 class CipherInstance():
     def __init__(self, key, algo=None):
         self.key = key
-        self.algo = algo or ("aes-128-cfb-siv" if key else "none")
+        self.algo = algo or ("aes-128-cfb8-siv" if key else "none")
 
     def _generate_key(self, nbits) -> "bytes":
         if nbits % 8:
@@ -110,15 +124,17 @@ class CipherInstance():
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
-                if algo[2] in {"cbc", "cfb"}:
+                if algo[2] in {"cbc", "cfb", "cfb8", "cfb128"}:
                     if "siv" in algo[3:]:
                         iv = self._deterministic_iv(clear, AES_BLOCK_BYTES)
                     else:
                         iv = os.urandom(AES_BLOCK_BYTES)
                     if algo[2] == "cbc":
                         return iv + aes_cbc_pkcs7_encrypt(clear, key, iv)
-                    elif algo[2] == "cfb":
+                    elif algo[2] in {"cfb", "cfb8"}:
                         return iv + aes_cfb8_encrypt(clear, key, iv)
+                    elif algo[2] == "cfb128":
+                        return iv + aes_cfb128_encrypt(clear, key, iv)
         else:
             raise UnknownAlgorithmError()
 
@@ -130,13 +146,15 @@ class CipherInstance():
             if algo[1] in {"128", "192", "256"}:
                 nbits = int(algo[1])
                 key = self._get_key_bits(nbits)
-                if algo[2] in {"cbc", "cfb"}:
+                if algo[2] in {"cbc", "cfb", "cfb8", "cfb128"}:
                     iv = wrapped[:AES_BLOCK_BYTES]
                     buf = wrapped[AES_BLOCK_BYTES:]
                     if algo[2] == "cbc":
                         clear = aes_cbc_pkcs7_decrypt(buf, key, iv)
-                    elif algo[2] == "cfb":
+                    elif algo[2] in {"cfb", "cfb8"}:
                         clear = aes_cfb8_decrypt(buf, key, iv)
+                    elif algo[2] == "cfb128":
+                        clear = aes_cfb128_decrypt(buf, key, iv)
                     if "siv" in algo[3:]:
                         if iv != self._deterministic_iv(clear, AES_BLOCK_BYTES):
                             raise MessageAuthenticationError()
