@@ -62,7 +62,7 @@ class CipherInstance():
                     buf = wrapped[AES_BLOCK_BYTES:]
                     if algo[2] == "cbc":
                         clear = aes_cbc_pkcs7_decrypt(buf, key, iv)
-                    elif algo[2] in {"cfb", "cfb8"}:
+                    elif algo[2] == "cfb8":
                         clear = aes_cfb8_decrypt(buf, key, iv)
                     elif algo[2] == "cfb128":
                         clear = aes_cfb128_decrypt(buf, key, iv)
