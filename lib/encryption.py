@@ -13,11 +13,6 @@ class CipherInstance():
         self.key = key
         self.algo = algo or ("aes-128-cfb8-siv" if key else "none")
 
-    def _generate_key(self, nbits) -> "bytes":
-        if nbits % 8:
-            raise ValueError("nbits not divisible by 8")
-        return random_bytes(nbits // 8)
-
     def _get_key_bits(self, nbits) -> "bytes":
         if nbits % 8:
             raise ValueError("nbits not divisible by 8")
