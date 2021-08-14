@@ -1,9 +1,9 @@
 import base64
 from collections import OrderedDict
 from nullroute.core import Core
-import nullroute.oath as oath
 import urllib.parse
 
+from .hotpie import TOTP
 from .string import encode_psk
 
 class OATHParameters():
@@ -51,4 +51,4 @@ class OATHParameters():
         Core.debug("generating TOTP from PSK: %r",
                    base64.b32encode(self.raw_psk).decode("us-ascii"))
 
-        return oath.TOTP(self.raw_psk, digits=self.digits, window=self.window)
+        return TOTP(self.raw_psk, digits=self.digits, window=self.window)
