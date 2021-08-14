@@ -62,7 +62,7 @@ class Entry():
             elif line.startswith("="):
                 if self.name:
                     # Ensure that Database only passes us single entries
-                    Core.warn("line %d: ignoring multiple name headers" % lineno)
+                    Core.warn("line %d: ignoring multiple name headers", lineno)
                 self.name = line[1:].strip()
             elif line.startswith("+"):
                 self.tags |= split_tags(line[1:])
@@ -78,13 +78,13 @@ class Entry():
                 pass
             elif line.startswith("{") and line.endswith("}"):
                 if self.uuid:
-                    Core.warn("line %d: ignoring multiple UUID headers" % lineno)
+                    Core.warn("line %d: ignoring multiple UUID headers", lineno)
                     continue
 
                 try:
                     self.uuid = uuid.UUID(line)
                 except ValueError:
-                    Core.warn("line %d: ignoring badly formed UUID %r" % (lineno, line))
+                    Core.warn("line %d: ignoring badly formed UUID %r", lineno, line)
                     self.comment += line + "\n"
             elif line.startswith("-- "):
                 # per-attribute comments
@@ -93,12 +93,12 @@ class Entry():
                 try:
                     key, val = re.split(self.RE_KEYVAL, line, 1)
                 except ValueError:
-                    Core.err("line %d: could not parse line %r" % (lineno, line))
+                    Core.err("line %d: could not parse line %r", lineno, line)
                     self.comment += line + "\n"
                     continue
 
                 if val == "<private>":
-                    Core.err("line %d: private data has been lost" % lineno)
+                    Core.err("line %d: private data has been lost", lineno)
                     self._broken = True
                 elif val.startswith("<base64> "):
                     nval = val[len("<base64> "):]

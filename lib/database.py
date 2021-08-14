@@ -156,7 +156,7 @@ class Database():
                     try:
                         key, val = line[3:].strip().split(": ", 1)
                     except ValueError:
-                        Core.err("line %d: malformed header: %r" % (lineno, line))
+                        Core.err("line %d: malformed header: %r", lineno, line)
                         continue
                     if key == "options":
                         self.options = split_tags(val)
@@ -164,11 +164,11 @@ class Database():
                         self.features = split_tags(val)
                         r = self.features - self.SUPPORTED_FEATURES
                         if r:
-                            Core.die("line %d: unsupported features %r are used in this file" % (lineno, r))
+                            Core.die("line %d: unsupported features %r are used in this file", lineno, r)
                     else:
                         self.header[key] = val
                 else:
-                    Core.warn("line %d: header after data: %r" % (lineno, line))
+                    Core.warn("line %d: header after data: %r", lineno, line)
             elif line.startswith("="):
                 if header:
                     self._process_header()

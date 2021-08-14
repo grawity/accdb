@@ -22,7 +22,7 @@ class Changeset(list):
                 k = a[1:]
                 Core.debug("  del-key %r", k)
                 if not k:
-                    Core.err("empty key name in change %r" % a)
+                    Core.err("empty key name in change %r", a)
                     continue
                 self.append(("del", k, None))
             elif "=" in a:
@@ -39,12 +39,12 @@ class Changeset(list):
                         op = "set"
                         Core.debug("  set-value %r = %r", k, v)
                 if not k:
-                    Core.err("empty key name in change %r" % a)
+                    Core.err("empty key name in change %r", a)
                     continue
                 self.append((op, k, v))
                 dwim.add(k)
             else:
-                Core.err("syntax error in change %r" % a)
+                Core.err("syntax error in change %r", a)
         Core.debug("parsed changes: %r", self)
 
     def apply_to(self, target, transform_cb=None):
@@ -94,7 +94,7 @@ class Changeset(list):
                 if self._key_alias:
                     v = self._key_alias.get(v, v)
                 if k == v:
-                    Core.err("destination is the same as source: %r = %r" % (_k, _v))
+                    Core.err("destination is the same as source: %r = %r", _k, _v)
                     continue
                     # note to future self: if this check is not done, then 'del target[v]'
                     #                      can lose the attribute entirely when k == v.
@@ -130,5 +130,5 @@ class Changeset(list):
                     target[k] = [re.sub(from_regex, to_replace, val)
                                  for val in target[k]]
             else:
-                Core.die("BUG: unknown changeset operation %r" % op)
+                Core.die("BUG: unknown changeset operation %r", op)
         return target

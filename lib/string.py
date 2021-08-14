@@ -136,7 +136,7 @@ def date_parse(s):
             try:
                 return datetime.datetime.strptime(s, "%Y")
             except ValueError:
-                Core.err("failed to parse %r as date" % s)
+                Core.err("failed to parse %r as date", s)
                 return datetime.datetime.fromordinal(1)
 
 def date_cmp(a, b):

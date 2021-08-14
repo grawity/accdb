@@ -18,7 +18,7 @@ class Filter():
         depth = 0
         start = -1
         esc = False
-        Core.trace("parse input: %r" % text)
+        Core.trace("parse input: %r", text)
         for pos, char in enumerate(text):
             if Core._log_level >= Core.LOG_TRACE:
                 Core.trace("  [%s] char=%r, pos=%d, start=%r, token=%r",
@@ -27,7 +27,7 @@ class Filter():
                 if depth == 0:
                     if start >= 0:
                         # don't lose the initial "foo" in "foo(bar"
-                        Core.trace("    tokens += prefix-word %r" % token)
+                        Core.trace("    tokens += prefix-word %r", token)
                         tokens.append(token)
                     start = pos + 1
                     token = ""
@@ -39,7 +39,7 @@ class Filter():
                 Core.trace("    found closing paren; decr depth=%r", depth)
                 depth -= 1
                 if depth == 0 and start >= 0:
-                    Core.trace("    tokens += grouped %r" % token)
+                    Core.trace("    tokens += grouped %r", token)
                     tokens.append(token)
                     start = -1
                     token = ""
@@ -47,7 +47,7 @@ class Filter():
                     token += char
             elif char in " \t\r\n" and not esc:
                 if depth == 0 and start >= 0:
-                    Core.trace("    tokens += word %r" % token)
+                    Core.trace("    tokens += word %r", token)
                     tokens.append(token)
                     start = -1
                     token = ""
@@ -69,9 +69,9 @@ class Filter():
             raise FilterSyntaxError("too many ')'s (depth %d)" % depth)
         else:
             if start >= 0 and start <= pos:
-                Core.trace("    tokens += final %r" % token)
+                Core.trace("    tokens += final %r", token)
                 tokens.append(token)
-            Core.trace("parse output: %r" % tokens)
+            Core.trace("parse output: %r", tokens)
             return tokens
 
     @staticmethod
@@ -148,13 +148,13 @@ class Filter():
             elif op in {"TRUE", "true", "FALSE", "false"}:
                 raise FilterSyntaxError("too many arguments for %r" % op)
             elif op.startswith("="):
-                Core.debug("unknown operator %r in (%s), trying name match" % (op, pattern))
+                Core.debug("unknown operator %r in (%s), trying name match", op, pattern)
                 return ItemNameFilter(":exact", pattern[1:])
             elif "=" in op or "~" in op:
-                Core.debug("unknown operator %r in (%s), trying attribute match" % (op, pattern))
+                Core.debug("unknown operator %r in (%s), trying attribute match", op, pattern)
                 return AttributeFilter.compile(db, pattern[1:])
             else:
-                Core.debug("unknown operator %r in (%s), assuming AND" % (op, pattern))
+                Core.debug("unknown operator %r in (%s), assuming AND", op, pattern)
                 filters = [Filter.compile(db, x) for x in tokens]
                 return ConjunctionFilter(*filters)
         # constant filters
@@ -162,7 +162,7 @@ class Filter():
             return ConstantFilter(op[0] in "Tt")
         # shortcut syntaxes
         elif " " in op or "(" in op or ")" in op:
-            Core.debug("whitespace in operator %r in (%s), recursing" % (op, pattern))
+            Core.debug("whitespace in operator %r in (%s), recursing", op, pattern)
             return Filter.compile(db, op)
         elif op.startswith("!"):
             Core.debug("operator with '!' prefix, recursing as (NOT %s)", op[1:])
@@ -187,7 +187,7 @@ class Filter():
         elif "=" in op[1:] or "~" in op[1:]:
             return AttributeFilter.compile(db, op)
         else:
-            Core.debug("no known prefix, trying PatternFilter(%r)" % op)
+            Core.debug("no known prefix, trying PatternFilter(%r)", op)
             return PatternFilter(db, op)
 
     @staticmethod
@@ -205,9 +205,9 @@ class Filter():
             else:
                 filter = Filter.compile(db, "*")
         except FilterSyntaxError as e:
-            Core.die("syntax error in filter: %s" % e.args)
+            Core.die("syntax error in filter: %s", e.args)
         except re.error as e:
-            Core.die("syntax error in regex: %s" % e.args)
+            Core.die("syntax error in regex: %s", e.args)
         return filter
 
     @staticmethod
@@ -224,7 +224,7 @@ class Filter():
         if not items:
             Core.die("no entries found")
         elif len(items) > 1:
-            Core.notice("using first result out of %d" % len(items))
+            Core.notice("using first result out of %d", len(items))
         return items[0]
 
 def AnyFilter(*args):
@@ -259,7 +259,7 @@ class PatternFilter(Filter):
             try:
                 return ItemNameFilter(":regex", arg[1:])
             except re.error as e:
-                Core.die("invalid regex %r (%s)" % (arg[1:], e))
+                Core.die("invalid regex %r (%s)", arg[1:], e)
         elif arg.startswith("="):
             return ItemNameFilter(":exact", arg[1:])
         elif arg.startswith(":"):
@@ -282,7 +282,7 @@ class PatternFilter(Filter):
             elif arg == ":badref":
                 return lambda entry: entry.has_bad_references()
             else:
-                Core.die("unrecognized pattern %r" % arg)
+                Core.die("unrecognized pattern %r", arg)
         elif arg.startswith("{"):
             return ItemUuidFilter(arg)
         else:
@@ -348,17 +348,17 @@ class AttributeFilter(Filter):
             if mode in {":exact", "="}:
                 self.mode = ":exact"
                 self.test = lambda entry: attr in entry.attributes
-                Core.trace("compiled to [key %r present]" % attr)
+                Core.trace("compiled to [key %r present]", attr)
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(attr)
                 self.test = lambda entry: any(regex.fullmatch(k) for k in entry.attributes)
-                Core.trace("compiled to [keys ~ %r]" % regex)
+                Core.trace("compiled to [keys ~ %r]", regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(attr, re.I)
                 self.test = lambda entry: any(regex.search(k) for k in entry.attributes)
-                Core.trace("compiled to [keys ~ %r]" % regex)
+                Core.trace("compiled to [keys ~ %r]", regex)
             else:
                 raise FilterSyntaxError("unknown attr-mode %r for %r" % (mode, "ATTR"))
         elif value == "":
@@ -368,44 +368,44 @@ class AttributeFilter(Filter):
                 self.mode = ":exact"
                 self.test = lambda entry: any(value in vs
                                               for vs in entry.attributes.values())
-                Core.trace("compiled to [values = %r]" % value)
+                Core.trace("compiled to [values = %r]", value)
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
                 self.test = lambda entry: any(any(regex.fullmatch(str(v)) for v in vs)
                                               for vs in entry.attributes.values())
-                Core.trace("compiled to [values ~ %r]" % regex)
+                Core.trace("compiled to [values ~ %r]", regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
                 self.test = lambda entry: any(any(regex.search(str(v)) for v in vs)
                                               for vs in entry.attributes.values())
-                Core.trace("compiled to [values ~ %r]" % regex)
+                Core.trace("compiled to [values ~ %r]", regex)
             else:
                 raise FilterSyntaxError("unknown value-mode %r for %r" % (mode, "ATTR"))
         else:
             if mode in {":exact", "="}:
                 self.mode = ":exact"
                 self.test = lambda entry: value in entry.attributes.get(attr, [])
-                Core.trace("compiled to [%r = %r]" % (attr, value))
+                Core.trace("compiled to [%r = %r]", attr, value)
             elif mode in {":glob", "?"}:
                 self.mode = ":glob"
                 regex = re_compile_glob(value)
                 self.test = lambda entry: any(regex.fullmatch(str(v))
                                               for v in entry.attributes.get(attr, []))
-                Core.trace("compiled to [%r ~ %r]" % (attr, regex))
+                Core.trace("compiled to [%r ~ %r]", attr, regex)
             elif mode in {":regex", "~"}:
                 self.mode = ":regex"
                 regex = re.compile(value, re.I)
                 self.test = lambda entry: any(regex.search(str(v))
                                               for v in entry.attributes.get(attr, []))
-                Core.trace("compiled to [%r ~ %r]" % (attr, regex))
+                Core.trace("compiled to [%r ~ %r]", attr, regex)
             elif mode in {":lt", "<"}:
                 self.mode = "<"
                 if attr.startswith("date."):
                     self.test = lambda entry: any(date_cmp(v, value) < 0
                                                   for v in entry.attributes.get(attr, []))
-                    Core.trace("compiled to [%r < %r]" % (attr, value))
+                    Core.trace("compiled to [%r < %r]", attr, value)
                 else:
                     raise FilterSyntaxError("unsupported op %r %r " % (attr, mode))
             elif mode in {":gt", ">"}:
@@ -413,7 +413,7 @@ class AttributeFilter(Filter):
                 if attr.startswith("date."):
                     self.test = lambda entry: any(date_cmp(v, value) > 0
                                                   for v in entry.attributes.get(attr, []))
-                    Core.trace("compiled to [%r > %r]" % (attr, value))
+                    Core.trace("compiled to [%r > %r]", attr, value)
                 else:
                     raise FilterSyntaxError("unsupported op %r %r " % (attr, mode))
             else:
@@ -436,10 +436,10 @@ class AttributeFilter(Filter):
             if attr_is_reflink(attr) and glob.startswith("#"):
                 try:
                     value = db.expand_attr_cb(attr, glob)
-                    Core.trace("-- expanded match value %r to %r" % (glob, value))
+                    Core.trace("-- expanded match value %r to %r", glob, value)
                     return AttributeFilter(attr, ":exact", value)
                 except IndexError:
-                    Core.trace("-- failed to expand match value %r" % glob)
+                    Core.trace("-- failed to expand match value %r", glob)
                     return ConstantFilter(False)
             elif is_glob(glob):
                 return AttributeFilter(attr, ":glob", glob)
@@ -451,7 +451,7 @@ class AttributeFilter(Filter):
             try:
                 return AttributeFilter(attr, ":regex", regex)
             except re.error as e:
-                Core.die("invalid regex %r (%s)" % (regex, e))
+                Core.die("invalid regex %r (%s)", regex, e)
         elif "<" in arg:
             attr, match = arg.split("<", 1)
             return AttributeFilter(attr, "<", match)

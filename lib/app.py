@@ -51,7 +51,7 @@ class Cmd():
             if func:
                 func(argv[1:])
             else:
-                Core.die("unknown command %r" % argv[0])
+                Core.die("unknown command %r", argv[0])
         else:
             Core.die("no command given")
 
@@ -159,7 +159,7 @@ class Cmd():
             for val in secret:
                 print(val)
         else:
-            Core.err("entry has no %r attribute" % attr)
+            Core.err("entry has no %r attribute", attr)
 
     def do_copy_pass(self, argv):
         """Copy password to clipboard"""
@@ -171,12 +171,11 @@ class Cmd():
         secret = entry.attributes.get(attr)
         if secret:
             if len(secret) > 1:
-                Core.notice("entry has %d values for %r, using first" \
-                            % (len(secret), attr))
+                Core.notice("entry has %d values for %r, using first", len(secret), attr)
             Clipboard.put(str(secret[0]))
-            Core.info("%r attribute copied to clipboard" % attr)
+            Core.info("%r attribute copied to clipboard", attr)
         else:
-            Core.err("entry has no %r attribute" % attr)
+            Core.err("entry has no %r attribute", attr)
 
     def do_get_totp(self, argv):
         """Generate an OATH TOTP response"""
@@ -230,7 +229,7 @@ class Cmd():
                     label = entry.name
                     secret = str(entry.attributes["pass"][0])
                 except KeyError as e:
-                    Core.err("entry has no secret to store (no %s field)" % e)
+                    Core.err("entry has no secret to store (no %s field)", e)
                     continue
 
             try:
@@ -245,25 +244,25 @@ class Cmd():
                         "keygrip", "n/%s" % entry.attributes["keygrip"][0],
                     ]
                 else:
-                    Core.err("couldn't determine entry schema (unknown kind %r)" % kind)
+                    Core.err("couldn't determine entry schema (unknown kind %r)", kind)
                     continue
             except KeyError as e:
-                Core.err("entry has no %s field (required for its kind %r)" % (e, kind))
+                Core.err("entry has no %s field (required for its kind %r)", e, kind)
                 continue
 
             if action == "store":
-                Core.debug("store entry %r" % label)
-                Core.debug("attrs %r" % attrs)
+                Core.debug("store entry %r", label)
+                Core.debug("attrs %r", attrs)
                 if kr.store(label, secret, attrs):
-                    Core.info("stored %s secret in keyring" % kind)
+                    Core.info("stored %s secret in keyring", kind)
                 else:
-                    Core.err("secret-tool %s failed for %r" % (action, attrs))
+                    Core.err("secret-tool %s failed for %r", action, attrs)
             elif action == "clear":
-                Core.debug("attrs %r" % attrs)
+                Core.debug("attrs %r", attrs)
                 if kr.clear(attrs):
-                    Core.info("removed matching %s secrets from keyring" % kind)
+                    Core.info("removed matching %s secrets from keyring", kind)
                 else:
-                    Core.err("secret-tool %s failed for %r" % (action, attrs))
+                    Core.err("secret-tool %s failed for %r", action, attrs)
             elif action == "lookup":
                 if "pass" in entry.attributes:
                     Core.err("refusing to overwrite password for %r", entry.name)
@@ -274,9 +273,9 @@ class Cmd():
                 if res:
                     entry.attributes["pass"] = [res]
                     entry.db.modified = True
-                    Core.info("imported %s secret from keyring" % kind)
+                    Core.info("imported %s secret from keyring", kind)
                 else:
-                    Core.err("secret-tool %s failed for %r" % (action, attrs))
+                    Core.err("secret-tool %s failed for %r", action, attrs)
             else:
                 raise ValueError("BUG: unhandled keyring action %r" % action)
 
@@ -306,7 +305,7 @@ class Cmd():
         bad_args = [t for t in tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
-            Core.die("bad arguments: %r" % bad_args)
+            Core.die("bad arguments: %r", bad_args)
         elif not old_tags:
             Core.die("no old tags specified")
 
@@ -337,7 +336,7 @@ class Cmd():
         bad_args = [t for t in tags if not (t.startswith("+") or t.startswith("-"))]
 
         if bad_args:
-            Core.die("bad arguments: %r" % bad_args)
+            Core.die("bad arguments: %r", bad_args)
 
         items = Filter.cli_search_str(self.db, query)
         tags  = set(tags)
@@ -430,7 +429,7 @@ class Cmd():
         elif argv[0] == "json":
             db.dump_json()
         else:
-            Core.err("export format %r not supported" % argv[0])
+            Core.err("export format %r not supported", argv[0])
 
     def do_convert(self, argv):
         """Read entries from stdin and dump to stdout"""
@@ -494,7 +493,7 @@ class Cmd():
             else:
                 Core.info("database fully decrypted")
         else:
-            Core.die("unrecognized args %r" % argv[0])
+            Core.die("unrecognized args %r", argv[0])
 
     def do_touch(self, argv):
         """Rewrite the accounts.db file"""
@@ -567,7 +566,7 @@ class AccdbApplication():
                                            "accounts.txt"))
 
     def load_db_from_file(self, db_path):
-        Core.debug("loading database from %r" % db_path)
+        Core.debug("loading database from %r", db_path)
         db = Database()
         db.path = db_path
         db.keyring = default_keyring()
