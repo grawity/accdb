@@ -214,12 +214,6 @@ class SecureStorage():
                            iter=1000,
                            length=16)
 
-    def set_password(self, passwd):
-        return self.set_raw_kek(self.kdf(passwd))
-
-    def change_password(self, passwd):
-        return self.change_raw_kek(self.kdf(passwd))
-
     # DEK
 
     @property
