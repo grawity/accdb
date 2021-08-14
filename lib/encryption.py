@@ -205,13 +205,8 @@ class SecureStorage():
         else:
             self.kek_cipher = CipherInstance(new_kek)
 
-    def kdf(self, passwd, salt):
-        legacy_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
-        iter = 4096 if (salt and salt != legacy_salt) else 1000
-        return pbkdf2_sha1(passwd.encode("utf-8"),
-                           salt,
-                           iter=iter,
-                           length=16)
+    def kdf(self, passwd, salt, iter):
+        return pbkdf2_sha1(passwd.encode("utf-8"), salt, iter, length=16)
 
     # DEK
 
