@@ -174,6 +174,8 @@ class Filter():
             return ItemUuidFilter(op)
         elif op.startswith("="):
             return ItemNameFilter(":exact", op[1:])
+        elif op.startswith("^"):
+            return ItemNameFilter(":regex", op)
         elif op.startswith("@"):
             return AttributeFilter.compile(db, op[1:])
         elif op.startswith("+"):
