@@ -104,17 +104,19 @@ def date_parse(s):
     if "T" in s:
         s = s.split("T")[0]
 
-    try:
-        return datetime.datetime.strptime(s, "%Y-%m-%d")
-    except ValueError:
+    formats = [
+        "%Y-%m-%d",
+        "%m/%Y", # for credit cards
+        "%Y-%m",
+        "%Y",
+    ]
+    for f in formats:
         try:
-            return datetime.datetime.strptime(s, "%Y-%m")
+            return datetime.datetime.strptime(s, f)
         except ValueError:
-            try:
-                return datetime.datetime.strptime(s, "%Y")
-            except ValueError:
-                Core.err("failed to parse %r as date", s)
-                return datetime.datetime.fromordinal(1)
+            continue
+    Core.err("failed to parse %r as date", s)
+    return datetime.datetime.fromordinal(1)
 
 def date_cmp(a, b):
     ax = date_parse(a).date()
