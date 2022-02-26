@@ -614,12 +614,7 @@ class AccdbApplication():
                 if "git" in self.db.options:
                     Core.debug("skipping Git commit")
 
-def main():
-    app = AccdbApplication()
-    app.run(sys.argv[1:])
-    Core.exit()
+app = AccdbApplication()
+app.run(sys.argv[1:])
 
-if __name__ == "__main__":
-    main()
-
-# vim: fdm=marker
+Core.exit()
