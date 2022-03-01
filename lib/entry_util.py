@@ -112,3 +112,6 @@ class SecureStr():
 
     def __lt__(self, other):
         return str(self) < str(other)
+
+    def __gt__(self, other):
+        return str(self) > str(other)
