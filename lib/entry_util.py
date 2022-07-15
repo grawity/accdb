@@ -35,7 +35,7 @@ def attr_is_private(name):
     return name.startswith("!") or name == "pass"
 
 def attr_is_reflink(name):
-    return name.startswith("ref.")
+    return name.startswith("ref.") or name == "ref"
 
 def attr_is_sortable(name):
     base = name.split(".")[0]
