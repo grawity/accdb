@@ -230,12 +230,24 @@ class Filter():
         return items[0]
 
 def AnyFilter(*args):
+    """
+    String match that encompasses every visible field (item names, attribute
+    names, attribute values, and tags).
+    """
     return DisjunctionFilter(ItemNameFilter(*args),
                              AttributeFilter(*args),
                              AttributeFilter("*", *args),
                              TagFilter(*args))
 
 class PatternFilter(Filter):
+    """
+    Collection of various ad-hoc filters, most of which merely expand to other
+    filters (and should probably be recognized in the parent Filter.compile
+    instead), but a few are specific lambdas that have no other representation
+    besides the "(PATTERN :foo)".
+
+    Anything not otherwise recognized is assumed to be a 'PATTERN'.
+    """
     def __init__(self, db, pattern):
         self.pattern = pattern
         self.func = PatternFilter.compile(db, self.pattern)
@@ -515,6 +527,9 @@ class TagFilter(Filter):
 
     def __str__(self):
         if self.value == "":
+            # XXX: This means "+" means all untagged items, which is not quite
+            # what's expected. It should probably mean all *tagged* items
+            # instead (with !+ becoming "untagged").
             return "(NOT %s)" % "(TAG %s)" % "*"
         elif self.value == "*":
             return "(TAG %s)" % self.value
