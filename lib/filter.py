@@ -179,7 +179,7 @@ class Filter():
         elif op.startswith("@"):
             return AttributeFilter.compile(db, op[1:])
         elif op.startswith("+"):
-            return TagFilter(op[1:])
+            return TagFilter(op[1:] or "*")
         elif op.startswith("?"):
             return AnyFilter(":regex", op[1:])
         elif op.isdecimal():
@@ -526,11 +526,7 @@ class TagFilter(Filter):
                 raise FilterSyntaxError("unknown mode %r for %r" % (mode, "TAG"))
 
     def __str__(self):
-        if self.value == "":
-            return "(TAG *)"
-        elif self.value == "*":
-            return "(TAG %s)" % self.value
-        elif self.mode == ":exact":
+        if self.mode == ":exact":
             return "(TAG %s)" % Filter.quote(self.value)
         else:
             return "(TAG %s %s)" % (self.mode, Filter.quote(self.value))
