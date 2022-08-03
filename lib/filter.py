@@ -281,6 +281,8 @@ class PatternFilter(Filter):
                 return Filter.compile(db, "AND (NOT +expired) @date.expiry<now+30")
             elif arg == ":untagged":
                 return Filter.compile(db, "NOT (TAG *)")
+            elif arg == ":weak":
+                return Filter.compile(db, "AND :active !+smartcard @pass~^.{,9}$")
             elif arg == ":badref":
                 return lambda entry: entry.has_bad_references()
             else:
