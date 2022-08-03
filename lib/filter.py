@@ -527,10 +527,7 @@ class TagFilter(Filter):
 
     def __str__(self):
         if self.value == "":
-            # XXX: This means "+" means all untagged items, which is not quite
-            # what's expected. It should probably mean all *tagged* items
-            # instead (with !+ becoming "untagged").
-            return "(NOT %s)" % "(TAG %s)" % "*"
+            return "(TAG *)"
         elif self.value == "*":
             return "(TAG %s)" % self.value
         elif self.mode == ":exact":
