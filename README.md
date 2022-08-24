@@ -1,21 +1,5 @@
 # accdb
 
-Everybody tells me "use `pass`", "use LastPass", "use KeePass". I've tried all of them.
-
-  - I want my password list to be editable anywhere I go.
-  - I want to edit it with Vim and Notepad2.
-  - I want to use my own field names for everything.
-  - I don't want to be annoyed with strict syntax requirements.
-  - I want it to be searchable from command line, conveniently.
-
-Eight years later:
-
-  - I can edit my password list anywhere I go, by typing tiny letters into a SSH client on my smartphone.
-  - I never edit it with Vim or Notepad2 anyway, not that I can when it's encrypted.
-  - Three different field names for the same thing.
-  - It literally started its life as a reformatter to enforce standard syntx.
-  - Well, `accdb grep` works just fine I guess.
-
 ## Dependencies
 
 <i>"What's a package manager?"</i>
