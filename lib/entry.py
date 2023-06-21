@@ -7,6 +7,22 @@ from .entry_util import *
 from .oath_util import OATHParameters
 from .string import *
 
+CLIFMT_PARENS = "38;5;244"
+CLIFMT_PARENS_DELETED = "38;5;202"
+CLIFMT_COMMENT = "38;5;30"
+CLIFMT_UUID = "38;5;8"
+CLIFMT_TITLE = "38;5;50"
+CLIFMT_KEY_NORMAL = "38;5;228"
+CLIFMT_VAL_NORMAL = ""
+CLIFMT_KEY_PRIVATE = "38;5;216"
+CLIFMT_VAL_PRIVATE = "34"
+CLIFMT_KEY_REFLINK = "38;5;250"
+CLIFMT_VAL_REFLINK = CLIFMT_KEY_REFLINK
+CLIFMT_KEY_METADATA = "38;5;244"
+CLIFMT_VAL_METADATA = CLIFMT_KEY_METADATA
+CLIFMT_VAL_NOTE = "38;5;244"
+CLIFMT_TAGS = "38;5;13"
+
 def split_tags(string):
     string = string.strip(" ,\n")
     items = re.split(Entry.RE_TAGS, string)
@@ -151,27 +167,22 @@ class Entry():
         else:
             f = lambda arg, fmt: arg
 
-        paren_fmt = "38;5;244"
-        paren_del_fmt = "38;5;202"
-        comment_fmt = "38;5;30"
-        uuid_fmt = "38;5;8"
-
         data = ""
 
         if show_itemno and self.itemno:
             if self.deleted:
-                data += "%s\n" % f("(deleted item %s)" % self.itemno, paren_del_fmt)
+                data += "%s\n" % f("(deleted item %s)" % self.itemno, CLIFMT_PARENS_DELETED)
             else:
-                data += "%s\n" % f("(item %s)" % self.itemno, paren_fmt)
+                data += "%s\n" % f("(item %s)" % self.itemno, CLIFMT_PARENS)
 
-        data += "= %s\n" % f(self.name, "38;5;50")
+        data += "= %s\n" % f(self.name, CLIFMT_TITLE)
 
         if show_contents:
             for line in self.comment.splitlines():
-                data += "%s %s\n" % (f(";", uuid_fmt), f(line, comment_fmt))
+                data += "%s %s\n" % (f(";", CLIFMT_UUID), f(line, CLIFMT_COMMENT))
 
             if self.uuid and storage:
-                data += "\t%s\n" % f("{%s}" % self.uuid, uuid_fmt)
+                data += "\t%s\n" % f("{%s}" % self.uuid, CLIFMT_UUID)
 
             if conceal:
                 hidden_attrs = self.DEFAULT_HIDDEN_ATTRS[:]
@@ -190,8 +201,8 @@ class Entry():
                         n_hidden += 1
                         continue
                     elif attr_is_private(key):
-                        key_fmt = "38;5;216"
-                        value_fmt = "34"
+                        key_fmt = CLIFMT_KEY_PRIVATE
+                        value_fmt = CLIFMT_VAL_PRIVATE
                         if storage:
                             if encrypt and ("encrypted" in self.db.features):
                                 if isinstance(value, SecureStr):
@@ -210,8 +221,8 @@ class Entry():
                                                        "\n\t" + " " * len(key) + "  ")
                     else:
                         if attr_is_reflink(key):
-                            key_fmt = "38;5;250"
-                            value_fmt = key_fmt
+                            key_fmt = CLIFMT_KEY_REFLINK
+                            value_fmt = CLIFMT_VAL_REFLINK
                             try:
                                 sub_entry = self.db.find_by_uuid(value)
                             except KeyError:
@@ -224,14 +235,14 @@ class Entry():
                                 if desc and conceal:
                                     value, desc = desc, None
                         elif attr_is_metadata(key):
-                            key_fmt = "38;5;244"
-                            value_fmt = key_fmt
+                            key_fmt = CLIFMT_KEY_METADATA
+                            value_fmt = CLIFMT_VAL_METADATA
                         else:
-                            key_fmt = "38;5;228"
-                            value_fmt = ""
+                            key_fmt = CLIFMT_KEY_NORMAL
+                            value_fmt = CLIFMT_VAL_NORMAL
                             if key.startswith("date."):
                                 if conceal:
-                                    value += f(" (%s)" % relative_date(value), paren_fmt)
+                                    value += f(" (%s)" % relative_date(value), CLIFMT_PARENS)
 
                         if val_is_unsafe(value):
                             if storage:
@@ -242,10 +253,10 @@ class Entry():
 
                     data += "\t%s %s\n" % (f("%s:" % key, key_fmt), f(value, value_fmt))
                     if desc:
-                        data += "\t%s\n" % f("-- %s" % desc, "38;5;244")
+                        data += "\t%s\n" % f("-- %s" % desc, CLIFMT_VAL_NOTE)
 
             if n_hidden:
-                data += "\t%s\n" % f("(%s hidden attributes)" % n_hidden, paren_fmt)
+                data += "\t%s\n" % f("(%s hidden attributes)" % n_hidden, CLIFMT_PARENS)
 
         if self.tags:
             tags = list(self.tags)
@@ -254,7 +265,7 @@ class Entry():
             while tags or line:
                 line_len = 8 + sum([len(i) + 2 for i in line])
                 if not tags or (line and line_len + len(tags[0]) + 2 > 80):
-                    data += "\t+ %s\n" % f(", ".join(line), "38;5;13")
+                    data += "\t+ %s\n" % f(", ".join(line), CLIFMT_TAGS)
                     line = []
                 if tags:
                     line.append(tags.pop(0))
