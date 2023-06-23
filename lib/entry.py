@@ -11,11 +11,11 @@ CLIFMT_PARENS = "38;5;244"
 CLIFMT_PARENS_DELETED = "38;5;202"
 CLIFMT_COMMENT = "38;5;30"
 CLIFMT_UUID = "3;38;5;250"
-CLIFMT_TITLE = "1;98"
-CLIFMT_KEY_NORMAL = "1;35"
-CLIFMT_VAL_NORMAL = "95"
-CLIFMT_KEY_PRIVATE = "1;38;5;248"
-CLIFMT_VAL_PRIVATE = "38;5;250"
+CLIFMT_TITLE = "4"
+CLIFMT_KEY_NORMAL = "32"
+CLIFMT_VAL_NORMAL = ""
+CLIFMT_KEY_PRIVATE = "32"
+CLIFMT_VAL_PRIVATE = CLIFMT_VAL_NORMAL
 CLIFMT_KEY_REFLINK = "38;5;250"
 CLIFMT_VAL_REFLINK = CLIFMT_KEY_REFLINK
 CLIFMT_KEY_METADATA = "38;5;244"
@@ -171,11 +171,15 @@ class Entry():
 
         if show_itemno and self.itemno:
             if self.deleted:
-                data += "%s\n" % f("(deleted item %s)" % self.itemno, CLIFMT_PARENS_DELETED)
+                tmp = f"deleted {self.itemno}"
             else:
-                data += "%s\n" % f("(item %s)" % self.itemno, CLIFMT_PARENS)
+                tmp = f"{self.itemno}"
+            data += "%s " % f(f"{tmp}:", CLIFMT_PARENS)
 
-        data += "= %s\n" % f(self.name, CLIFMT_TITLE)
+        if storage:
+            data += "= %s\n" % f(self.name, CLIFMT_TITLE)
+        else:
+            data += "%s\n" % f(self.name, CLIFMT_TITLE)
 
         if show_contents:
             for line in self.comment.splitlines():
