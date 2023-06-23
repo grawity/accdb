@@ -8,8 +8,8 @@ attr_names = {
     "website":  "uri",
     "user":     "username",
     "nicname":  "nic-hdl",
-    "password": "pass",
-    "!pass":    "pass",
+    "password": "!pass",
+    "pass":     "!pass",
     "mail":     "email",
     "tel":      "phone",
     "ssid":     "wifi.essid",
@@ -20,7 +20,7 @@ attr_names = {
 attr_groups = {
     "object":   ["entity", "host", "uri", "realm", "wifi.essid"],
     "username": ["login", "login.", "username", "nic-hdl", "principal"],
-    "password": ["pass"],
+    "password": ["!pass"],
     "email":    ["email", "phone"],
 }
 

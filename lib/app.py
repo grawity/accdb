@@ -21,6 +21,8 @@ from .keyring import *
 from .qrcode import qr_encode
 from .string import *
 
+PASS_ATTR = "!pass"
+
 def str_join_qwords_safe(argv):
     def safe_attr(arg):
         if arg and "=" in arg[1:]:
@@ -38,7 +40,7 @@ def maybe_pop_attr(argv: "mutable"):
     elif argv and argv[-1].startswith("!"):
         return argv.pop()
     else:
-        return "pass"
+        return PASS_ATTR
 
 class Cmd():
     def __init__(self, app, db):
@@ -227,7 +229,7 @@ class Cmd():
             if action == "store":
                 try:
                     label = entry.name
-                    secret = str(entry.attributes["pass"][0])
+                    secret = str(entry.attributes[PASS_ATTR][0])
                 except KeyError as e:
                     Core.err("entry has no secret to store (no %s field)", e)
                     continue
@@ -264,14 +266,14 @@ class Cmd():
                 else:
                     Core.err("secret-tool %s failed for %r", action, attrs)
             elif action == "lookup":
-                if "pass" in entry.attributes:
+                if PASS_ATTR in entry.attributes:
                     Core.err("refusing to overwrite password for %r", entry.name)
                     continue
                 Core.debug("attrs %r", attrs)
                 res = kr.lookup(attrs)
                 Core.debug("result %r", res)
                 if res:
-                    entry.attributes["pass"] = [res]
+                    entry.attributes[PASS_ATTR] = [res]
                     entry.db.modified = True
                     Core.info("imported %s secret from keyring", kind)
                 else:

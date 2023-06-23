@@ -295,7 +295,7 @@ class PatternFilter(Filter):
                 return Filter.compile(db, "NOT (TAG *)")
             elif arg == ":weak":
                 return Filter.compile(db, "AND :active !+smartcard !+default !+other"
-                                            " @pass~^.{,9}$")
+                                            " @!pass~^.{,9}$")
             elif arg == ":badref":
                 return lambda entry: entry.has_bad_references()
             else:
