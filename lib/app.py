@@ -43,6 +43,9 @@ def maybe_pop_attr(argv: "mutable"):
         return PASS_ATTR
 
 class Cmd():
+    # Used for tracking separator lines between entries
+    _n_shown = 0
+
     def __init__(self, app, db):
         self.app = app
         self.db = db
@@ -97,7 +100,10 @@ class Cmd():
             for line in text.split("\n"):
                 print("\t"*depth + line)
         else:
-            print(text)
+            if self._n_shown > 0:
+                print()
+            print(text, end="")
+            self._n_shown += 1
         if recurse:
             for key in entry.attributes:
                 if attr_is_reflink(key):
