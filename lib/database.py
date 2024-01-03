@@ -42,14 +42,16 @@ class Database():
 
         if "encrypted" in self.features:
             kek = None
-            if "dek" in header:
-                dek = header["dek"]
+            dek = header.get("dek")
 
-            if dek.startswith("none;"):
+            if not dek:
+                Core.die("BUG: help I forgot how this is supposed to be handled")
+            elif dek.startswith("none;"):
                 Core.debug("found plaintext DEK; setting null KEK")
                 self.sec.set_raw_kek(None)
             else:
-                # Read KDF parameters before keyring lookup, so they'll be accessible to _get_header()
+                # Read KDF parameters before keyring lookup, so they'll be
+                # accessible to _get_header()
                 legacy_salt = b"\x25\xa9\x7b\xc5\x7a\x59\x0d\xa6"
                 if "salt" in header:
                     salt = base64.b64decode(header["salt"])
