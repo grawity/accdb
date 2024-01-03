@@ -11,7 +11,7 @@ class MessageAuthenticationError(Exception):
 class CipherInstance():
     def __init__(self, key, algo=None):
         self.key = key
-        self.algo = algo or ("aes-128-cfb8-siv" if key else "none")
+        self.algo = algo or ("aes-128-cfb128-siv" if key else "none")
 
     def _get_key_bits(self, nbits):
         if nbits % 8:
