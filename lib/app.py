@@ -606,10 +606,13 @@ class AccdbApplication():
             self.run_git("push", "-q")
 
     def run(self, argv):
-        self.db = self.load_db_from_file(self.db_path())
+        try:
+            self.db = self.load_db_from_file(self.db_path())
 
-        interp = Cmd(self, self.db)
-        interp.call(argv)
+            interp = Cmd(self, self.db)
+            interp.call(argv)
+        except RuntimeError as e:
+            Core.die("%s", e)
 
         if self.db.modified:
             if not os.environ.get("DRYRUN"):
