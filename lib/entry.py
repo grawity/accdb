@@ -375,6 +375,7 @@ class Entry():
 
     def apply_changeset(self, changes):
         self.attributes["@name"] = [self.name]
+        self.attributes["@tags"] = [*self.tags]
         self.attributes["@comment"] = self.comment.rstrip("\n").split("\n")
 
         changes.apply_to(self.attributes, transform_cb=self.expand_attr_cb)
@@ -385,6 +386,12 @@ class Entry():
 
         # TODO: instead of this, make @comment a real attribute that's merely
         # formatted differently – this would allow search without a new filter
+
+        if "@tags" in self.attributes:
+            self.tags = set(self.attributes["@tags"])
+            del self.attributes["@tags"]
+        else:
+            self.tags = set()
 
         if "@comment" in self.attributes:
             self.comment = "\n".join(self.attributes["@comment"])
