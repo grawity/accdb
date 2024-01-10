@@ -179,7 +179,7 @@ class Entry():
         if storage:
             data += "= %s\n" % f(self.name, CLIFMT_TITLE)
         else:
-            if aka := self.attributes.get("@aka", []):
+            if conceal and aka := self.attributes.get("@aka", []):
                 data += "%s %s\n" % (f(self.name, CLIFMT_TITLE),
                                      f("[+%d]" % len(aka), CLIFMT_PARENS))
             else:
@@ -206,7 +206,7 @@ class Entry():
                 for value in self.attributes[key]:
                     key = translate_attr(key)
                     desc = None
-                    if key in {"@aka"}:
+                    if conceal and key in {"@aka"}:
                         # Those are either counted separately, or not count as
                         # attributes in general.
                         continue
