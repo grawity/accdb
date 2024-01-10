@@ -178,12 +178,14 @@ class Entry():
 
         if storage:
             data += "= %s\n" % f(self.name, CLIFMT_TITLE)
-        else:
-            if conceal and aka := self.attributes.get("@aka", []):
+        elif conceal:
+            if aka := self.attributes.get("@aka", []):
                 data += "%s %s\n" % (f(self.name, CLIFMT_TITLE),
                                      f("[+%d]" % len(aka), CLIFMT_PARENS))
             else:
                 data += "%s\n" % f(self.name, CLIFMT_TITLE)
+        else:
+            data += "%s\n" % f(self.name, CLIFMT_TITLE)
 
         n_hidden = 0
 
