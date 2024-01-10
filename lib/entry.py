@@ -179,7 +179,13 @@ class Entry():
         if storage:
             data += "= %s\n" % f(self.name, CLIFMT_TITLE)
         else:
-            data += "%s\n" % f(self.name, CLIFMT_TITLE)
+            if aka := self.attributes.get("@aka", []):
+                data += "%s %s\n" % (f(self.name, CLIFMT_TITLE),
+                                     f("[+%d]" % len(aka), CLIFMT_PARENS))
+            else:
+                data += "%s\n" % f(self.name, CLIFMT_TITLE)
+
+        n_hidden = 0
 
         if show_contents:
             for line in self.comment.splitlines():
@@ -193,7 +199,6 @@ class Entry():
                 hidden_attrs += self.attributes.get("@hidden", [])
             else:
                 hidden_attrs = []
-            n_hidden = 0
 
             for key in sort_attrs(self):
                 if attr_is_sortable(key):
@@ -201,7 +206,11 @@ class Entry():
                 for value in self.attributes[key]:
                     key = translate_attr(key)
                     desc = None
-                    if match_globs(key, hidden_attrs):
+                    if key in {"@aka"}:
+                        # Those are either counted separately, or not count as
+                        # attributes in general.
+                        continue
+                    elif match_globs(key, hidden_attrs):
                         n_hidden += 1
                         continue
                     elif attr_is_private(key):
